@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.1.4 · 2026-10-30
+
+- 逐条核对了 Finance（18,299 条）和 Medicine（24,293 条）两个专业词库的全部译名，以及多个分类里重复出现、合并了译名的术语。
+- Finance 修正 5 处：foreclosure 补上最常用的「取消抵押品赎回权」，bootstrapping、chooser option、soft dollars、Gramm-Leach-Bliley Act 补全常见译法。
+- Medicine 修正 7 处：partial-thickness skin graft 改为「断层皮片」（原来的「刃厚皮片」是其中最薄的一种）；lipoma、neurodermatitis 合并后出现的中医病名「肉瘤」「牛皮癣」标明是中医病名，避免和现代医学的肉瘤、银屑病混淆；schistocyte 去掉不规范的「裂体细胞」；僵蚕的英文改为 stiff silkworm，普济消毒饮的英文名改为 Universal Relief Toxin-Eliminating Beverage；一个分类名里的繁体字改为简体。
+
 ## 0.1.3 · 2026-10-30
 
 - 词根表从 909 条扩充到 1084 条，又补上一批词库里用到的词根，例如 parere（生育）、secur（安全）、lign（线）、phyt（植物）、tax（排列）、topo（地方）。

@@ -292,7 +292,7 @@ lookback option	回望期权	衍生品
 binary option	二元期权	衍生品
 digital option	数字期权	衍生品
 compound option	复合期权	衍生品
-chooser option	选择人期权	衍生品
+chooser option	选择者期权；任选期权	衍生品
 stock option	股票期权	衍生品
 index option	指数期权	衍生品
 currency option	外汇期权；货币期权	衍生品
@@ -422,7 +422,7 @@ yield to call	赎回收益率	固定收益
 bond equivalent yield	债券等价收益率	固定收益
 bank discount yield	银行贴现收益率	固定收益
 realized compound yield	已实现复合收益率	固定收益
-bootstrapping	息票剥离法	固定收益
+bootstrapping	息票剥离法；自举法	固定收益
 Nelson-Siegel model	Nelson-Siegel模型	固定收益
 short-rate model	短期利率模型	固定收益
 Hull-White model	Hull-White模型；赫尔-怀特模型	固定收益
@@ -930,7 +930,7 @@ Securities Investor Protection Corporation	证券投资者保护公司（SIPC）
 self-regulatory organization	自律组织（SRO）	金融监管
 Investment Company Act of 1940	1940年投资公司法	金融监管
 Investment Advisers Act of 1940	1940年投资顾问法	金融监管
-Gramm-Leach-Bliley Act	金融服务现代化法案	金融监管
+Gramm-Leach-Bliley Act	格雷姆-里奇-比利雷法案；金融服务现代化法案	金融监管
 Community Reinvestment Act	社区再投资法	金融监管
 Basel Committee on Banking Supervision	巴塞尔银行监管委员会	金融监管
 Financial Stability Board	金融稳定理事会（FSB）	金融监管
@@ -1282,7 +1282,7 @@ personal pension	个人养老金	投资学
 403(b) plan	403(b)计划	投资学
 investment company	投资公司	投资学
 commingled fund	混合基金	投资学
-soft dollars	软美元	投资学
+soft dollars	软美元；软佣金	投资学
 appraisal ratio	评估比率	投资学
 Treynor-Black model	特雷诺-布莱克模型	投资学
 Roy's safety-first criterion	罗伊安全第一准则	投资学
