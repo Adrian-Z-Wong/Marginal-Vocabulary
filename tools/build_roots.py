@@ -116,7 +116,7 @@ class Linker:
 
     def ending(self, form, gloss):
         """复合后缀（-ator、-ability、-istic）：取结尾那个后缀（-or、-ity、-ic），意思要对得上。"""
-        chars = set(CJK.findall(gloss))
+        chars = set(CJK.findall(re.sub("[前后]缀", "", gloss)))
         if len(chars) > 1:
             chars -= {"词"}
         for k in range(1, len(form) - 1):
@@ -150,9 +150,12 @@ class Linker:
                 prefer = ["suffix", "root"]
             else:
                 prefer = ["root"]
-            chars = set(CJK.findall(gloss))
+            if not kind:
+                # 没标连字符的，最后也看看前缀、后缀表（percent 里的 cent、dismal 里的 mal）
+                prefer += [t for t in ("prefix", "suffix") if t not in prefer]
+            chars = set(CJK.findall(re.sub("[前后]缀", "", gloss)))
             if len(chars) > 1:
-                chars -= {"词"}  # 「名词」「动词」只看前一个字
+                chars -= {"词"}  # 「名词」「动词」只看前一个字；「后缀」两个字不算
             for t in prefer:
                 group = [r for r in cands if r["type"] == t]
                 if not group:

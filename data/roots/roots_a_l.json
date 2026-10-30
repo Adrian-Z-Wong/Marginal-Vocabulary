@@ -7,7 +7,7 @@
       "acu",
       "acerb"
     ],
-    "meaning": "尖，锐；酸",
+    "meaning": "尖，锐，针；酸",
     "origin": "拉丁语 acer「尖锐的」、acus「针」、acidus「酸的」",
     "note": "酸味像「尖刺」扎舌头，所以「尖」和「酸」同源",
     "examples": [
@@ -51,9 +51,10 @@
   {
     "type": "root",
     "forms": [
-      "acro"
+      "acro",
+      "acr"
     ],
-    "meaning": "高，顶端",
+    "meaning": "高，顶端，首",
     "origin": "希腊语 akros「最高的，顶端的」",
     "note": "",
     "examples": [
@@ -85,7 +86,8 @@
       "act",
       "ag",
       "ig",
-      "agit"
+      "agit",
+      "cog"
     ],
     "meaning": "做，行动；驱使",
     "origin": "拉丁语 agere「做，驱动」（过去分词 actum）",
@@ -244,7 +246,7 @@
     "forms": [
       "agon"
     ],
-    "meaning": "竞争，挣扎",
+    "meaning": "竞争，挣扎；痛苦",
     "origin": "希腊语 agon「竞赛，斗争」",
     "note": "",
     "examples": [
@@ -437,7 +439,8 @@
       "am",
       "amor",
       "amic",
-      "amat"
+      "amat",
+      "ami"
     ],
     "meaning": "爱；友",
     "origin": "拉丁语 amare「爱」、amicus「朋友」",
@@ -782,7 +785,7 @@
       "apt",
       "ept"
     ],
-    "meaning": "适合",
+    "meaning": "适合；获得",
     "origin": "拉丁语 aptus「适合的」",
     "note": "",
     "examples": [
@@ -1124,7 +1127,8 @@
     "forms": [
       "aud",
       "audi",
-      "audit"
+      "audit",
+      "ed"
     ],
     "meaning": "听",
     "origin": "拉丁语 audire「听」",
@@ -1167,9 +1171,10 @@
     "forms": [
       "aug",
       "auct",
-      "aux"
+      "aux",
+      "auxili"
     ],
-    "meaning": "增加",
+    "meaning": "增加；帮助",
     "origin": "拉丁语 augere「增加」（过去分词 auctum）",
     "note": "",
     "examples": [
@@ -1240,9 +1245,10 @@
     "type": "root",
     "forms": [
       "bar",
-      "barr"
+      "barr",
+      "bargo"
     ],
-    "meaning": "横木，栅栏",
+    "meaning": "横木，栅栏；阻挡",
     "origin": "通俗拉丁语 barra「横木」",
     "note": "",
     "examples": [
@@ -1386,7 +1392,8 @@
   {
     "type": "root",
     "forms": [
-      "bio"
+      "bio",
+      "bi"
     ],
     "meaning": "生命",
     "origin": "希腊语 bios「生命」",
@@ -1434,9 +1441,10 @@
     "forms": [
       "bol",
       "ball",
-      "blem"
+      "blem",
+      "ble"
     ],
-    "meaning": "扔，抛",
+    "meaning": "扔，抛，投掷",
     "origin": "希腊语 ballein「扔，投」",
     "note": "",
     "examples": [
@@ -1598,9 +1606,10 @@
     "forms": [
       "cad",
       "cas",
-      "cid"
+      "cid",
+      "casu"
     ],
-    "meaning": "落下",
+    "meaning": "落下；偶然",
     "origin": "拉丁语 cadere「落下」",
     "note": "",
     "examples": [
@@ -1690,7 +1699,7 @@
       "calc",
       "calcul"
     ],
-    "meaning": "石子，石灰；计算",
+    "meaning": "石子，石灰，钙；计算",
     "origin": "拉丁语 calx「石灰石」、calculus「小石子」",
     "note": "古罗马人用小石子计数",
     "examples": [
@@ -1846,9 +1855,10 @@
       "ceive",
       "cip",
       "cup",
-      "ceit"
+      "ceit",
+      "cuper"
     ],
-    "meaning": "拿，抓，取；容纳",
+    "meaning": "拿，抓，取，获得；容纳，能力",
     "origin": "拉丁语 capere「拿，抓」",
     "note": "",
     "examples": [
@@ -1899,7 +1909,9 @@
     "forms": [
       "capit",
       "cipit",
-      "chief"
+      "chief",
+      "capt",
+      "cip"
     ],
     "meaning": "头；首要",
     "origin": "拉丁语 caput（属格 capitis）「头」",
@@ -2027,7 +2039,7 @@
       "cus",
       "cuse"
     ],
-    "meaning": "原因；诉讼",
+    "meaning": "原因，理由；诉讼",
     "origin": "拉丁语 causa「原因，诉讼」",
     "note": "",
     "examples": [
@@ -2293,7 +2305,8 @@
       "cern",
       "cert",
       "cret",
-      "crimin"
+      "crimin",
+      "creet"
     ],
     "meaning": "区分，筛选；确定",
     "origin": "拉丁语 cernere「筛，区分」（过去分词 cretum）、certus「确定的」",
@@ -2569,7 +2582,9 @@
   {
     "type": "root",
     "forms": [
-      "civ"
+      "civ",
+      "citi",
+      "citad"
     ],
     "meaning": "公民；城邦；文明",
     "origin": "拉丁语 civis「公民」、civitas「城邦」",
@@ -2939,7 +2954,7 @@
       "cosm",
       "cosmo"
     ],
-    "meaning": "宇宙；秩序；装饰",
+    "meaning": "宇宙，世界；秩序；装饰",
     "origin": "希腊语 kosmos「秩序，宇宙，装饰」",
     "note": "",
     "examples": [
@@ -3020,7 +3035,8 @@
   {
     "type": "root",
     "forms": [
-      "cred"
+      "cred",
+      "cre"
     ],
     "meaning": "相信",
     "origin": "拉丁语 credere「相信」",
@@ -3205,7 +3221,8 @@
     "type": "root",
     "forms": [
       "cruc",
-      "crux"
+      "crux",
+      "crus"
     ],
     "meaning": "十字",
     "origin": "拉丁语 crux（属格 crucis）「十字架」",
@@ -3354,7 +3371,7 @@
       "cult",
       "col"
     ],
-    "meaning": "耕种；培养",
+    "meaning": "耕种；培养；文化",
     "origin": "拉丁语 colere「耕种，培育」（过去分词 cultum）",
     "note": "",
     "examples": [
@@ -3427,7 +3444,8 @@
       "cur",
       "curr",
       "curs",
-      "cour"
+      "cour",
+      "cor"
     ],
     "meaning": "跑，流",
     "origin": "拉丁语 currere「跑」（过去分词 cursum）",
@@ -3907,7 +3925,7 @@
     "forms": [
       "dign"
     ],
-    "meaning": "价值；值得",
+    "meaning": "价值；值得；尊严",
     "origin": "拉丁语 dignus「值得的」",
     "note": "",
     "examples": [
@@ -3948,7 +3966,8 @@
     "forms": [
       "divid",
       "divis",
-      "vis"
+      "vis",
+      "vide"
     ],
     "meaning": "分",
     "origin": "拉丁语 dividere「分开」（过去分词 divisum）",
@@ -4058,9 +4077,10 @@
     "type": "root",
     "forms": [
       "dom",
-      "domin"
+      "domin",
+      "domit"
     ],
-    "meaning": "家；统治",
+    "meaning": "家；统治；驯服",
     "origin": "拉丁语 domus「家，房屋」、dominus「主人」",
     "note": "",
     "examples": [
@@ -4840,9 +4860,10 @@
       "fab",
       "fat",
       "fant",
-      "fan"
+      "fan",
+      "face"
     ],
-    "meaning": "说；命运",
+    "meaning": "说；寓言；命运",
     "origin": "拉丁语 fari「说」、fama「传闻，名声」",
     "note": "infant 原意是「还不会说话的」",
     "examples": [
@@ -4953,7 +4974,7 @@
       "fals",
       "faul"
     ],
-    "meaning": "欺骗；错误，虚假",
+    "meaning": "欺骗；错误，虚假，缺失",
     "origin": "拉丁语 fallere「欺骗，使失误」（过去分词 falsum）",
     "note": "",
     "examples": [
@@ -5260,7 +5281,7 @@
       "fid",
       "fi"
     ],
-    "meaning": "信任",
+    "meaning": "信任，忠实",
     "origin": "拉丁语 fides「信任」、fidere「信任」",
     "note": "",
     "examples": [
@@ -5487,7 +5508,7 @@
     "forms": [
       "flat"
     ],
-    "meaning": "吹",
+    "meaning": "吹，膨胀",
     "origin": "拉丁语 flare「吹」（过去分词 flatum）",
     "note": "",
     "examples": [
@@ -5801,7 +5822,7 @@
       "frag",
       "fring"
     ],
-    "meaning": "破碎",
+    "meaning": "破碎；折",
     "origin": "拉丁语 frangere「打破」（过去分词 fractum）",
     "note": "",
     "examples": [
@@ -6097,9 +6118,10 @@
     "forms": [
       "gen",
       "gener",
-      "gn"
+      "gn",
+      "ign"
     ],
-    "meaning": "产生；种族，家系；出身",
+    "meaning": "产生；种族，家系；出身，高贵",
     "origin": "拉丁语 genus「种类，出身」、gignere「生」（希腊语 genos「种族」）",
     "note": "",
     "examples": [
@@ -6231,9 +6253,10 @@
       "gno",
       "gnor",
       "gnit",
-      "gniz"
+      "gniz",
+      "gnom"
     ],
-    "meaning": "知道",
+    "meaning": "知道；格言",
     "origin": "希腊语 gnosis「知识」；拉丁语 (g)noscere「知道」",
     "note": "",
     "examples": [
@@ -6425,9 +6448,10 @@
     "type": "root",
     "forms": [
       "graph",
-      "gram"
+      "gram",
+      "grammat"
     ],
-    "meaning": "写，画；记录",
+    "meaning": "写，画；记录，文字",
     "origin": "希腊语 graphein「写」、gramma「字母，文字」",
     "note": "",
     "examples": [
@@ -6632,7 +6656,7 @@
       "habit",
       "hibit"
     ],
-    "meaning": "拥有，持有，拿；居住；习惯",
+    "meaning": "拥有，持有，拿；居住；习惯；能力",
     "origin": "拉丁语 habere「拥有」、habitare「居住」",
     "note": "",
     "examples": [
@@ -6836,7 +6860,8 @@
   {
     "type": "root",
     "forms": [
-      "horr"
+      "horr",
+      "hor"
     ],
     "meaning": "颤抖；恐惧",
     "origin": "拉丁语 horrere「（毛发）竖起，颤抖」",
@@ -6958,7 +6983,7 @@
       "hydr",
       "hydro"
     ],
-    "meaning": "水",
+    "meaning": "水；氢",
     "origin": "希腊语 hydor「水」",
     "note": "",
     "examples": [
@@ -7120,7 +7145,7 @@
       "insul",
       "isol"
     ],
-    "meaning": "岛",
+    "meaning": "岛；孤立",
     "origin": "拉丁语 insula「岛」",
     "note": "",
     "examples": [
@@ -7365,7 +7390,7 @@
       "jud",
       "judic"
     ],
-    "meaning": "判断",
+    "meaning": "判断；司法",
     "origin": "拉丁语 judex（属格 judicis）「法官」",
     "note": "",
     "examples": [
@@ -7814,9 +7839,10 @@
     "type": "root",
     "forms": [
       "lax",
-      "leas"
+      "leas",
+      "lease"
     ],
-    "meaning": "松",
+    "meaning": "松，放开",
     "origin": "拉丁语 laxus「松的」、laxare「放松」",
     "note": "",
     "examples": [
@@ -7978,7 +8004,8 @@
     "forms": [
       "lev",
       "liev",
-      "lief"
+      "lief",
+      "leger"
     ],
     "meaning": "轻；举起",
     "origin": "拉丁语 levis「轻的」、levare「举起」",
@@ -8126,7 +8153,7 @@
     "forms": [
       "lic"
     ],
-    "meaning": "允许",
+    "meaning": "允许；放纵",
     "origin": "拉丁语 licere「被允许」",
     "note": "",
     "examples": [
@@ -8205,7 +8232,7 @@
     "forms": [
       "limin"
     ],
-    "meaning": "门槛",
+    "meaning": "门槛，阈",
     "origin": "拉丁语 limen（属格 liminis）「门槛」",
     "note": "eliminate 是把人「赶出门槛」",
     "examples": [
@@ -8422,7 +8449,8 @@
   {
     "type": "root",
     "forms": [
-      "loc"
+      "loc",
+      "lieu"
     ],
     "meaning": "地方，位置",
     "origin": "拉丁语 locus「地方」",
@@ -8548,7 +8576,8 @@
     "type": "root",
     "forms": [
       "loqu",
-      "locut"
+      "locut",
+      "locu"
     ],
     "meaning": "说",
     "origin": "拉丁语 loqui「说」（过去分词 locutus）",
@@ -8645,7 +8674,7 @@
       "lud",
       "lus"
     ],
-    "meaning": "玩；戏弄",
+    "meaning": "玩；戏弄；演奏",
     "origin": "拉丁语 ludere「玩，戏弄」（过去分词 lusum）",
     "note": "",
     "examples": [

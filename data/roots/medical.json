@@ -349,7 +349,8 @@
 "type": "root",
 "forms": [
 "oste",
-"osse"
+"osse",
+"oss"
 ],
 "meaning": "骨",
 "origin": "希腊语 osteon「骨」，拉丁语 os, ossis「骨」",
@@ -375,7 +376,9 @@
 {
 "type": "root",
 "forms": [
-"arthr"
+"arthr",
+"art",
+"articul"
 ],
 "meaning": "关节",
 "origin": "希腊语 arthron「关节」",
@@ -1412,7 +1415,7 @@
 "glyc",
 "gluc"
 ],
-"meaning": "糖",
+"meaning": "糖，甜",
 "origin": "希腊语 glykys「甜」",
 "note": "医学常用",
 "examples": [

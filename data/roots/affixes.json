@@ -3273,7 +3273,8 @@
  {
   "type": "prefix",
   "forms": [
-   "pan"
+   "pan",
+   "panto"
   ],
   "meaning": "全，总，泛",
   "origin": "希腊语 pan",
@@ -4042,7 +4043,9 @@
   "type": "prefix",
   "forms": [
    "cent",
-   "centi"
+   "centi",
+   "centen",
+   "centur"
   ],
   "meaning": "百；百分之一",
   "origin": "拉丁语 centum",

@@ -90,9 +90,10 @@
 "type": "root",
 "forms": [
 "mand",
-"mend"
+"mend",
+"commend"
 ],
-"meaning": "命令，委托",
+"meaning": "命令，委托；称赞",
 "origin": "拉丁语 mandare「交付，命令」",
 "note": "",
 "examples": [
@@ -131,7 +132,8 @@
 {
 "type": "root",
 "forms": [
-"mania"
+"mania",
+"mani"
 ],
 "meaning": "疯狂，癖好",
 "origin": "希腊语 mania「疯狂」",
@@ -163,7 +165,8 @@
 "type": "root",
 "forms": [
 "mar",
-"mari"
+"mari",
+"mer"
 ],
 "meaning": "海",
 "origin": "拉丁语 mare「海」",
@@ -201,9 +204,10 @@
 "forms": [
 "mater",
 "matr",
-"matri"
+"matri",
+"metro"
 ],
-"meaning": "母亲",
+"meaning": "母亲；物质",
 "origin": "拉丁语 mater「母亲」",
 "note": "",
 "examples": [
@@ -237,7 +241,8 @@
 {
 "type": "root",
 "forms": [
-"medi"
+"medi",
+"meri"
 ],
 "meaning": "中间",
 "origin": "拉丁语 medius「中间的」",
@@ -384,9 +389,10 @@
 {
 "type": "root",
 "forms": [
-"ment"
+"ment",
+"minisc"
 ],
-"meaning": "心智，思考",
+"meaning": "心智，思考，回想",
 "origin": "拉丁语 mens（属格 mentis）「心智」",
 "note": "",
 "examples": [
@@ -420,9 +426,11 @@
 {
 "type": "root",
 "forms": [
-"merc"
+"merc",
+"mercantil",
+"mercen"
 ],
-"meaning": "交易，商品",
+"meaning": "交易，商品；雇佣",
 "origin": "拉丁语 merx（属格 mercis）「商品」",
 "note": "",
 "examples": [
@@ -506,7 +514,7 @@
 "meter",
 "metr"
 ],
-"meaning": "测量",
+"meaning": "测量；韵律",
 "origin": "希腊语 metron「尺度，测量」",
 "note": "",
 "examples": [
@@ -618,9 +626,10 @@
 "type": "root",
 "forms": [
 "min",
-"mini"
+"mini",
+"minor"
 ],
-"meaning": "小",
+"meaning": "小，少",
 "origin": "拉丁语 minor「较小的」，minimus「最小的」，minuere「减少」",
 "note": "",
 "examples": [
@@ -691,9 +700,10 @@
 "type": "root",
 "forms": [
 "mir",
-"mar"
+"mar",
+"mirr"
 ],
-"meaning": "惊奇",
+"meaning": "惊奇；看",
 "origin": "拉丁语 mirari「惊奇」",
 "note": "",
 "examples": [
@@ -728,7 +738,8 @@
 "type": "root",
 "forms": [
 "misc",
-"mix"
+"mix",
+"miscell"
 ],
 "meaning": "混合",
 "origin": "拉丁语 miscere（过去分词 mixtus）「混合」",
@@ -899,7 +910,7 @@
 "forms": [
 "mod"
 ],
-"meaning": "方式，尺度",
+"meaning": "方式，尺度；调节",
 "origin": "拉丁语 modus「尺度，方式」",
 "note": "",
 "examples": [
@@ -1008,7 +1019,7 @@
 "forms": [
 "monstr"
 ],
-"meaning": "显示",
+"meaning": "显示；怪物",
 "origin": "拉丁语 monstrare「显示，指出」",
 "note": "",
 "examples": [
@@ -1109,7 +1120,8 @@
 {
 "type": "root",
 "forms": [
-"mort"
+"mort",
+"mori"
 ],
 "meaning": "死",
 "origin": "拉丁语 mors（属格 mortis）「死亡」",
@@ -1150,7 +1162,8 @@
 {
 "type": "root",
 "forms": [
-"mount"
+"mount",
+"mont"
 ],
 "meaning": "山；登上",
 "origin": "拉丁语 mons（属格 montis）「山」，经古法语 monter「登上」",
@@ -1231,7 +1244,7 @@
 "forms": [
 "mut"
 ],
-"meaning": "变化，交换",
+"meaning": "变化，交换；相互",
 "origin": "拉丁语 mutare「改变」",
 "note": "",
 "examples": [
@@ -1571,7 +1584,8 @@
 "forms": [
 "nomin",
 "nom",
-"nomen"
+"nomen",
+"gnomen"
 ],
 "meaning": "名字",
 "origin": "拉丁语 nomen（属格 nominis）「名字」",
@@ -1737,7 +1751,8 @@
 "type": "root",
 "forms": [
 "nounce",
-"nunci"
+"nunci",
+"nounc"
 ],
 "meaning": "宣告，报告",
 "origin": "拉丁语 nuntiare「报告，宣布」",
@@ -1968,7 +1983,8 @@
 "forms": [
 "od",
 "hod",
-"ode"
+"ode",
+"odo"
 ],
 "meaning": "道路",
 "origin": "希腊语 hodos「道路」",
@@ -2114,7 +2130,7 @@
 "ops",
 "op"
 ],
-"meaning": "眼，视力",
+"meaning": "眼，视力，看",
 "origin": "希腊语 opsis「视觉」，optos「看得见的」",
 "note": "注意与拉丁语表示「选择」的 opt 区分",
 "examples": [
@@ -2154,7 +2170,8 @@
 "type": "root",
 "forms": [
 "or",
-"ora"
+"ora",
+"ori"
 ],
 "meaning": "嘴；说；祈求",
 "origin": "拉丁语 os（属格 oris）「嘴」，orare「说；祈祷」",
@@ -2198,7 +2215,7 @@
 "ordin",
 "ord"
 ],
-"meaning": "顺序",
+"meaning": "顺序；命令",
 "origin": "拉丁语 ordo（属格 ordinis）「顺序，行列」",
 "note": "",
 "examples": [
@@ -2240,7 +2257,7 @@
 "ori",
 "ort"
 ],
-"meaning": "升起，开始",
+"meaning": "升起，开始；出生",
 "origin": "拉丁语 oriri「升起，起源」",
 "note": "",
 "examples": [
@@ -2482,9 +2499,11 @@
 "type": "root",
 "forms": [
 "par",
-"pair"
+"pair",
+"per",
+"pire"
 ],
-"meaning": "准备",
+"meaning": "准备；命令",
 "origin": "拉丁语 parare「准备，安排」",
 "note": "",
 "examples": [
@@ -2559,7 +2578,7 @@
 "pars",
 "port"
 ],
-"meaning": "部分",
+"meaning": "部分，份",
 "origin": "拉丁语 pars（属格 partis）「部分」，portio「份额」",
 "note": "",
 "examples": [
@@ -2785,7 +2804,7 @@
 "pecu",
 "pecun"
 ],
-"meaning": "钱财",
+"meaning": "钱财，私产",
 "origin": "拉丁语 pecus「牲畜」→ pecunia「钱财」",
 "note": "古代以牲畜计财富，所以「牲畜」引申为「钱」",
 "examples": [
@@ -2817,7 +2836,7 @@
 "ped",
 "pedi"
 ],
-"meaning": "脚，足",
+"meaning": "脚，足；步行",
 "origin": "拉丁语 pes（属格 pedis）「脚」",
 "note": "",
 "examples": [
@@ -2895,9 +2914,10 @@
 "forms": [
 "pel",
 "puls",
-"peal"
+"peal",
+"pell"
 ],
-"meaning": "推，驱使",
+"meaning": "推，驱使；呼叫；搏动",
 "origin": "拉丁语 pellere（过去分词 pulsus）「推，驱赶」",
 "note": "",
 "examples": [
@@ -2985,9 +3005,10 @@
 "type": "root",
 "forms": [
 "pend",
-"pens"
+"pens",
+"pench"
 ],
-"meaning": "悬挂",
+"meaning": "悬挂；倾向",
 "origin": "拉丁语 pendere「悬挂」",
 "note": "",
 "examples": [
@@ -3034,7 +3055,7 @@
 "pens",
 "pend"
 ],
-"meaning": "称量；花费，支付",
+"meaning": "称量；思考；花费，支付",
 "origin": "拉丁语 pendere（过去分词 pensus）「称重；支付」",
 "note": "古时以称重金属来付款，所以「称量」引申为「支付」",
 "examples": [
@@ -3119,7 +3140,7 @@
 "pet",
 "peat"
 ],
-"meaning": "寻求，追求",
+"meaning": "寻求，追求；冲",
 "origin": "拉丁语 petere「寻求，奔向」",
 "note": "",
 "examples": [
@@ -3166,9 +3187,12 @@
 "phen",
 "phan",
 "phas",
-"fan"
+"fan",
+"pha",
+"fant",
+"fanci"
 ],
-"meaning": "显现",
+"meaning": "显现；幻想",
 "origin": "希腊语 phainein「显示，显现」",
 "note": "",
 "examples": [
@@ -3453,7 +3477,7 @@
 "phys",
 "physi"
 ],
-"meaning": "自然；身体",
+"meaning": "自然；身体；物理",
 "origin": "希腊语 physis「自然」",
 "note": "",
 "examples": [
@@ -3496,7 +3520,7 @@
 "pig",
 "paint"
 ],
-"meaning": "描绘，画",
+"meaning": "描绘，画；涂色",
 "origin": "拉丁语 pingere（过去分词 pictus）「描绘」",
 "note": "",
 "examples": [
@@ -3648,9 +3672,11 @@
 "plet",
 "pli",
 "pul",
-"ply"
+"ply",
+"pl",
+"plenti"
 ],
-"meaning": "满，填满",
+"meaning": "满，填满，充足",
 "origin": "拉丁语 plere（过去分词 pletus）「填满」，plenus「满的」",
 "note": "",
 "examples": [
@@ -3704,9 +3730,10 @@
 "plex",
 "ploy",
 "pli",
-"ploit"
+"ploit",
+"ple"
 ],
-"meaning": "折叠，弯曲；编织",
+"meaning": "折叠，倍；弯曲；编织",
 "origin": "拉丁语 plicare「折叠」，plectere「编织」",
 "note": "",
 "examples": [
@@ -3789,7 +3816,7 @@
 "pod",
 "pus"
 ],
-"meaning": "脚",
+"meaning": "脚，足",
 "origin": "希腊语 pous（属格 podos）「脚」",
 "note": "",
 "examples": [
@@ -3864,7 +3891,7 @@
 "pond",
 "pound"
 ],
-"meaning": "重量，称量",
+"meaning": "重量，称量，权衡",
 "origin": "拉丁语 pondus「重量」，pondo「按重量」",
 "note": "",
 "examples": [
@@ -3954,7 +3981,7 @@
 "popul",
 "publ"
 ],
-"meaning": "人民",
+"meaning": "人民，公众",
 "origin": "拉丁语 populus「人民」，publicus「公众的」",
 "note": "",
 "examples": [
@@ -4034,9 +4061,10 @@
 "prehend",
 "prehens",
 "pris",
-"pren"
+"pren",
+"prent"
 ],
-"meaning": "抓，握，拿",
+"meaning": "抓，握，拿；学，获知",
 "origin": "拉丁语 prehendere「抓住」",
 "note": "",
 "examples": [
@@ -4065,7 +4093,8 @@
 {
 "type": "root",
 "forms": [
-"press"
+"press",
+"prim"
 ],
 "meaning": "压",
 "origin": "拉丁语 premere, pressus「压」",
@@ -4131,7 +4160,7 @@
 "prob",
 "prov"
 ],
-"meaning": "证明，检验",
+"meaning": "证明，检验；正直",
 "origin": "拉丁语 probare「检验，证明」",
 "note": "",
 "examples": [
@@ -4194,7 +4223,7 @@
 "forms": [
 "put"
 ],
-"meaning": "计算，思考，认为",
+"meaning": "计算，思考，认为；修剪",
 "origin": "拉丁语 putare「计算，认为」",
 "note": "",
 "examples": [
@@ -4293,7 +4322,7 @@
 "rig",
 "regul"
 ],
-"meaning": "直；纠正，规则；统治，管理",
+"meaning": "直；纠正，规则；统治，管理，国王",
 "origin": "拉丁语 regere, rectus「引导，统治」",
 "note": "",
 "examples": [
@@ -4871,7 +4900,7 @@
 "simul",
 "sembl"
 ],
-"meaning": "相似，一起",
+"meaning": "相似，模仿；一起",
 "origin": "拉丁语 similis「相似的」，simul「同时」",
 "note": "",
 "examples": [
@@ -4909,7 +4938,7 @@
 "stice",
 "stem"
 ],
-"meaning": "站，立；设立，放置",
+"meaning": "站，立；停止，静止，固定；设立，放置",
 "origin": "拉丁语 stare, sistere, status「站立」",
 "note": "",
 "examples": [
@@ -5105,7 +5134,7 @@
 "pect",
 "spite"
 ],
-"meaning": "看，观察；外观，种类",
+"meaning": "看，观察；外观，景象，种类",
 "origin": "拉丁语 specere, spectus「看」",
 "note": "",
 "examples": [
@@ -5205,7 +5234,7 @@
 "spond",
 "spons"
 ],
-"meaning": "承诺，回应",
+"meaning": "承诺，约定，回应",
 "origin": "拉丁语 spondere, sponsus「承诺」",
 "note": "",
 "examples": [
@@ -5267,9 +5296,10 @@
 {
 "type": "root",
 "forms": [
-"struct"
+"struct",
+"stru"
 ],
-"meaning": "建造",
+"meaning": "建造，结构",
 "origin": "拉丁语 struere, structus「建造」",
 "note": "",
 "examples": [
@@ -5301,7 +5331,7 @@
 "sum",
 "sumpt"
 ],
-"meaning": "拿，用",
+"meaning": "拿，用；花费",
 "origin": "拉丁语 sumere, sumptus「拿，取」",
 "note": "",
 "examples": [
@@ -5367,7 +5397,8 @@
 "tag",
 "ting",
 "tain",
-"tamin"
+"tamin",
+"teger"
 ],
 "meaning": "接触",
 "origin": "拉丁语 tangere, tactus「接触」",
@@ -5506,7 +5537,8 @@
 "forms": [
 "tend",
 "tens",
-"tent"
+"tent",
+"tence"
 ],
 "meaning": "伸展；倾向",
 "origin": "拉丁语 tendere, tensus「伸展」",
@@ -5699,7 +5731,8 @@
 {
 "type": "root",
 "forms": [
-"tort"
+"tort",
+"tor"
 ],
 "meaning": "扭曲",
 "origin": "拉丁语 torquere, tortus「扭曲」",
@@ -5801,7 +5834,7 @@
 "forms": [
 "trib"
 ],
-"meaning": "给予，分配",
+"meaning": "给予，分配；进贡",
 "origin": "拉丁语 tribuere「给予，分配」",
 "note": "",
 "examples": [
@@ -5864,7 +5897,7 @@
 "forms": [
 "turb"
 ],
-"meaning": "扰乱",
+"meaning": "扰乱；旋转",
 "origin": "拉丁语 turbare「扰乱」",
 "note": "",
 "examples": [
@@ -6226,7 +6259,8 @@
 "type": "root",
 "forms": [
 "vert",
-"vers"
+"vers",
+"vorce"
 ],
 "meaning": "转",
 "origin": "拉丁语 vertere, versus「转」",
@@ -6334,7 +6368,8 @@
 "forms": [
 "vid",
 "vis",
-"voy"
+"voy",
+"vey"
 ],
 "meaning": "看",
 "origin": "拉丁语 videre, visus「看」",
@@ -6403,7 +6438,8 @@
 "type": "root",
 "forms": [
 "viv",
-"vit"
+"vit",
+"vi"
 ],
 "meaning": "生命，活",
 "origin": "拉丁语 vivere「活」，vita「生命」",
@@ -6440,9 +6476,10 @@
 "type": "root",
 "forms": [
 "voc",
-"vok"
+"vok",
+"vow"
 ],
-"meaning": "声音，叫喊，召唤",
+"meaning": "声音，叫喊，召唤；词",
 "origin": "拉丁语 vocare「叫」，vox, vocis「声音」",
 "note": "",
 "examples": [
@@ -6508,9 +6545,10 @@
 "type": "root",
 "forms": [
 "volv",
-"volu"
+"volu",
+"volt"
 ],
-"meaning": "卷，转",
+"meaning": "卷，转，滚",
 "origin": "拉丁语 volvere, volutus「卷，转」",
 "note": "",
 "examples": [
@@ -6578,7 +6616,7 @@
 "vot",
 "vow"
 ],
-"meaning": "发誓，许愿",
+"meaning": "发誓，许愿；投票",
 "origin": "拉丁语 vovere, votus「发誓」",
 "note": "",
 "examples": [
