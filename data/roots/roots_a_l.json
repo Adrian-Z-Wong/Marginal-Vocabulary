@@ -5,7 +5,8 @@
       "ac",
       "acr",
       "acu",
-      "acerb"
+      "acerb",
+      "acid"
     ],
     "meaning": "尖，锐，针；酸",
     "origin": "拉丁语 acer「尖锐的」、acus「针」、acidus「酸的」",
@@ -87,7 +88,9 @@
       "ag",
       "ig",
       "agit",
-      "cog"
+      "cog",
+      "eg",
+      "gu"
     ],
     "meaning": "做，行动；驱使",
     "origin": "拉丁语 agere「做，驱动」（过去分词 actum）",
@@ -350,7 +353,10 @@
   {
     "type": "root",
     "forms": [
-      "alt"
+      "alt",
+      "hance",
+      "haught",
+      "haut"
     ],
     "meaning": "高",
     "origin": "拉丁语 altus「高的」",
@@ -440,7 +446,9 @@
       "amor",
       "amic",
       "amat",
-      "ami"
+      "ami",
+      "emy",
+      "imic"
     ],
     "meaning": "爱；友",
     "origin": "拉丁语 amare「爱」、amicus「朋友」",
@@ -1324,7 +1332,8 @@
   {
     "type": "root",
     "forms": [
-      "bell"
+      "bell",
+      "bel"
     ],
     "meaning": "战争",
     "origin": "拉丁语 bellum「战争」",
@@ -1393,7 +1402,8 @@
     "type": "root",
     "forms": [
       "bio",
-      "bi"
+      "bi",
+      "be"
     ],
     "meaning": "生命",
     "origin": "希腊语 bios「生命」",
@@ -1607,7 +1617,8 @@
       "cad",
       "cas",
       "cid",
-      "casu"
+      "casu",
+      "cay"
     ],
     "meaning": "落下；偶然",
     "origin": "拉丁语 cadere「落下」",
@@ -1856,7 +1867,9 @@
       "cip",
       "cup",
       "ceit",
-      "cuper"
+      "cuper",
+      "ceipt",
+      "ceiv"
     ],
     "meaning": "拿，抓，取，获得；容纳，能力",
     "origin": "拉丁语 capere「拿，抓」",
@@ -1911,7 +1924,9 @@
       "cipit",
       "chief",
       "capt",
-      "cip"
+      "cip",
+      "chiev",
+      "chieve"
     ],
     "meaning": "头；首要",
     "origin": "拉丁语 caput（属格 capitis）「头」",
@@ -2148,9 +2163,10 @@
       "cede",
       "ceed",
       "cess",
-      "ced"
+      "ced",
+      "cest"
     ],
-    "meaning": "走；让步",
+    "meaning": "走；让步；停止",
     "origin": "拉丁语 cedere「走，退让」（过去分词 cessum）",
     "note": "",
     "examples": [
@@ -2261,7 +2277,8 @@
   {
     "type": "root",
     "forms": [
-      "centr"
+      "centr",
+      "center"
     ],
     "meaning": "中心",
     "origin": "拉丁语 centrum「中心」（源自希腊语 kentron）",
@@ -2306,7 +2323,8 @@
       "cert",
       "cret",
       "crimin",
-      "creet"
+      "creet",
+      "cre"
     ],
     "meaning": "区分，筛选；确定",
     "origin": "拉丁语 cernere「筛，区分」（过去分词 cretum）、certus「确定的」",
@@ -2743,7 +2761,8 @@
     "forms": [
       "clud",
       "clus",
-      "clos"
+      "clos",
+      "claus"
     ],
     "meaning": "关闭",
     "origin": "拉丁语 claudere「关闭」（过去分词 clausum）",
@@ -3259,7 +3278,8 @@
     "type": "root",
     "forms": [
       "crypt",
-      "crypto"
+      "crypto",
+      "cryph"
     ],
     "meaning": "隐藏",
     "origin": "希腊语 kryptos「隐藏的」",
@@ -3618,7 +3638,8 @@
     "type": "root",
     "forms": [
       "damn",
-      "demn"
+      "demn",
+      "dam"
     ],
     "meaning": "损失，损害；谴责",
     "origin": "拉丁语 damnum「损失」、damnare「判罪」",
@@ -3650,7 +3671,8 @@
     "type": "root",
     "forms": [
       "deb",
-      "du"
+      "du",
+      "due"
     ],
     "meaning": "欠；应当",
     "origin": "拉丁语 debere「欠」",
@@ -3872,7 +3894,8 @@
     "type": "root",
     "forms": [
       "dict",
-      "dic"
+      "dic",
+      "dit"
     ],
     "meaning": "说，言；宣称",
     "origin": "拉丁语 dicere「说」（过去分词 dictum）",
@@ -3923,7 +3946,9 @@
   {
     "type": "root",
     "forms": [
-      "dign"
+      "dign",
+      "dain",
+      "deign"
     ],
     "meaning": "价值；值得；尊严",
     "origin": "拉丁语 dignus「值得的」",
@@ -4306,7 +4331,9 @@
     "type": "root",
     "forms": [
       "duc",
-      "duct"
+      "duct",
+      "du",
+      "due"
     ],
     "meaning": "引导",
     "origin": "拉丁语 ducere「引导」（过去分词 ductum）",
@@ -4467,7 +4494,10 @@
   {
     "type": "root",
     "forms": [
-      "ed"
+      "ed",
+      "es",
+      "ese",
+      "est"
     ],
     "meaning": "吃",
     "origin": "拉丁语 edere「吃」",
@@ -4563,7 +4593,8 @@
     "forms": [
       "empt",
       "em",
-      "eem"
+      "eem",
+      "mpt"
     ],
     "meaning": "拿；买",
     "origin": "拉丁语 emere「拿，买」（过去分词 emptum）",
@@ -4605,7 +4636,8 @@
     "type": "root",
     "forms": [
       "equ",
-      "equi"
+      "equi",
+      "iqu"
     ],
     "meaning": "相等，公平",
     "origin": "拉丁语 aequus「相等的，公平的」",
@@ -4657,7 +4689,8 @@
     "type": "root",
     "forms": [
       "erg",
-      "urg"
+      "urg",
+      "urgy"
     ],
     "meaning": "工作，功；能",
     "origin": "希腊语 ergon「工作」",
@@ -4741,7 +4774,9 @@
     "forms": [
       "ess",
       "ent",
-      "sent"
+      "sent",
+      "est",
+      "s"
     ],
     "meaning": "存在",
     "origin": "拉丁语 esse「存在，是」",
@@ -4919,7 +4954,8 @@
       "fit",
       "feit",
       "feas",
-      "feat"
+      "feat",
+      "fair"
     ],
     "meaning": "做，制作",
     "origin": "拉丁语 facere「做」（过去分词 factum）",
@@ -5076,7 +5112,8 @@
     "type": "root",
     "forms": [
       "fend",
-      "fens"
+      "fens",
+      "fence"
     ],
     "meaning": "打击；防护",
     "origin": "拉丁语 -fendere「打击」（见于 defendere、offendere）",
@@ -5168,7 +5205,8 @@
   {
     "type": "root",
     "forms": [
-      "ferv"
+      "ferv",
+      "fer"
     ],
     "meaning": "沸腾；热",
     "origin": "拉丁语 fervere「沸腾」",
@@ -5279,7 +5317,8 @@
     "type": "root",
     "forms": [
       "fid",
-      "fi"
+      "fi",
+      "fy"
     ],
     "meaning": "信任，忠实",
     "origin": "拉丁语 fides「信任」、fidere「信任」",
@@ -5589,7 +5628,8 @@
   {
     "type": "root",
     "forms": [
-      "flict"
+      "flict",
+      "flig"
     ],
     "meaning": "打击",
     "origin": "拉丁语 fligere「打击」（过去分词 flictum）",
@@ -5782,7 +5822,8 @@
   {
     "type": "root",
     "forms": [
-      "fort"
+      "fort",
+      "forc"
     ],
     "meaning": "强，力",
     "origin": "拉丁语 fortis「强壮的」",
@@ -6039,7 +6080,8 @@
     "type": "root",
     "forms": [
       "fus",
-      "fund"
+      "fund",
+      "found"
     ],
     "meaning": "倾倒，流；熔化",
     "origin": "拉丁语 fundere「倾倒，熔化」（过去分词 fusum）",
@@ -6208,7 +6250,8 @@
     "type": "root",
     "forms": [
       "gest",
-      "ger"
+      "ger",
+      "gist"
     ],
     "meaning": "带来，运送；进行",
     "origin": "拉丁语 gerere「携带，进行」（过去分词 gestum）",
@@ -6501,7 +6544,9 @@
     "type": "root",
     "forms": [
       "grat",
-      "gree"
+      "gree",
+      "graci",
+      "grace"
     ],
     "meaning": "感激；愉悦，满意；恩惠",
     "origin": "拉丁语 gratus「感激的，令人愉快的」、gratia「恩惠」",
@@ -7054,7 +7099,8 @@
   {
     "type": "root",
     "forms": [
-      "ident"
+      "ident",
+      "idem"
     ],
     "meaning": "相同",
     "origin": "拉丁语 idem「同一个」",
@@ -7211,7 +7257,8 @@
     "type": "root",
     "forms": [
       "it",
-      "iti"
+      "iti",
+      "i"
     ],
     "meaning": "走",
     "origin": "拉丁语 ire「走」（过去分词 itum）",
@@ -7470,7 +7517,7 @@
       "jus",
       "just"
     ],
-    "meaning": "法律；发誓",
+    "meaning": "法律，公正；发誓",
     "origin": "拉丁语 jus（属格 juris）「法律，权利」、jurare「发誓」",
     "note": "",
     "examples": [
@@ -7584,7 +7631,8 @@
   {
     "type": "root",
     "forms": [
-      "labor"
+      "labor",
+      "labour"
     ],
     "meaning": "劳动",
     "origin": "拉丁语 labor「劳动」",
@@ -7651,7 +7699,8 @@
   {
     "type": "root",
     "forms": [
-      "laps"
+      "laps",
+      "lab"
     ],
     "meaning": "滑落；失误",
     "origin": "拉丁语 labi「滑落」（过去分词 lapsus）",
@@ -7797,7 +7846,8 @@
     "forms": [
       "lav",
       "lau",
-      "lu"
+      "lu",
+      "luv"
     ],
     "meaning": "洗",
     "origin": "拉丁语 lavare「洗」、luere「冲洗」",
@@ -8088,7 +8138,8 @@
   {
     "type": "root",
     "forms": [
-      "liber"
+      "liber",
+      "liver"
     ],
     "meaning": "自由",
     "origin": "拉丁语 liber「自由的」",
@@ -8230,9 +8281,11 @@
   {
     "type": "root",
     "forms": [
-      "limin"
+      "limin",
+      "lim",
+      "limit"
     ],
-    "meaning": "门槛，阈",
+    "meaning": "门槛，阈；界限",
     "origin": "拉丁语 limen（属格 liminis）「门槛」",
     "note": "eliminate 是把人「赶出门槛」",
     "examples": [
@@ -8625,7 +8678,8 @@
     "forms": [
       "luc",
       "lumin",
-      "lustr"
+      "lustr",
+      "lumen"
     ],
     "meaning": "光",
     "origin": "拉丁语 lux（属格 lucis）「光」、lumen「光」、lustrare「照亮」",

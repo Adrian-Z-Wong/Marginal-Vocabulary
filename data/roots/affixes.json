@@ -104,7 +104,8 @@
    "im",
    "il",
    "ir",
-   "ig"
+   "ig",
+   "i"
   ],
   "meaning": "不，无，非，未",
   "origin": "拉丁语 in-",
@@ -157,7 +158,8 @@
   "forms": [
    "dis",
    "dif",
-   "di"
+   "di",
+   "des"
   ],
   "meaning": "不，相反；分开，去掉；加强",
   "origin": "拉丁语 dis-",
@@ -412,7 +414,10 @@
    "sup",
    "sus",
    "sum",
-   "su"
+   "su",
+   "sou",
+   "subter",
+   "so"
   ],
   "meaning": "在下，下面；次，副，亚",
   "origin": "拉丁语 sub-",
@@ -467,7 +472,8 @@
    "com",
    "co",
    "col",
-   "cor"
+   "cor",
+   "coun"
   ],
   "meaning": "共同，一起；加强",
   "origin": "拉丁语 com-",
@@ -519,7 +525,8 @@
   "type": "prefix",
   "forms": [
    "in",
-   "im"
+   "im",
+   "indi"
   ],
   "meaning": "向内，进入；在内，在上；使；加强",
   "origin": "拉丁语 in-",
@@ -571,7 +578,8 @@
   "type": "prefix",
   "forms": [
    "en",
-   "em"
+   "em",
+   "el"
   ],
   "meaning": "使…，使成为；进入，置于…之中",
   "origin": "法语 en-（源自拉丁语 in-）",
@@ -987,7 +995,8 @@
   "type": "prefix",
   "forms": [
    "pro",
-   "por"
+   "por",
+   "prod"
   ],
   "meaning": "向前，在前；赞成，支持；代替",
   "origin": "拉丁语 pro-",
@@ -1038,7 +1047,9 @@
  {
   "type": "prefix",
   "forms": [
-   "super"
+   "super",
+   "supra",
+   "supr"
   ],
   "meaning": "超，超级；在上",
   "origin": "拉丁语 super-",
@@ -1411,7 +1422,10 @@
  {
   "type": "prefix",
   "forms": [
-   "bi"
+   "bi",
+   "bin",
+   "bine",
+   "bis"
   ],
   "meaning": "二，两，双",
   "origin": "拉丁语 bi-",
@@ -1452,7 +1466,9 @@
  {
   "type": "prefix",
   "forms": [
-   "tri"
+   "tri",
+   "tre",
+   "trin"
   ],
   "meaning": "三",
   "origin": "拉丁语、希腊语 tri-",
@@ -1494,7 +1510,8 @@
   "type": "prefix",
   "forms": [
    "uni",
-   "un"
+   "un",
+   "unit"
   ],
   "meaning": "一，单一，统一",
   "origin": "拉丁语 unus",
@@ -1721,7 +1738,8 @@
    "oc",
    "of",
    "op",
-   "os"
+   "os",
+   "o"
   ],
   "meaning": "反对，逆；对着；加强",
   "origin": "拉丁语 ob-",
@@ -1768,7 +1786,8 @@
   "type": "prefix",
   "forms": [
    "per",
-   "par"
+   "par",
+   "pel"
   ],
   "meaning": "贯穿，自始至终；完全，彻底",
   "origin": "拉丁语 per",
@@ -1814,7 +1833,11 @@
  {
   "type": "prefix",
   "forms": [
-   "extra"
+   "extra",
+   "extr",
+   "extro",
+   "strang",
+   "strange"
   ],
   "meaning": "在…之外，超出；额外",
   "origin": "拉丁语 extra",
@@ -1897,7 +1920,8 @@
   "type": "prefix",
   "forms": [
    "contra",
-   "contro"
+   "contro",
+   "contr"
   ],
   "meaning": "反对，相反，对抗",
   "origin": "拉丁语 contra",
@@ -1940,7 +1964,8 @@
   "forms": [
    "syn",
    "sym",
-   "syl"
+   "syl",
+   "sy"
   ],
   "meaning": "共同，相同，一起",
   "origin": "希腊语 syn-",
@@ -1986,7 +2011,8 @@
  {
   "type": "prefix",
   "forms": [
-   "se"
+   "se",
+   "sed"
   ],
   "meaning": "分开，离开；无",
   "origin": "拉丁语 se-",
@@ -2141,7 +2167,8 @@
  {
   "type": "prefix",
   "forms": [
-   "ultra"
+   "ultra",
+   "ulter"
   ],
   "meaning": "超，极端，超出",
   "origin": "拉丁语 ultra",
@@ -2395,7 +2422,8 @@
   "type": "prefix",
   "forms": [
    "intra",
-   "intro"
+   "intro",
+   "entr"
   ],
   "meaning": "在内，内部；向内",
   "origin": "拉丁语 intra、intro",
@@ -2436,7 +2464,8 @@
  {
   "type": "prefix",
   "forms": [
-   "bene"
+   "bene",
+   "beni"
   ],
   "meaning": "好，善，益",
   "origin": "拉丁语 bene",
@@ -3000,7 +3029,11 @@
   "type": "prefix",
   "forms": [
    "ante",
-   "anti"
+   "anti",
+   "an",
+   "anc",
+   "anter",
+   "van"
   ],
   "meaning": "前，先，在…之前",
   "origin": "拉丁语 ante",
@@ -3098,7 +3131,8 @@
  {
   "type": "prefix",
   "forms": [
-   "pseudo"
+   "pseudo",
+   "pseud"
   ],
   "meaning": "假，伪",
   "origin": "希腊语 pseudēs",
@@ -3165,7 +3199,8 @@
  {
   "type": "prefix",
   "forms": [
-   "epi"
+   "epi",
+   "ep"
   ],
   "meaning": "在上，在外；在…之后；在…之中",
   "origin": "希腊语 epi",
@@ -3508,7 +3543,8 @@
  {
   "type": "prefix",
   "forms": [
-   "homo"
+   "homo",
+   "homeo"
   ],
   "meaning": "同，相同",
   "origin": "希腊语 homos",
@@ -3570,7 +3606,8 @@
  {
   "type": "prefix",
   "forms": [
-   "meta"
+   "meta",
+   "meth"
   ],
   "meaning": "变化；在…之后，超越",
   "origin": "希腊语 meta",
@@ -3637,7 +3674,8 @@
  {
   "type": "prefix",
   "forms": [
-   "mega"
+   "mega",
+   "megalo"
   ],
   "meaning": "大，巨大；百万（用于单位）",
   "origin": "希腊语 megas",
@@ -3710,7 +3748,8 @@
  {
   "type": "prefix",
   "forms": [
-   "cata"
+   "cata",
+   "cat"
   ],
   "meaning": "向下；完全；相反",
   "origin": "希腊语 kata",
@@ -3772,7 +3811,8 @@
  {
   "type": "prefix",
   "forms": [
-   "apo"
+   "apo",
+   "aph"
   ],
   "meaning": "离开，远离；去掉",
   "origin": "希腊语 apo",
@@ -3975,7 +4015,8 @@
   "type": "prefix",
   "forms": [
    "proto",
-   "prot"
+   "prot",
+   "prote"
   ],
   "meaning": "原始，最初；第一",
   "origin": "希腊语 prōtos",
@@ -4155,7 +4196,8 @@
   "type": "prefix",
   "forms": [
    "deca",
-   "dec"
+   "dec",
+   "decem"
   ],
   "meaning": "十",
   "origin": "希腊语 deka",
@@ -4762,7 +4804,9 @@
  {
   "type": "suffix",
   "forms": [
-   "ist"
+   "ist",
+   "ast",
+   "aste"
   ],
   "meaning": "…者，…家；…主义者",
   "origin": "希腊语 -istēs（经拉丁语、法语）",
@@ -5279,7 +5323,8 @@
    "ous",
    "ious",
    "eous",
-   "uous"
+   "uous",
+   "os"
   ],
   "meaning": "形容词后缀：多…的，有…性质的，充满…的",
   "origin": "拉丁语 -osus（经法语 -eux）",
@@ -5373,7 +5418,8 @@
   "type": "suffix",
   "forms": [
    "ance",
-   "ence"
+   "ence",
+   "nce"
   ],
   "meaning": "名词后缀：性质，状态；行为",
   "origin": "拉丁语 -antia/-entia（经法语）",
@@ -5930,7 +5976,8 @@
  {
   "type": "suffix",
   "forms": [
-   "ism"
+   "ism",
+   "asm"
   ],
   "meaning": "名词后缀：主义，学说；行为，特征；状态",
   "origin": "希腊语 -ismos",
@@ -6034,7 +6081,7 @@
   "forms": [
    "al"
   ],
-  "meaning": "名词后缀：行为，过程",
+  "meaning": "名词后缀：行为，过程；人，物，场所",
   "origin": "拉丁语 -alis（经法语）",
   "note": "多加在动词后构成名词",
   "examples": [
@@ -6211,9 +6258,10 @@
  {
   "type": "suffix",
   "forms": [
-   "th"
+   "th",
+   "eth"
   ],
-  "meaning": "名词后缀：动作，性质，状态",
+  "meaning": "名词后缀：动作，性质，状态；序数词后缀：第…",
   "origin": "古英语 -þu/-þ",
   "note": "常伴随词干元音变化，如 long→length、strong→strength、deep→depth",
   "examples": [
@@ -6453,7 +6501,8 @@
   "type": "suffix",
   "forms": [
    "logy",
-   "ology"
+   "ology",
+   "ogy"
   ],
   "meaning": "名词后缀：…学，…论",
   "origin": "希腊语 -logia（言辞，学说）",
@@ -6550,7 +6599,8 @@
  {
   "type": "suffix",
   "forms": [
-   "ly"
+   "ly",
+   "li"
   ],
   "meaning": "形容词后缀：具有…性质的，像…的；每…一次的",
   "origin": "古英语 -līc",
@@ -6648,7 +6698,8 @@
  {
   "type": "suffix",
   "forms": [
-   "ory"
+   "ory",
+   "ori"
   ],
   "meaning": "形容词后缀：…的，有…性质的",
   "origin": "拉丁语 -orius",
@@ -7244,9 +7295,10 @@
  {
   "type": "suffix",
   "forms": [
-   "ory"
+   "ory",
+   "oir"
   ],
-  "meaning": "名词后缀：场所；物",
+  "meaning": "名词后缀：场所；物；…的人",
   "origin": "拉丁语 -orium",
   "note": "同形的形容词后缀见 -ory（形容词）",
   "examples": [
@@ -7771,9 +7823,15 @@
    "ule",
    "cule",
    "cle",
-   "cul"
+   "cul",
+   "acle",
+   "acul",
+   "ole",
+   "olus",
+   "ula",
+   "ulus"
   ],
-  "meaning": "名词后缀：小",
+  "meaning": "名词后缀：小；器具，物",
   "origin": "拉丁语 -ulus/-culus",
   "note": "",
   "examples": [
@@ -7851,7 +7909,8 @@
  {
   "type": "suffix",
   "forms": [
-   "eer"
+   "eer",
+   "aire"
   ],
   "meaning": "从事…的人，…者",
   "origin": "法语 -ier（源自拉丁语 -arius）",
@@ -8019,7 +8078,7 @@
   "forms": [
    "ar"
   ],
-  "meaning": "…的人",
+  "meaning": "名词后缀：…的人，…者；物，场所",
   "origin": "拉丁语 -aris；中古英语 -er 的变体",
   "note": "",
   "examples": [
@@ -8559,7 +8618,8 @@
  {
   "type": "suffix",
   "forms": [
-   "mony"
+   "mony",
+   "moni"
   ],
   "meaning": "名词后缀：状态，身份；结果",
   "origin": "拉丁语 -monium/-monia",

@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.1.5 · 2026-10-30
+
+- 词根表从 1084 条扩充到 1208 条，补上之前漏收的词根，例如 vari（变化）、und（波浪）、nucle（核）、seism（地震）、trem（颤抖）、fest（节日）、herb（草）、organ（器官）、person（人）、juxta-（旁边）。
+- 逐条检查了拆解里没对应上词根的语素，修正了约 1300 个单词的拆解：有的补上漏收的词根，有的把意思写法改成和词根表一致（如 indicate 里的 dic 现在能连到「说，宣称」）。
+- 新增约 640 个单词的拆解（如 indistinguishable、anthropomorphism、decapitate、androgynous），有拆解的单词从 1.17 万个增加到 1.23 万个。
+- Finance 词库新增 57 个术语（如 bill of exchange 汇票、CDS basis、troy ounce 金衡盎司、credit valuation adjustment 信用估值调整），共 18,356 条。
+
 ## 0.1.4 · 2026-10-30
 
 - 逐条核对了 Finance（18,299 条）和 Medicine（24,293 条）两个专业词库的全部译名，以及多个分类里重复出现、合并了译名的术语。

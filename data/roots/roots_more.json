@@ -96,7 +96,8 @@
   "type": "root",
   "forms": [
    "preci",
-   "prais"
+   "prais",
+   "price"
   ],
   "meaning": "价值，价格",
   "origin": "拉丁语 pretium「价格，价值」",
@@ -933,7 +934,8 @@
   "type": "root",
   "forms": [
    "ras",
-   "raz"
+   "raz",
+   "rade"
   ],
   "meaning": "刮，擦",
   "origin": "拉丁语 radere「刮」（过去分词 rasum）",
@@ -1451,7 +1453,8 @@
  {
   "type": "root",
   "forms": [
-   "ol"
+   "ol",
+   "odor"
   ],
   "meaning": "气味；闻",
   "origin": "拉丁语 olere「发出气味」",
@@ -1911,7 +1914,8 @@
   "type": "root",
   "forms": [
    "spers",
-   "sperse"
+   "sperse",
+   "spars"
   ],
   "meaning": "撒，散布",
   "origin": "拉丁语 spargere「撒」（过去分词 sparsum）",
@@ -1942,7 +1946,8 @@
  {
   "type": "root",
   "forms": [
-   "trit"
+   "trit",
+   "tri"
   ],
   "meaning": "磨，摩擦",
   "origin": "拉丁语 terere「磨」（过去分词 tritum）",
@@ -1974,9 +1979,10 @@
   "type": "root",
   "forms": [
    "cart",
-   "chart"
+   "chart",
+   "carto"
   ],
-  "meaning": "纸；文书",
+  "meaning": "纸，文书；地图",
   "origin": "拉丁语 charta「纸」",
   "note": "",
   "examples": [
@@ -2053,7 +2059,8 @@
   "type": "root",
   "forms": [
    "circ",
-   "circul"
+   "circul",
+   "search"
   ],
   "meaning": "圆，环",
   "origin": "拉丁语 circus「圆圈」，circulus「小圆圈」",
@@ -2247,7 +2254,8 @@
   "type": "root",
   "forms": [
    "veh",
-   "vect"
+   "vect",
+   "veigh"
   ],
   "meaning": "运载，携带",
   "origin": "拉丁语 vehere「运载」（过去分词 vectum）",
@@ -2420,7 +2428,8 @@
  {
   "type": "root",
   "forms": [
-   "prec"
+   "prec",
+   "pray"
   ],
   "meaning": "祈求",
   "origin": "拉丁语 precari「祈求」",
@@ -2769,7 +2778,8 @@
   "type": "root",
   "forms": [
    "fac",
-   "faci"
+   "faci",
+   "fic"
   ],
   "meaning": "脸，面",
   "origin": "拉丁语 facies「脸，外貌」",
@@ -3758,9 +3768,11 @@
   "type": "root",
   "forms": [
    "olesc",
-   "ult"
+   "ult",
+   "alesc",
+   "al"
   ],
-  "meaning": "成长",
+  "meaning": "成长；养育",
   "origin": "拉丁语 adolescere「成长」（过去分词 adultus）",
   "note": "",
   "examples": [
@@ -4240,7 +4252,8 @@
  {
   "type": "root",
   "forms": [
-   "caval"
+   "caval",
+   "chival"
   ],
   "meaning": "马",
   "origin": "拉丁语 caballus「马」",
@@ -4550,9 +4563,10 @@
  {
   "type": "root",
   "forms": [
-   "dec"
+   "dec",
+   "decor"
   ],
-  "meaning": "合适",
+  "meaning": "合适，得体；装饰",
   "origin": "拉丁语 decere「合适，得体」",
   "note": "",
   "examples": [
@@ -5384,7 +5398,9 @@
  {
   "type": "root",
   "forms": [
-   "frug"
+   "frug",
+   "fruct",
+   "fruit"
   ],
   "meaning": "果实；节俭",
   "origin": "拉丁语 frux「果实」（属格 frugis）",
@@ -5599,7 +5615,8 @@
  {
   "type": "root",
   "forms": [
-   "heli"
+   "heli",
+   "helio"
   ],
   "meaning": "太阳",
   "origin": "希腊语 hēlios「太阳」",
@@ -6957,9 +6974,11 @@
   "type": "root",
   "forms": [
    "pag",
-   "pact"
+   "pact",
+   "ping",
+   "pinge"
   ],
-  "meaning": "固定，紧固",
+  "meaning": "固定，紧固；撞击",
   "origin": "拉丁语 pangere「固定」（过去分词 pactum）",
   "note": "",
   "examples": [
@@ -7989,7 +8008,8 @@
  {
   "type": "root",
   "forms": [
-   "bell"
+   "bell",
+   "beau"
   ],
   "meaning": "美",
   "origin": "拉丁语 bellus「美的」",
@@ -8066,7 +8086,8 @@
  {
   "type": "root",
   "forms": [
-   "bib"
+   "bib",
+   "bev"
   ],
   "meaning": "饮",
   "origin": "拉丁语 bibere「喝」",
@@ -8173,7 +8194,8 @@
  {
   "type": "root",
   "forms": [
-   "coll"
+   "coll",
+   "col"
   ],
   "meaning": "颈",
   "origin": "拉丁语 collum「脖子」",

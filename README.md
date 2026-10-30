@@ -44,7 +44,7 @@
 
 | 词库 | 词数 |
 | --- | --- |
-| Finance | 18,299 |
+| Finance | 18,356 |
 | Medicine | 24,293 |
 | CET-4 | 5,331 |
 | CET-6 | 7,086 |
@@ -56,7 +56,7 @@
 
 Finance 收录经济、金融、会计、管理、公司治理、财务管理、资本市场、货币政策等专业词汇。Medicine 收录解剖、基础医学、内外妇儿各科疾病、临床检查、药理、公共卫生，以及中医理论、经络穴位、中药方剂。CET-4 包含高考词汇，CET-6 和 GEE（考研）包含 CET-4 词汇。原始表格在 [`data/finance/`](data/finance/) 和 [`data/medicine/`](data/medicine/)，可以直接用 Excel 打开。
 
-词根板块收录 1084 个前缀、词根、后缀（含医学常用构词成分），以及 1.1 万多个单词的拆解，数据在 [`data/roots/`](data/roots/)。发现不准的地方，欢迎[提 Issue](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/issues/new/choose)。
+词根板块收录 1208 个前缀、词根、后缀（含医学常用构词成分），以及 1.2 万多个单词的拆解，数据在 [`data/roots/`](data/roots/)。发现不准的地方，欢迎[提 Issue](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/issues/new/choose)。
 
 ## 开发
 

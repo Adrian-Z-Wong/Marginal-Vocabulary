@@ -3533,3 +3533,45 @@ business development company	商业发展公司（BDC）	金融市场与工具
 interval fund	区间基金	金融市场与工具
 auction rate securities	拍卖利率证券	金融市场与工具
 Eurocommercial paper	欧洲商业票据	金融市场与工具
+accrual swap	区间累计互换	衍生品
+mark-to-market	逐日盯市；按市值计价	衍生品
+theta decay	时间价值衰减	衍生品
+credit valuation adjustment	信用估值调整（CVA）	衍生品
+debit valuation adjustment	债务估值调整（DVA）	衍生品
+funding valuation adjustment	融资估值调整（FVA）	衍生品
+gamma squeeze	伽马挤压	衍生品
+futures curve	期货曲线	衍生品
+carbon offset	碳抵消	可持续金融
+investment grade	投资级	固定收益
+rising star	上升之星（升为投资级的债券）	固定收益
+size effect	规模效应	资产定价
+order book	订单簿	市场微观结构
+market impact	市场冲击	市场微观结构
+VWAP	成交量加权平均价格	市场微观结构
+TWAP	时间加权平均价格	市场微观结构
+bull trap	多头陷阱	投资学
+bear trap	空头陷阱	投资学
+sentiment index	情绪指数	行为金融
+fear and greed index	恐惧与贪婪指数	行为金融
+mining pool	矿池	金融科技
+bill of exchange	汇票	银行与金融机构
+SAFE	未来股权简单协议（SAFE）	公司金融
+Amsterdam Stock Exchange	阿姆斯特丹证券交易所	金融史
+commodity index	商品指数	金融市场与工具
+troy ounce	金衡盎司	金融市场与工具
+London gold fixing	伦敦金定盘价	金融市场与工具
+CHIPS	纽约清算所银行同业支付系统	银行与金融机构
+CIPS	人民币跨境支付系统	银行与金融机构
+ACH	自动清算所	银行与金融机构
+merchant discount rate	商户扣率	银行与金融机构
+chargeback	拒付；退单	银行与金融机构
+acquiring bank	收单行	银行与金融机构
+issuing bank	发卡行；开证行	银行与金融机构
+negative amortization	负摊还	银行与金融机构
+CDS basis	CDS基差	固定收益
+charm	Charm（Delta随时间的变化率）	衍生品
+pin risk	钉住风险	衍生品
+synthetic long	合成多头	衍生品
+DeFi lending	去中心化借贷（DeFi借贷）	金融科技
+biometric authentication	生物特征认证	金融科技
+credit card skimming	信用卡侧录	金融科技

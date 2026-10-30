@@ -4,7 +4,9 @@
 "forms": [
 "magn",
 "maj",
-"max"
+"max",
+"magistr",
+"magister"
 ],
 "meaning": "大",
 "origin": "拉丁语 magnus「大的」（比较级 major，最高级 maximus）",
@@ -242,7 +244,9 @@
 "type": "root",
 "forms": [
 "medi",
-"meri"
+"meri",
+"mi",
+"mean"
 ],
 "meaning": "中间",
 "origin": "拉丁语 medius「中间的」",
@@ -668,9 +672,10 @@
 {
 "type": "root",
 "forms": [
-"min"
+"min",
+"men"
 ],
-"meaning": "突出，伸出",
+"meaning": "突出，伸出；威胁；驱赶",
 "origin": "拉丁语 minere「突出」",
 "note": "注意与表示「小」的 min 区分",
 "examples": [
@@ -772,7 +777,8 @@
 "forms": [
 "mit",
 "miss",
-"mis"
+"mis",
+"mess"
 ],
 "meaning": "送，派遣；放出，投掷",
 "origin": "拉丁语 mittere（过去分词 missus）「送，放」",
@@ -1316,7 +1322,9 @@
 "forms": [
 "nat",
 "nasc",
-"naiss"
+"naiss",
+"gnat",
+"gnate"
 ],
 "meaning": "出生",
 "origin": "拉丁语 nasci（过去分词 natus）「出生」",
@@ -1551,7 +1559,8 @@
 "type": "root",
 "forms": [
 "noc",
-"nox"
+"nox",
+"nuis"
 ],
 "meaning": "伤害",
 "origin": "拉丁语 nocere「伤害」，noxa「伤害」",
@@ -1585,7 +1594,8 @@
 "nomin",
 "nom",
 "nomen",
-"gnomen"
+"gnomen",
+"noun"
 ],
 "meaning": "名字",
 "origin": "拉丁语 nomen（属格 nominis）「名字」",
@@ -1867,9 +1877,12 @@
 "forms": [
 "nutr",
 "nour",
-"nurt"
+"nurt",
+"nutri",
+"nurs",
+"nurse"
 ],
-"meaning": "滋养",
+"meaning": "滋养；护理",
 "origin": "拉丁语 nutrire「喂养，滋养」",
 "note": "",
 "examples": [
@@ -1950,7 +1963,8 @@
 {
 "type": "root",
 "forms": [
-"ocul"
+"ocul",
+"ocle"
 ],
 "meaning": "眼",
 "origin": "拉丁语 oculus「眼睛；芽眼」",
@@ -2059,7 +2073,9 @@
 "type": "root",
 "forms": [
 "oper",
-"opus"
+"opus",
+"euver",
+"oeuvre"
 ],
 "meaning": "工作",
 "origin": "拉丁语 opus（属格 operis）「工作」，operari「工作」",
@@ -2128,7 +2144,8 @@
 "forms": [
 "opt",
 "ops",
-"op"
+"op",
+"opia"
 ],
 "meaning": "眼，视力，看",
 "origin": "希腊语 opsis「视觉」，optos「看得见的」",
@@ -2171,7 +2188,8 @@
 "forms": [
 "or",
 "ora",
-"ori"
+"ori",
+"ore"
 ],
 "meaning": "嘴；说；祈求",
 "origin": "拉丁语 os（属格 oris）「嘴」，orare「说；祈祷」",
@@ -2255,9 +2273,12 @@
 "type": "root",
 "forms": [
 "ori",
-"ort"
+"ort",
+"orig",
+"origin",
+"orient"
 ],
-"meaning": "升起，开始；出生",
+"meaning": "升起，开始；出生；起源；东方，方向",
 "origin": "拉丁语 oriri「升起，起源」",
 "note": "",
 "examples": [
@@ -2963,7 +2984,8 @@
 "forms": [
 "pen",
 "pun",
-"pain"
+"pain",
+"poena"
 ],
 "meaning": "惩罚；悔",
 "origin": "拉丁语 poena「惩罚」，punire「惩罚」",
@@ -3053,7 +3075,9 @@
 "type": "root",
 "forms": [
 "pens",
-"pend"
+"pend",
+"poise",
+"spend"
 ],
 "meaning": "称量；思考；花费，支付",
 "origin": "拉丁语 pendere（过去分词 pensus）「称重；支付」",
@@ -3631,9 +3655,10 @@
 "plaud",
 "plaus",
 "plod",
-"plos"
+"plos",
+"plause"
 ],
-"meaning": "鼓掌",
+"meaning": "鼓掌；赞许",
 "origin": "拉丁语 plaudere（过去分词 plausus）「拍手」",
 "note": "explode 原指「把演员嘘下台」",
 "examples": [
@@ -3731,7 +3756,8 @@
 "ploy",
 "pli",
 "ploit",
-"ple"
+"ple",
+"play"
 ],
 "meaning": "折叠，倍；弯曲；编织",
 "origin": "拉丁语 plicare「折叠」，plectere「编织」",
@@ -3927,7 +3953,8 @@
 "forms": [
 "pos",
 "pon",
-"pound"
+"pound",
+"post"
 ],
 "meaning": "放置",
 "origin": "拉丁语 ponere（过去分词 positus）「放置」",
@@ -4027,7 +4054,10 @@
 "forms": [
 "potent",
 "pot",
-"poss"
+"poss",
+"pos",
+"puiss",
+"power"
 ],
 "meaning": "能力，力量",
 "origin": "拉丁语 posse「能够」",
@@ -4062,7 +4092,8 @@
 "prehens",
 "pris",
 "pren",
-"prent"
+"prent",
+"pregn"
 ],
 "meaning": "抓，握，拿；学，获知",
 "origin": "拉丁语 prehendere「抓住」",
@@ -4094,7 +4125,8 @@
 "type": "root",
 "forms": [
 "press",
-"prim"
+"prim",
+"print"
 ],
 "meaning": "压",
 "origin": "拉丁语 premere, pressus「压」",
@@ -4158,7 +4190,8 @@
 "type": "root",
 "forms": [
 "prob",
-"prov"
+"prov",
+"proof"
 ],
 "meaning": "证明，检验；正直",
 "origin": "拉丁语 probare「检验，证明」",
@@ -4190,7 +4223,9 @@
 "type": "root",
 "forms": [
 "punct",
-"pung"
+"pung",
+"poign",
+"point"
 ],
 "meaning": "刺，点",
 "origin": "拉丁语 pungere, punctus「刺」",
@@ -4320,7 +4355,10 @@
 "rect",
 "reg",
 "rig",
-"regul"
+"regul",
+"reign",
+"roy",
+"rule"
 ],
 "meaning": "直；纠正，规则；统治，管理，国王",
 "origin": "拉丁语 regere, rectus「引导，统治」",
@@ -4482,7 +4520,9 @@
 "sal",
 "sil",
 "sult",
-"ult"
+"ult",
+"sault",
+"sail"
 ],
 "meaning": "跳",
 "origin": "拉丁语 salire「跳」",
@@ -4547,7 +4587,9 @@
 "forms": [
 "scend",
 "scens",
-"scent"
+"scent",
+"scal",
+"scan"
 ],
 "meaning": "爬，攀",
 "origin": "拉丁语 scandere「爬」",
@@ -4609,7 +4651,9 @@
 {
 "type": "root",
 "forms": [
-"scop"
+"scop",
+"scept",
+"skept"
 ],
 "meaning": "看，观察",
 "origin": "希腊语 skopein「看」",
@@ -4803,7 +4847,9 @@
 "sequ",
 "secu",
 "ecut",
-"sue"
+"sue",
+"second",
+"suit"
 ],
 "meaning": "跟随",
 "origin": "拉丁语 sequi, secutus「跟随」",
@@ -4834,7 +4880,9 @@
 {
 "type": "root",
 "forms": [
-"serv"
+"serv",
+"sert",
+"serf"
 ],
 "meaning": "服务；保持；注意，看守",
 "origin": "拉丁语 servire「服务」，servare「保持」",
@@ -4936,7 +4984,8 @@
 "sta",
 "stin",
 "stice",
-"stem"
+"stem",
+"ist"
 ],
 "meaning": "站，立；停止，静止，固定；设立，放置",
 "origin": "拉丁语 stare, sistere, status「站立」",
@@ -5066,7 +5115,8 @@
 {
 "type": "root",
 "forms": [
-"son"
+"son",
+"sound"
 ],
 "meaning": "声音",
 "origin": "拉丁语 sonus「声音」",
@@ -5132,7 +5182,8 @@
 "spec",
 "spic",
 "pect",
-"spite"
+"spite",
+"spise"
 ],
 "meaning": "看，观察；外观，景象，种类",
 "origin": "拉丁语 specere, spectus「看」",
@@ -5168,7 +5219,8 @@
 {
 "type": "root",
 "forms": [
-"sper"
+"sper",
+"spair"
 ],
 "meaning": "希望",
 "origin": "拉丁语 sperare「希望」",
@@ -5232,7 +5284,8 @@
 "type": "root",
 "forms": [
 "spond",
-"spons"
+"spons",
+"spous"
 ],
 "meaning": "承诺，约定，回应",
 "origin": "拉丁语 spondere, sponsus「承诺」",
@@ -5297,7 +5350,8 @@
 "type": "root",
 "forms": [
 "struct",
-"stru"
+"stru",
+"stroy"
 ],
 "meaning": "建造，结构",
 "origin": "拉丁语 struere, structus「建造」",
@@ -5361,9 +5415,12 @@
 "type": "root",
 "forms": [
 "surg",
-"surrect"
+"surrect",
+"sourc",
+"source",
+"surge"
 ],
-"meaning": "升起",
+"meaning": "升起，涌起",
 "origin": "拉丁语 surgere「升起」",
 "note": "",
 "examples": [
@@ -5398,7 +5455,9 @@
 "ting",
 "tain",
 "tamin",
-"teger"
+"teger",
+"tegr",
+"tig"
 ],
 "meaning": "接触",
 "origin": "拉丁语 tangere, tactus「接触」",
@@ -5472,7 +5531,8 @@
 {
 "type": "root",
 "forms": [
-"techn"
+"techn",
+"tech"
 ],
 "meaning": "技艺",
 "origin": "希腊语 techne「技艺」",
@@ -5504,7 +5564,8 @@
 "type": "root",
 "forms": [
 "tempor",
-"temper"
+"temper",
+"tempest"
 ],
 "meaning": "时间；调和",
 "origin": "拉丁语 tempus, temporis「时间」，temperare「调和」",
@@ -5574,7 +5635,8 @@
 {
 "type": "root",
 "forms": [
-"terr"
+"terr",
+"ter"
 ],
 "meaning": "土地",
 "origin": "拉丁语 terra「土地」",
@@ -5796,7 +5858,11 @@
 "forms": [
 "tract",
 "tray",
-"trait"
+"trait",
+"trac",
+"trace",
+"train",
+"treat"
 ],
 "meaning": "拉，拖",
 "origin": "拉丁语 trahere, tractus「拉」",
@@ -6021,7 +6087,8 @@
 "forms": [
 "us",
 "ut",
-"util"
+"util",
+"use"
 ],
 "meaning": "用",
 "origin": "拉丁语 uti, usus「使用」",
@@ -6369,7 +6436,9 @@
 "vid",
 "vis",
 "voy",
-"vey"
+"vey",
+"vice",
+"view"
 ],
 "meaning": "看",
 "origin": "拉丁语 videre, visus「看」",
@@ -6477,7 +6546,8 @@
 "forms": [
 "voc",
 "vok",
-"vow"
+"vow",
+"vouch"
 ],
 "meaning": "声音，叫喊，召唤；词",
 "origin": "拉丁语 vocare「叫」，vox, vocis「声音」",
@@ -6582,7 +6652,8 @@
 {
 "type": "root",
 "forms": [
-"vor"
+"vor",
+"vour"
 ],
 "meaning": "吃",
 "origin": "拉丁语 vorare「吞吃」",
@@ -6614,7 +6685,8 @@
 "type": "root",
 "forms": [
 "vot",
-"vow"
+"vow",
+"vout"
 ],
 "meaning": "发誓，许愿；投票",
 "origin": "拉丁语 vovere, votus「发誓」",
