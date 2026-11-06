@@ -1251,7 +1251,7 @@ textarea.paste:focus { outline: none; border-color: var(--accent); box-shadow: 0
 
 img.px, canvas.scene { image-rendering: pixelated; image-rendering: crisp-edges; }
 img.px { display: inline-block; vertical-align: bottom; }
-.page.wide { max-width: 1080px; }
+.page.wide { max-width: 1320px; }
 .g-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .g-top .h1 { margin: 0; }
 .g-top .muted { margin: 4px 0 0; font-size: 15px; }
@@ -1259,6 +1259,9 @@ img.px { display: inline-block; vertical-align: bottom; }
   position: relative;
   display: flex;
   justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  max-width: 100%;
   border-radius: 16px;
   overflow: hidden;
   background: #2f5a2c;
@@ -1734,13 +1737,25 @@ window.MARGIN_ART = (function () {
     }
   };
   // 外轮廓：透明像素挨着有色像素，就涂成那个颜色的描边色
+  // 迎光的一边（左上）描边浅一点，背光的一边（右下）深一点，轮廓不那么死板
   Pix.prototype.outline = function (only) {
     const add = [];
+    const hexAt = (x, y) => {
+      const c = this.get(x, y);
+      return c && c[0] === '#' ? c : null;
+    };
     for (let y = 0; y < this.h; y++)
       for (let x = 0; x < this.w; x++) {
         if (this.get(x, y)) continue;
-        const n = this.get(x, y - 1) || this.get(x - 1, y) || this.get(x + 1, y) || this.get(x, y + 1);
-        if (n && n[0] === '#' && !(only && !only(n))) add.push([x, y, ramp(n).line]);
+        const below = hexAt(x, y + 1);
+        const right = hexAt(x + 1, y);
+        const above = hexAt(x, y - 1);
+        const left = hexAt(x - 1, y);
+        const n = above || left || right || below;
+        if (!n || (only && !only(n))) continue;
+        const lit = (below || right) && !above && !left;
+        const R = ramp(lit ? below || right : n);
+        add.push([x, y, lit ? mix(R.line, R.lo, 0.45) : R.line]);
       }
     for (const [x, y, c] of add) this.set(x, y, c);
   };
@@ -1829,6 +1844,8 @@ window.MARGIN_ART = (function () {
     }
     p.rect(x, y, 2, h, INK);
     p.set(x, y, WHITE);
+    // 眼睛下面一点反光，看起来水汪汪的
+    if (h >= 3) p.set(x + 1, y + h - 1, '#5d5470');
   }
   function blush(p, x, y, c) {
     p.rect(x, y, 2, 1, c || '#f2a0a0');
@@ -2555,104 +2572,206 @@ window.MARGIN_ART = (function () {
   // 宠物戴帽子的位置：帽子画在 16 宽的格子里，挪到宠物头顶
   const PET_HAT_AT = { crab: 4, cat: 0, shiba: 0, fox: -1, rabbit: 1, hamster: 4, penguin: 1, duck: -1, frog: 3, piglet: 1, lamb: 0, corgi: -1, hedgehog: 2, squirrel: 0, owl: 1, otter: 2, raccoon: 0, koala: 1, redpanda: 0, panda: 1, chick: 4, medaka: 4, goldfish: 4, guppy: 4, koi: 4, goldkoi: 4 };
 
+  // 人物是一格一格手画的（16×32）：头、身子、腿分开画，走路时身子上下颠一下、两条腿交替抬起。
+  // 字母代表颜色：h 头发、H 头发暗部、j 头发高光、s 皮肤、S 皮肤暗部、c 腮红、e 眼睛、w 眼睛高光、m 嘴、
+  // t 上衣、T 上衣暗部、y 上衣高光、o 胳膊和身子之间的暗线、b 裤子、B 裤子暗部、f 鞋、F 鞋底
+  const AV = {
+    headFront: [
+      '................',
+      '.....hhhhhh.....',
+      '...hhjjjjhhhh...',
+      '..hhjjhhhhhhhH..',
+      '.hhjhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hhssshhsssshHh.',
+      '.hhssssssssssHh.',
+      '.hhswesssswesHh.',
+      '.hhseesssseesHh.',
+      '..hccssssssccH..',
+      '...SsssmmsssS...',
+      '....SSssssSS....',
+    ],
+    headSide: [
+      '................',
+      '......hhhhh.....',
+      '....hhjjjhhhh...',
+      '...hhjjhhhhhhh..',
+      '..hhjhhhhhhhhhh.',
+      '..hhhhhhhhhhhhh.',
+      '..hhhhhhhhhhhhh.',
+      '..hhhhhhhhhssss.',
+      '..hHhhhhsssssss.',
+      '..hHhhhSssswess.',
+      '..hHhhsSssseess.',
+      '...Hhhssssscsss.',
+      '....HSsssssssmS.',
+      '.....SSsssssSS..',
+    ],
+    headBack: [
+      '................',
+      '.....hhhhhh.....',
+      '...hhjjjjhhhh...',
+      '..hhjjhhhhhhhH..',
+      '.hhjhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hhhhhhhhhhhhHh.',
+      '.hHhhhhhhhhhhHh.',
+      '.hHhhhhhhhhhHHh.',
+      '..hHhhhhhhhhHH..',
+      '...SHHhhhhHHS...',
+      '....SSssssSS....',
+    ],
+    bodyFront: [
+      '.....tSSSSt.....',
+      '...ttytTTttTT...',
+      '..ttoytttttoTT..',
+      '..tToytttttoTT..',
+      '..tTottttttoTT..',
+      '..tTottttttoTT..',
+      '..tToTTTTTToTT..',
+      '..sSobbbbbboSS..',
+      '....bbbbbbbB....',
+      '....bbbbbbbB....',
+    ],
+    bodyFrontAct: [
+      '.....tSSSSt.....',
+      '...ttytTTttTT...',
+      '..ttyttttttttT..',
+      '..tTotttttttTT..',
+      '..tToTTsSSTTTT..',
+      '...TTosSSSoTT...',
+      '....tTTTTTTT....',
+      '....obbbbbbo....',
+      '....bbbbbbbB....',
+      '....bbbbbbbB....',
+    ],
+    bodyBack: [
+      '.....tSSSSt.....',
+      '...ttytttttTT...',
+      '..ttoytttttoTT..',
+      '..tToytttttoTT..',
+      '..tTottttttoTT..',
+      '..tTottttttoTT..',
+      '..tToTTTTTToTT..',
+      '..sSobbbbbboSS..',
+      '....bbbbbbbB....',
+      '....bbbbbbbB....',
+    ],
+    bodySide: [
+      '......tSSt......',
+      '.....yttttttT...',
+      '.....ytottTtT...',
+      '.....ytottTtT...',
+      '.....ytottTtT...',
+      '.....ttottTtT...',
+      '.....TToTTTTT...',
+      '.....bbosSbbB...',
+      '.....bbbbbbbB...',
+      '.....bbbbbbbB...',
+    ],
+    bodySideAct: [
+      '......tSSt......',
+      '.....yttttttT...',
+      '.....ytotttTtT..',
+      '.....yttooTTTTsS',
+      '.....yttttTttTSS',
+      '.....tttttTtT...',
+      '.....TTTTTTTT...',
+      '.....bbbbbbbB...',
+      '.....bbbbbbbB...',
+      '.....bbbbbbbB...',
+    ],
+    legsFront: ['....bbB..bbB....', '....bbB..bbB....', '....bbB..bbB....', '....bbB..bbB....', '...fffF..fffF...', '...FFFF..FFFF...', '................', '................'],
+    legsFrontWalk: ['....bbB..bbB....', '....bbB..bbB....', '....bbB..bbB....', '...fffF..bbB....', '...FFFF..fffF...', '.........FFFF...', '................', '................'],
+    legsSide: ['......bbBbbB....', '......bbBbbB....', '......bbBbbB....', '......bbBbbB....', '......fffffffF..', '......FFFFFFFF..', '................', '................'],
+    legsSideWalk: ['......bBbbbB....', '.....bBB.bbbB...', '.....BB...bbB...', '....BB.....bbB..', '...FFF.....ffffF', '...........FFFFF', '................', '................'],
+  };
+  // 镜像一行（走路的另一只脚）
+  const mirrorRow = (r) => r.split('').reverse().join('');
+
   function person(p, look, f, dir) {
     dir = dir || 'front';
     const skin = look.skin || '#f3c9a5';
-    const hair = look.hair || '#5a3a2a';
-    const top = look.top || '#d6ccb8';
-    const bottom = look.bottom || '#6d6a7a';
-    const shoes = look.shoes || '#5a4334';
-    const H = ramp(hair);
-    const T = ramp(top);
-    const y0 = f === 'walk1' || f === 'walk2' ? -1 : 0;
-    const [a, b] = feet(f);
+    const hair = look.hair || '#6b4a35';
+    const top = look.top || '#e8e2d4';
+    const bottom = look.bottom || '#5b6b8a';
+    const shoes = look.shoes || '#6a4a3a';
+    const HR = ramp(hair);
+    const SK = ramp(skin);
+    const TP = ramp(top);
+    const BT = ramp(bottom);
+    const SH = ramp(shoes);
     const act = f === 'act';
-    // 腿、鞋
-    const bs = look.bottomStyle || 'pants';
-    if (dir === 'side') {
-      p.sRect(6, 23 + y0, 4, 6 - a, bottom, { noHi: true });
-      if (bs !== 'skirt') p.sRect(5 + (a ? 2 : 0), 23 + y0, 4, 6 - b, bottom, { noHi: true });
-      p.sRect(6, 29 + y0 - a, 6, 2, shoes, { noHi: true });
-    } else {
-      const legH = bs === 'shorts' ? 3 : 6;
-      p.sRect(4, 23 + y0, 4, legH - a, bottom, { noHi: true });
-      p.sRect(8, 23 + y0, 4, legH - b, bottom, { noHi: true });
-      if (bs === 'shorts') {
-        p.rect(4, 26 + y0 - a, 4, 3, skin);
-        p.rect(8, 26 + y0 - b, 4, 3, skin);
-      }
-      p.sRect(3, 29 + y0 - a, 5, 2, shoes, { noHi: true });
-      p.sRect(8, 29 + y0 - b, 5, 2, shoes, { noHi: true });
-    }
-    if (bs === 'skirt') p.poly([[3, 22 + y0], [13, 22 + y0], [14.5, 27 + y0], [1.5, 27 + y0]], bottom);
-    // 上衣
+    const walk = f === 'walk1' || f === 'walk2';
+    const y0 = walk ? -1 : 0;
+    const head = AV[dir === 'side' ? 'headSide' : dir === 'back' ? 'headBack' : 'headFront'];
+    const body = AV[dir === 'side' ? (act ? 'bodySideAct' : 'bodySide') : dir === 'back' ? 'bodyBack' : act ? 'bodyFrontAct' : 'bodyFront'];
+    let legs = AV[dir === 'side' ? (walk ? 'legsSideWalk' : 'legsSide') : walk ? 'legsFrontWalk' : 'legsFront'];
+    if (f === 'walk2' && dir !== 'side') legs = legs.map(mirrorRow);
+    const pal = {
+      h: hair, H: HR.mid, j: HR.hi,
+      s: skin, S: SK.mid, c: '#f2a0a0', e: INK, w: WHITE, m: '#c0705f',
+      t: top, T: TP.mid, y: TP.hi, o: TP.lo,
+      b: bottom, B: BT.mid,
+      f: shoes, F: SH.lo,
+    };
+    // 上衣样式、下装样式：按格子换颜色
     const ts = look.topStyle || 'tee';
-    p.sRect(3, 15 + y0, 10, 8, top);
-    if (ts === 'stripe') for (let y = 17; y < 23; y += 2) p.rect(3, y + y0, 10, 1, '#f4ece0');
-    if (ts === 'overalls') {
-      p.sRect(4, 18 + y0, 8, 5, bottom);
-      p.rect(5, 15 + y0, 1, 3, ramp(bottom).base);
-      p.rect(10, 15 + y0, 1, 3, ramp(bottom).base);
-      p.set(5, 18 + y0, '#f2c14e');
-      p.set(10, 18 + y0, '#f2c14e');
-    }
-    if (ts === 'hoodie' && dir !== 'back') {
-      p.rect(6, 15 + y0, 1, 4, T.lo);
-      p.rect(9, 15 + y0, 1, 4, T.lo);
-      p.rect(5, 20 + y0, 6, 2, T.mid);
-    }
-    if (ts === 'hoodie' && dir === 'back') p.sEll(8, 15.5 + y0, 5, 2.5, top);
-    if (dir !== 'back' && ts !== 'hoodie') p.rect(7, 15 + y0, 2, 1, ramp(skin).mid);
-    // 胳膊
-    if (dir === 'side') {
-      const sw = act ? 0 : a - b;
-      if (act) {
-        p.sRect(9, 17 + y0, 5, 2, top, { noHi: true });
-        p.rect(14, 17 + y0, 2, 2, skin);
-      } else {
-        p.sRect(7 + sw, 16 + y0, 2, 6, top, { noHi: true });
-        p.rect(7 + sw, 22 + y0, 2, 1, skin);
+    const bs = look.bottomStyle || 'pants';
+    const colorAt = (ch, x, y) => {
+      if ((ch === 't' || ch === 'y' || ch === 'T') && y >= 14 && y <= 20) {
+        if (ts === 'stripe' && y >= 16 && y % 2 === 0) return ch === 'T' ? mix('#f4ece0', TP.mid, 0.35) : '#f4ece0';
+        if (ts === 'overalls' && dir !== 'side') {
+          // 胸前的背带裤：两条背带、两颗扣子、一块护胸
+          if (y >= 17 && x >= 5 && x <= 10) return ch === 'T' ? BT.mid : bottom;
+          if ((y === 15 || y === 16) && (x === 5 || x === 10)) return BT.mid;
+        }
+        if (ts === 'overalls' && dir === 'side' && y >= 17 && x >= 5 && x <= 12) return ch === 'T' ? BT.mid : bottom;
       }
-    } else if (act && dir === 'front') {
-      p.sRect(3, 18 + y0, 10, 2, top, { noHi: true });
-      p.rect(6, 20 + y0, 4, 1, skin);
-    } else {
-      p.sRect(1, 16 + y0 + b - a, 2, 6, top, { noHi: true });
-      p.sRect(13, 16 + y0 + a - b, 2, 6, top, { noHi: true });
-      p.rect(1, 22 + y0 + b - a, 2, 1, skin);
-      p.rect(13, 22 + y0 + a - b, 2, 1, skin);
-    }
-    // 头
+      if (ts === 'overalls' && dir === 'front' && y === 17 && (x === 5 || x === 10)) return '#f2c14e';
+      if (ts === 'hoodie' && dir === 'front') {
+        if (y === 14 && (x === 5 || x === 10)) return TP.mid;
+        if ((x === 6 || x === 9) && y >= 15 && y <= 17 && ch !== 'o') return TP.hi;
+        if (y === 19 && x >= 6 && x <= 9) return TP.lo;
+      }
+      if (bs === 'shorts' && (ch === 'b' || ch === 'B') && y >= 25) return ch === 'B' ? SK.mid : skin;
+      return pal[ch];
+    };
+    const put = (rows, oy, shift) => {
+      rows.forEach((r, j) => {
+        for (let x = 0; x < 16; x++) {
+          const ch = r[x];
+          if (ch === '.') continue;
+          const y = oy + j;
+          p.set(x, y + shift, colorAt(ch, x, y));
+        }
+      });
+    };
+    // 长发：披在肩上（前面、侧面）或者盖住后背
     const hs = look.hairStyle || 'short';
-    if (hs === 'long' && dir !== 'side') p.sRect(2, 7 + y0, 12, 10, hair, { noHi: true });
-    if (hs === 'long' && dir === 'side') p.sRect(2, 7 + y0, 6, 10, hair, { noHi: true });
-    p.sEll(8, 8.5 + y0, 6.3, 6.6, skin, { noHi: true });
-    if (dir === 'back') {
-      p.sEll(8, 8 + y0, 6.8, 7, hair);
-      if (hs === 'bun') p.sEll(8, 2 + y0, 2.6, 2.4, hair);
-    } else if (dir === 'side') {
-      p.sEll(7, 5.5 + y0, 6.6, 4.6, hair);
-      p.sEll(4.5, 9 + y0, 3.6, 4.4, hair);
-      p.rect(10, 7 + y0, 4, 1, H.mid);
-      p.set(13, 8 + y0, H.mid);
-      p.rect(3, 4 + y0, 4, 1, H.hi);
-      if (hs === 'bun') p.sEll(2.5, 3 + y0, 2.4, 2.2, hair);
-      p.rect(11, 10 + y0, 1, 2, INK);
-      p.set(12, 12 + y0, '#f4b9ab');
-      p.set(12, 13 + y0, '#c98a78');
-    } else {
-      p.sEll(8, 5.5 + y0, 6.8, 4.6, hair);
-      p.rect(1, 5 + y0, 2, 6, H.base);
-      p.rect(13, 5 + y0, 2, 6, H.mid);
-      p.rect(3, 7 + y0, 3, 1, H.base);
-      p.rect(10, 7 + y0, 3, 1, H.mid);
-      p.rect(4, 3 + y0, 4, 1, H.hi);
-      if (hs === 'bun') p.sEll(8, 1.5 + y0, 2.6, 2.4, hair);
-      p.rect(5, 10 + y0, 1, 2, INK);
-      p.rect(10, 10 + y0, 1, 2, INK);
-      p.set(4, 12 + y0, '#f4b9ab');
-      p.set(11, 12 + y0, '#f4b9ab');
-      p.rect(7, 13 + y0, 2, 1, '#c98a78');
+    if (hs === 'long') {
+      if (dir === 'front') for (let y = 9; y <= 18; y++) for (const x of [1, 2, 13, 14]) p.set(x, y + y0, x === 2 || x === 13 ? HR.mid : hair);
+      if (dir === 'side') for (let y = 9; y <= 18; y++) for (let x = 2; x <= 5; x++) p.set(x, y + y0, x === 5 ? HR.mid : hair);
+    }
+    put(head.concat(body), 0, y0);
+    put(legs, 24, 0);
+    if (bs === 'skirt') {
+      // 裙子：从腰往下张开
+      for (let y = 21; y <= 25; y++) {
+        const w = 4 + (y - 21);
+        for (let x = 8 - w; x < 8 + w; x++) if (x >= 1 && x <= 14) p.set(x, y + (y < 24 ? y0 : 0), x >= 8 + w - 2 ? BT.mid : y === 25 ? BT.hi : bottom);
+      }
+      for (let y = 26; y <= 27; y++) for (const x of dir === 'side' ? [7, 8, 9, 10] : [4, 5, 10, 11]) if (p.get(x, y)) p.set(x, y, skin);
+    }
+    if (hs === 'long' && dir === 'back') for (let y = 12; y <= 19; y++) for (let x = 3; x <= 12; x++) p.set(x, y + y0, x === 12 || y === 19 ? HR.mid : x === 5 && y < 16 ? HR.hi : hair);
+    if (hs === 'bun') {
+      const by = dir === 'side' ? 1 : 0;
+      const bx = dir === 'side' ? 5 : 8;
+      p.sEll(bx, 1.5 + by + y0, 2.6, 2, hair);
+      p.set(bx - 1, 1 + by + y0, HR.hi);
     }
     if (look.hat && HATS[look.hat]) HATS[look.hat](p, y0, dir);
   }
@@ -2741,22 +2860,106 @@ window.MARGIN_ART = (function () {
     cactus: { shape: 'cactus', leaf: '#5f9e4f' },
   };
 
+  // 树冠：先按几个椭圆圈出形状，再在里面排一团团小叶簇；每团左上亮、右下暗，团和团之间露出深色的缝，
+  // 上面的团整体亮一点、下面的暗一点；边上的叶簇稍微探出轮廓，边缘就是一团一团的
+  function leafClumps(p, blobs, color, o) {
+    o = o || {};
+    const R = ramp(color);
+    const r = o.r || 4;
+    const inMask = (x, y) => blobs.some(([cx, cy, rx, ry]) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1);
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const [cx, cy, rx, ry] of blobs) {
+      x0 = Math.min(x0, cx - rx);
+      y0 = Math.min(y0, cy - ry);
+      x1 = Math.max(x1, cx + rx);
+      y1 = Math.max(y1, cy + ry);
+    }
+    // 底色：最深的一层，叶簇之间的缝隙
+    for (let y = Math.floor(y0); y <= y1; y++) for (let x = Math.floor(x0); x <= x1; x++) if (inMask(x, y)) p.set(x, y, R.lo);
+    const seed = o.seed || 1;
+    const hsh = (a, b) => {
+      let h = (a * 374761393 + b * 668265263 + seed * 2246822519) | 0;
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+    };
+    const step = r * 1.3;
+    const pts = [];
+    let row = 0;
+    for (let y = y0 + r * 0.6; y <= y1; y += step * 0.78, row++)
+      for (let x = x0 + (row % 2 ? step / 2 : 0) + r * 0.4; x <= x1; x += step) {
+        const jx = x + (hsh(row, Math.round(x)) - 0.5) * r * 0.7;
+        const jy = y + (hsh(Math.round(x), row + 9) - 0.5) * r * 0.6;
+        if (inMask(jx, jy)) pts.push([jx, jy]);
+      }
+    pts.sort((a, b) => a[1] - b[1]);
+    const H = Math.max(1, y1 - y0);
+    for (const [cx, cy] of pts) {
+      const t = (cy - y0) / H;
+      const rr = r * (0.9 + hsh(Math.round(cx * 3), Math.round(cy * 3)) * 0.25);
+      for (let y = Math.floor(cy - rr); y <= cy + rr; y++)
+        for (let x = Math.floor(cx - rr); x <= cx + rr; x++) {
+          const nx = (x + 0.5 - cx) / rr;
+          const ny = (y + 0.5 - cy) / rr;
+          const d = nx * nx + ny * ny;
+          if (d > 1) continue;
+          if (!inMask(x, y) && d > 0.6) continue;
+          const lit = -(nx * 0.6 + ny * 0.8);
+          let c = t > 0.72 ? R.mid : color;
+          if (lit > 0.42 && d < 0.85) c = t < 0.6 ? R.hi : color;
+          else if (lit < -0.3) c = t > 0.45 ? R.lo : R.mid;
+          else if (lit < 0.05 && t > 0.55) c = R.mid;
+          p.set(x, y, c);
+        }
+      // 叶簇顶上的一两点亮光
+      if (t < 0.7) {
+        p.set(Math.round(cx - rr * 0.35), Math.round(cy - rr * 0.45), lighten(R.hi, 0.06));
+        if (rr > 3) p.set(Math.round(cx - rr * 0.1), Math.round(cy - rr * 0.6), R.hi);
+      }
+    }
+    if (o.dots)
+      for (const [x, y, c] of o.dots) {
+        p.rect(x, y, 2, 2, c);
+        p.set(x, y, lighten(c, 0.18));
+        p.set(x + 1, y + 1, ramp(c).mid);
+      }
+  }
+
+  // 树干：往下稍微变粗，根部向两边张开；有竖着的树皮纹，顶上被树冠遮出一截阴影
+  function trunkS(p, S, color, top, w, marks) {
+    const R = ramp(color);
+    const base = Math.round(46 * S);
+    const yTop = Math.round(top * S);
+    const cx = 16 * S;
+    for (let y = yTop; y <= base; y++) {
+      const t = (y - yTop) / Math.max(1, base - yTop);
+      const flare = t > 0.7 ? Math.pow((t - 0.7) / 0.3, 2) * 2.4 * S : 0;
+      const ww = (w - 0.8) * S + t * 0.8 * S + flare * 2;
+      const xa = Math.round(cx - ww / 2);
+      const xb = Math.round(cx + ww / 2) - 1;
+      for (let x = xa; x <= xb; x++) {
+        const u = (x - xa) / Math.max(1, xb - xa);
+        let c = u < 0.25 ? R.hi : u > 0.72 ? R.mid : color;
+        if (u > 0.88) c = R.lo;
+        // 树皮纹
+        if (!marks && (x * 7 + Math.floor(y / 3) * 3) % 9 === 0 && u > 0.2 && u < 0.85) c = R.mid;
+        if (marks && (y * 5 + x * 3) % 11 === 0) c = marks;
+        if (y - yTop < 2 * S) c = mix(c, R.lo, 0.55);
+        p.set(x, y, c);
+      }
+    }
+  }
+
   function drawTree(p, sp, S) {
     const t = typeof sp === 'string' ? TREE_SPECS[sp] || TREE_SPECS.oak : sp;
     const q = (v) => v * S;
     const B = (list) => list.map(([x, y, rx, ry]) => [q(x), q(y), q(rx), q(ry)]);
     const TR = t.trunk || '#8a5a3b';
     const shade = (rx) => p.ell(q(16), q(46) - 0.5, q(rx), 2.2 * S, 'rgba(40,30,20,.24)');
-    const stem = (top, h, w) => {
-      w = Math.round(q(w || 5));
-      const x = Math.round(q(16) - w / 2);
-      const R = ramp(TR);
-      p.sRect(x, Math.round(q(top)), w, Math.round(q(46) - q(top)), TR, { bottom: 1 });
-      p.rect(x - Math.round(S * 2), Math.round(q(46)) - 2, Math.round(S * 2), 2, R.mid);
-      p.rect(x + w, Math.round(q(46)) - 2, Math.round(S * 2), 2, R.lo);
-      for (let k = 0; k < 3 * S; k++) p.set(x + 1 + ((k * 3) % (w - 1)), Math.round(q(top + 4 + k * 4)), R.lo);
-      if (t.marks) for (let y = Math.round(q(top)) + 2; y < q(44); y += 4 + (y % 3)) p.rect(x + ((y * 7) % (w - 1)), y, 2, 1, t.marks);
-    };
+    const stem = (top, h, w) => trunkS(p, S, TR, top, w || 5, t.marks);
+    const canopy = (blobs, color, speck, dts) => leafClumps(p, blobs, color, { r: 4.2 * S, dots: dts, seed: color.length + blobs.length });
     const speck = (list) => list.map(([x, y]) => [Math.round(q(x)), Math.round(q(y))]);
     const dots = (list, c) => (c ? list.map(([x, y]) => [Math.round(q(x)), Math.round(q(y)), c]) : null);
     const DOTS = [[9, 15], [21, 12], [16, 21], [24, 21], [12, 24], [17, 8], [7, 20], [26, 15]];
@@ -2773,7 +2976,7 @@ window.MARGIN_ART = (function () {
           : t.shape === 'fan' ? [[16, 24, 12, 7], [16, 16, 10, 7], [16, 9, 7, 6], [16, 4, 4, 3]]
           : t.shape === 'oval' ? [[16, 22, 9, 7], [16, 14, 9, 8], [11, 18, 5, 5], [21, 18, 5, 5], [16, 7, 6, 5]]
           : ROUND;
-        canopy(p, B(blobs), t.leaf, speck(SPECK), dots(DOTS.slice(0, S > 1 ? 8 : 6), t.dots));
+        canopy(B(blobs), t.leaf, speck(SPECK), dots(DOTS.slice(0, S > 1 ? 8 : 6), t.dots));
         if (t.blossom) for (const [x, y] of [[11, 11], [20, 17], [14, 25], [23, 9]]) p.ell(q(x), q(y), 1.2 * S, 1.2 * S, t.blossom);
         if (t.petals) for (const [x, y] of [[5, 41], [26, 43], [9, 45], [22, 46], [29, 39]]) p.set(Math.round(q(x)), Math.round(q(y)), t.petals);
         break;
@@ -2781,7 +2984,7 @@ window.MARGIN_ART = (function () {
       case 'willow': {
         shade(12);
         stem(26, 0, 5);
-        canopy(p, B([[16, 16, 12, 8], [10, 12, 7, 6], [22, 12, 7, 6], [16, 8, 8, 6]]), t.leaf);
+        canopy(B([[16, 16, 12, 8], [10, 12, 7, 6], [22, 12, 7, 6], [16, 8, 8, 6]]), t.leaf);
         const R = ramp(t.leaf);
         // 垂下来的柳条
         for (let x = Math.round(q(5)); x <= Math.round(q(27)); x += S > 1 ? 2 : 2) {
@@ -2794,7 +2997,7 @@ window.MARGIN_ART = (function () {
       case 'wisteria': {
         shade(12);
         stem(28, 0, 5);
-        canopy(p, B([[16, 18, 13, 8], [9, 13, 7, 6], [23, 13, 7, 6], [16, 9, 9, 6]]), t.leaf);
+        canopy(B([[16, 18, 13, 8], [9, 13, 7, 6], [23, 13, 7, 6], [16, 9, 9, 6]]), t.leaf);
         const H = ramp(t.hang);
         for (const [x, y, n] of [[6, 20, 9], [10, 23, 11], [14, 24, 8], [18, 24, 12], [22, 23, 9], [26, 20, 10], [12, 15, 6], [21, 15, 6]]) {
           for (let k = 0; k < n * S; k++) {
@@ -2813,14 +3016,12 @@ window.MARGIN_ART = (function () {
           p.line(q(x1), q(y1), q(x2), q(y2), t.trunk);
           if (S > 1) p.line(q(x1) + 1, q(y1), q(x2) + 1, q(y2), R.mid);
         }
-        const F = ramp(t.flower);
         const spots = [[7, 12], [4, 14], [25, 10], [28, 16], [16, 4], [11, 6], [21, 5], [9, 16], [22, 13], [13, 10], [19, 9], [14, 18], [18, 17], [6, 9], [26, 7], [16, 11]];
+        // 一簇簇的花：用叶簇的画法画成小团，再点上花心
+        leafClumps(p, spots.map(([x, y]) => [q(x), q(y), 2.3 * S, 2 * S]), t.flower, { r: 1.7 * S, seed: 7 });
         for (const [x, y] of spots) {
-          const cx = q(x);
-          const cy = q(y);
-          p.ell(cx, cy, 1.9 * S, 1.7 * S, t.flower);
-          p.set(Math.round(cx - 0.5 * S), Math.round(cy - 0.6 * S), F.hi);
-          p.set(Math.round(cx), Math.round(cy), t.center);
+          p.set(Math.round(q(x)), Math.round(q(y)), t.center);
+          if (S > 1) p.set(Math.round(q(x)) + 2, Math.round(q(y)) + 1, t.center);
         }
         for (const [x, y] of [[6, 42], [24, 44], [11, 45]]) p.set(Math.round(q(x)), Math.round(q(y)), t.flower);
         break;
@@ -2832,18 +3033,31 @@ window.MARGIN_ART = (function () {
         const G = t.leaf;
         const R = ramp(G);
         if (t.shape === 'column') {
-          canopy(p, B([[16, 31, 6.5, 8], [16, 22, 7, 9], [16, 13, 5.5, 8], [16, 5, 3.5, 4.5]]), G, speck([[14, 12], [15, 20], [14, 28]]));
+          canopy(B([[16, 31, 6.5, 8], [16, 22, 7, 9], [16, 13, 5.5, 8], [16, 5, 3.5, 4.5]]), G, speck([[14, 12], [15, 20], [14, 28]]));
           break;
         }
-        for (const [y, w] of [[32, 14], [24, 12], [16, 9], [9, 6]]) {
-          p.poly([[q(16 - w - 1), q(y + 4)], [q(16 + w + 1), q(y + 4)], [q(16), q(y - 9)]], R.lo);
-          p.poly([[q(16 - w), q(y + 3)], [q(16 + w), q(y + 3)], [q(16), q(y - 9)]], G);
-          p.poly([[q(16 - w), q(y + 3)], [q(16), q(y + 3)], [q(16), q(y - 9)]], R.base);
-          p.poly([[q(16 - w + 2), q(y + 1)], [q(15), q(y + 1)], [q(15), q(y - 6)]], R.hi);
-          p.rect(Math.round(q(16)), Math.round(q(y - 7)), 1, Math.round(q(y > 20 ? 9 : 6)), R.mid);
-          // 枝叶边上一排小锯齿
-          for (let x = Math.round(q(16 - w)); x < q(16 + w); x += 3) p.set(x, Math.round(q(y + 3)), R.lo);
+        // 松树：四层枝叶，下面的先画，上面的盖在上面；每层下沿一排锯齿，左边迎光、右边和下沿暗
+        for (const [by, hw, h] of [[37, 14.5, 13], [29, 12, 12], [21, 9.5, 11], [13, 6.5, 11]]) {
+          const yb = Math.round(q(by));
+          const yt = Math.round(q(by - h));
+          const cx = q(16);
+          for (let y = yt; y <= yb; y++) {
+            const tt = (y - yt) / Math.max(1, yb - yt);
+            const half = q(hw) * Math.pow(tt, 0.85) + 0.5 + ((y * 7) % 3 === 0 ? 0.8 : 0);
+            for (let x = Math.round(cx - half); x <= Math.round(cx + half); x++) {
+              const u = (x - (cx - half)) / (2 * half);
+              let c = u < 0.3 ? R.hi : u < 0.62 ? G : u < 0.85 ? R.mid : R.lo;
+              if (yb - y < 1.4 * S) c = u < 0.4 ? R.mid : R.lo;
+              if ((x * 5 + y * 3) % 13 === 0 && u < 0.6 && yb - y > 2) c = lighten(R.hi, 0.05);
+              p.set(x, y, c);
+            }
+          }
+          for (let x = Math.round(cx - q(hw)); x <= cx + q(hw); x += Math.max(2, Math.round(2.2 * S))) {
+            p.set(x, yb + 1, R.lo);
+            if (S > 1) p.set(x, yb + 2, R.lo);
+          }
         }
+        p.set(Math.round(q(16)), Math.round(q(1)), R.hi);
         break;
       }
       case 'palm': {
@@ -2926,77 +3140,92 @@ window.MARGIN_ART = (function () {
     pine: { shape: 'pine', leaf: '#2f6a45', trunk: '#6a4632' },
   };
 
-  // 花（16×16）：stage 0 刚种下、1 发芽、2 花苞、3 开花
+  // 花（16×16，向日葵长高以后 16×24）：stage 0 刚种下、1 发芽、2 花苞、3 开花。
+  // 一株是一小丛：底下两片宽叶子，两三根茎，顶上的花是一格一格手画的。
+  // 字母：h 高光、b 本色、m 暗部、l 最暗、w 白、W 白的暗部、y 黄、Y 黄的暗部、k 花心、K 花心暗部
   const FLOWERS = {
-    tulip: { c: '#e85d75', bloom(p, c) {
-      p.sEll(8, 5.5, 3.5, 3.5, c);
-      p.rect(6, 2, 1, 2, ramp(c).base);
-      p.rect(8, 2, 1, 2, ramp(c).hi);
-      p.rect(10, 2, 1, 2, ramp(c).mid);
-    } },
-    rose: { c: '#ef7fa0', bloom(p, c) {
-      p.sEll(8, 5.5, 4, 3.5, c);
-      p.set(8, 5, ramp(c).lo);
-      p.set(7, 4, ramp(c).lo);
-      p.set(9, 6, ramp(c).lo);
-      p.set(6, 6, ramp(c).hi);
-    } },
-    daisy: { c: '#fbf7ef', bloom(p, c) {
-      for (const [x, y] of [[8, 2], [8, 8], [5, 5], [11, 5], [6, 3], [10, 3], [6, 7], [10, 7]]) p.ell(x + 0.5, y + 0.5, 1.4, 1.4, c);
-      p.sEll(8.5, 5.5, 1.6, 1.6, '#f2c14e');
-    } },
-    sunflower: { c: '#f6c33b', bloom(p, c) {
-      for (let k = 0; k < 10; k++) {
-        const t = (k / 10) * Math.PI * 2;
-        p.ell(8.5 + Math.cos(t) * 3.6, 5 + Math.sin(t) * 3.2, 1.4, 1.4, k % 2 ? c : ramp(c).mid);
-      }
-      p.sEll(8.5, 5, 2.4, 2.2, '#7a4a2a');
-    } },
-    lavender: { c: '#9b7fd1', bloom(p, c) {
-      for (const x of [5, 8, 11]) for (let y = 1; y < 8; y += 2) p.rect(x, y + (x === 8 ? -1 : 1), 2, 2, y < 3 ? ramp(c).hi : c);
-    } },
-    bluebell: { c: '#5a8fe0', bloom(p, c) {
-      p.line(8, 2, 12, 4, '#4f8a43');
-      for (const [x, y] of [[5, 4], [9, 6], [12, 7]]) {
-        p.sEll(x + 0.5, y + 0.5, 2, 1.8, c);
-        p.set(x, y + 2, ramp(c).lo);
-        p.set(x + 1, y + 2, ramp(c).lo);
-      }
-    } },
+    tulip: { c: '#e85d75', bloom: ['h.b.m', 'hbhbm', 'bbbbm', 'mbbml', '.mml.'], at: [[2, 4], [9, 1], [6, 7]] },
+    rose: { c: '#ef7fa0', bloom: ['.hbb.', 'hbmhm', 'bmhml', 'mbmbl', '.mll.'], at: [[1, 5], [9, 2], [6, 0]] },
+    daisy: { c: '#fbf7ef', bloom: ['..w.w..', '.wwwww.', 'wwyyyww', '.wyYyW.', 'wwyYYWW', '.wWWWW.', '..W.W..'], at: [[0, 4], [8, 1]] },
+    sunflower: { c: '#f6c33b', tall: true, bloom: ['..y.y.y..', '.yyyyyyy.', 'yyKkkkKyy', '.yKkKkkY.', 'yyKkkkKYy', '.yKkkKkY.', 'yyKKkKKYy', '.yYYYYYY.', '..Y.Y.Y..'], at: [[3, 0]] },
+    lavender: { c: '#9b7fd1', spikes: [[4, 3], [8, 1], [12, 4]] },
+    bluebell: { c: '#5a8fe0', bells: [[3, 6], [6, 8], [10, 4], [13, 6]] },
   };
+  const LEAF = '#5f9e4f';
+  const STEM = '#4a8a3c';
 
   function soilMound(p) {
-    p.sEll(8, 13.5, 5, 2, '#8a6244');
-    p.set(6, 13, '#6b4a33');
-    p.set(10, 14, '#6b4a33');
+    const H = p.h;
+    p.ell(8, H - 2.2, 5.2, 1.7, '#7a5238');
+    p.ell(8, H - 2.7, 4.2, 1.1, '#8a6244');
+    p.set(6, H - 2, '#5e3e2a');
+    p.set(10, H - 2, '#5e3e2a');
   }
-  function stem(p, top) {
-    const G = '#4f8a43';
-    p.rect(8, top, 1, 14 - top, G);
-    p.poly([[8, 11], [4, 8.5], [5, 11]], '#6aa35a');
-    p.poly([[9, 10], [13, 7.5], [12, 10]], ramp('#6aa35a').mid);
+  // 底下两片宽叶子
+  function leafPair(p, big) {
+    const H = p.h;
+    const L = ramp(LEAF);
+    const w = big ? 7 : 5;
+    p.poly([[8, H - 2], [8 - w, H - 7], [8 - w + 1, H - 5], [7, H - 3]], LEAF);
+    p.line(8 - w + 1, H - 6, 7, H - 3, L.hi);
+    p.poly([[9, H - 2], [8 + w, H - 8], [8 + w - 1, H - 5], [10, H - 3]], L.mid);
+    p.line(9, H - 3, 8 + w - 1, H - 7, L.base);
+  }
+  function bloomAt(p, map, x0, y0, c) {
+    const R = ramp(c);
+    const col = { h: R.hi, b: c, m: R.mid, l: R.lo, w: '#fbf7ef', W: '#d8d0c4', y: '#f6c33b', Y: '#d89a2a', k: '#7a4a2a', K: '#5a3420' };
+    map.forEach((row, j) => {
+      for (let i = 0; i < row.length; i++) if (row[i] !== '.') p.set(x0 + i, y0 + j, col[row[i]]);
+    });
   }
   function flower(p, kind, stage) {
     const F = FLOWERS[kind] || FLOWERS.tulip;
+    const H = p.h;
+    const R = ramp(F.c);
     soilMound(p);
     if (stage === 0) {
-      p.set(7, 12, '#e8d8b0');
-      p.set(9, 12, '#e8d8b0');
+      p.set(7, H - 3, '#e8d8b0');
+      p.set(9, H - 3, '#e8d8b0');
       return;
     }
     if (stage === 1) {
-      p.rect(8, 9, 1, 4, '#4f8a43');
-      p.poly([[8, 10], [5, 8], [6, 10]], '#6aa35a');
-      p.poly([[9, 10], [12, 8], [11, 10]], ramp('#6aa35a').mid);
+      p.line(8, H - 2, 8, H - 6, STEM);
+      p.poly([[8, H - 5], [4, H - 8], [5, H - 5]], LEAF);
+      p.poly([[9, H - 6], [13, H - 9], [12, H - 6]], ramp(LEAF).mid);
       return;
     }
-    stem(p, stage === 2 ? 6 : 5);
+    leafPair(p, F.tall);
+    // 茎：从底下分到每朵花
+    const heads = F.spikes || F.bells || F.at;
+    const size = F.bloom ? [F.bloom[0].length, F.bloom.length] : [2, 2];
+    for (const [x, y] of heads) {
+      const tx = F.bloom ? x + Math.floor(size[0] / 2) : x;
+      const ty = F.bloom ? y + size[1] - 1 : y + 2;
+      p.line(8, H - 3, tx, ty, STEM);
+    }
     if (stage === 2) {
-      p.sEll(8.5, 5, 1.8, 2.4, '#6aa35a');
-      p.rect(8, 3, 1, 2, F.c);
+      // 花苞：绿色的萼片包着一点花色
+      for (const [x, y] of heads) {
+        const tx = F.bloom ? x + Math.floor(size[0] / 2) : x;
+        const ty = F.bloom ? y + size[1] - 2 : y + 1;
+        p.sEll(tx + 0.5, ty, 1.6, 2, ramp(LEAF).mid);
+        p.set(tx, ty - 2, F.c);
+        p.set(tx + (F.tall ? 1 : 0), ty - 1, R.hi);
+      }
       return;
     }
-    F.bloom(p, F.c);
+    if (F.bloom) for (const [x, y] of F.at) bloomAt(p, F.bloom, x, y, F.c);
+    if (F.spikes)
+      for (const [x, y] of F.spikes)
+        for (let k = 0; k < 7; k++) {
+          const c = k < 2 ? R.hi : k % 2 ? R.mid : F.c;
+          p.set(x + (k % 2), y + k, c);
+          p.set(x + 1 - (k % 2), y + k, k % 2 ? F.c : R.mid);
+        }
+    if (F.bells)
+      for (const [x, y] of F.bells) {
+        bloomAt(p, ['.h.', 'hbm', 'bbm', 'm.l'], x - 1, y, F.c);
+      }
   }
 
   // 灌木（16×16）
@@ -3007,26 +3236,26 @@ window.MARGIN_ART = (function () {
   };
   function shrub(p, kind, stage) {
     const S = SHRUBS[kind] || SHRUBS.bush;
-    p.ell(8, 14.5, 6, 1.5, 'rgba(40,30,20,.2)');
+    p.ell(8, 14.5, 6.5, 1.5, 'rgba(40,30,20,.22)');
     if (stage === 0) {
       soilMound(p);
-      p.rect(8, 9, 1, 4, '#4f8a43');
-      p.poly([[8, 10], [5, 8], [6, 10]], '#6aa35a');
+      p.line(8, 13, 8, 10, STEM);
+      p.poly([[8, 11], [5, 9], [6, 11]], LEAF);
+      p.poly([[9, 11], [12, 9], [11, 11]], ramp(LEAF).mid);
       return;
     }
-    const k = stage === 1 ? 0.65 : 1;
-    canopy(p, [[8, 10, 6.5 * k, 4.5 * k], [5, 8.5 - 2 * k, 3.5 * k, 3 * k], [11, 8.5 - 2 * k, 3.5 * k, 3 * k]].map(([x, y, a, b]) => [x, y + (1 - k) * 4, a, b]), S.c);
-    if (stage === 2 && S.dots) {
-      const pts = S.big ? [[4, 7], [9, 5], [11, 9], [6, 10]] : [[5, 8], [9, 6], [11, 10], [7, 11], [12, 7]];
-      for (const [x, y] of pts) {
-        if (S.big) {
-          p.sEll(x + 1, y + 1, 1.8, 1.6, S.dots);
-        } else {
-          p.set(x, y, S.dots);
-          p.set(x + 1, y, lighten(S.dots, 0.15));
-        }
-      }
+    if (stage === 1) {
+      leafClumps(p, [[8, 11, 4.6, 3.4], [6, 9.5, 2.6, 2.2], [10.5, 9.5, 2.6, 2.2]], S.c, { r: 2.1, seed: 3 });
+      return;
     }
+    leafClumps(p, [[8, 10.5, 7, 4.4], [4.5, 8, 3.6, 3.2], [11.5, 7.5, 3.8, 3.4], [8, 6.5, 3.6, 3]], S.c, { r: 2.5, seed: kind.length });
+    if (S.dots && S.big) leafClumps(p, [[4, 7, 2.2, 1.9], [9, 5, 2.4, 2], [12, 9, 2.2, 1.9], [6, 10, 2, 1.8]], S.dots, { r: 1.3, seed: 5 });
+    else if (S.dots)
+      for (const [x, y] of [[4, 8], [8, 6], [11, 9], [6, 11], [12, 7], [9, 10]]) {
+        p.set(x, y, S.dots);
+        p.set(x + 1, y, ramp(S.dots).mid);
+        p.set(x, y - 1, lighten(S.dots, 0.2));
+      }
   }
 
   // 草（16×16，蒲苇和狼尾草长大后是 16×24）：stage 0 刚种下、1 发芽、2 长好
@@ -4293,11 +4522,12 @@ window.MARGIN_ART = (function () {
 
   function grassSprite(kind, stage) {
     const tall = (GRASSES[kind] || {}).tall && stage >= 2;
-    return cached('grass:' + kind + ':' + stage, () => build(16, tall ? 24 : 16, (q) => grassPlant(q, kind, stage), { outline: false }));
+    return cached('grass:' + kind + ':' + stage, () => build(16, tall ? 24 : 16, (q) => grassPlant(q, kind, stage)));
   }
 
   function flowerSprite(kind, stage) {
-    return cached('flower:' + kind + ':' + stage, () => build(16, 16, (q) => flower(q, kind, stage)));
+    const tall = (FLOWERS[kind] || {}).tall && stage >= 2;
+    return cached('flower:' + kind + ':' + stage, () => build(16, tall ? 24 : 16, (q) => flower(q, kind, stage)));
   }
 
   function shrubSprite(kind, stage) {
@@ -6453,7 +6683,7 @@ window.MARGIN_PETS = {
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
       '<div class="set-row"><div><div class="t">宠物在页面上走动</div></div><div>' + chipsHtml('petRoam', [[true, '开'], [false, '关']]) +
-      '<div class="d">陪你背单词的那只宠物会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在花园和「商店 → 我的宠物」里出现。</div></div></div>' +
+      '<div class="d">陪你背单词的宠物在页面上走动、说话。</div></div></div>' +
       '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
@@ -7075,7 +7305,7 @@ window.MARGIN_PETS = {
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.0';
+  const APP_VERSION = '0.5.1';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -7471,14 +7701,14 @@ window.MARGIN_PETS = {
 
   // ================= 金币、宠物、花园 =================
   // 背单词攒金币，在商店买宠物、种子、水、肥料、装饰、家具、宠物用品和装扮。
-  // 花园一直留着：买来的树、花、草、灌木种下以后浇水施肥慢慢长大；每周一给上一周拍一张快照。
+  // 花园：买来的树、花、草、灌木种下以后浇水施肥慢慢长大。
   // 宠物可以养好几只，每只都有饱腹和心情，每天往下掉，掉到 0 会生病，要吃药，生病太久会死。
 
   const PETS = window.MARGIN_PETS || { species: [], trees: [], shop: [], lines: {}, refund: {} };
   const ART = window.MARGIN_ART;
   const SPECIES = new Map(PETS.species.map((s) => [s.id, s]));
   const TREES = new Map(PETS.trees.map((t) => [t.id, t]));
-  // 树种子的货架由树的列表生成
+  // 杂货店里的树种子由树的列表生成
   const SHELVES = PETS.shop.map((sh) =>
     sh.items === 'TREES' ? Object.assign({}, sh, { items: PETS.trees.map((t) => ({ id: 'tseed.' + t.id, name: t.name, price: t.price, use: 'plant', plant: ['tree', t.id] })) }) : sh
   );
@@ -7529,11 +7759,12 @@ window.MARGIN_PETS = {
   // 左下角是池塘，四周是树林。花园可以花金币扩建三次，往右、往下变大，原来的东西位置不变。
   const TILE = 16;
   const GB = 2; // 外圈两格是树林
+  // 花园都是 4:3，和画面一样
   const LANDS = [
-    { w: 40, h: 28, price: 0 },
-    { w: 50, h: 34, price: 6000 },
-    { w: 60, h: 40, price: 15000 },
-    { w: 72, h: 46, price: 30000 },
+    { w: 40, h: 30, price: 0 },
+    { w: 48, h: 36, price: 6000 },
+    { w: 56, h: 42, price: 15000 },
+    { w: 64, h: 48, price: 30000 },
   ];
   const HOUSE = { x: 16, y: 4, w: 9, h: 4 }; // 房子占的格子，门在下沿正中（第 20 列）
   const DOOR_X = HOUSE.x + Math.floor(HOUSE.w / 2);
@@ -8062,7 +8293,6 @@ window.MARGIN_PETS = {
         refund += PETS.refund[id];
         old.owned = old.owned.filter((x) => x !== id);
       }
-      if (refund) notes.push('旧的宠物配饰（眼镜、领结、围巾等）新版没有了');
     }
     if (!W.migrated) {
       W.migrated = 1;
@@ -8098,7 +8328,7 @@ window.MARGIN_PETS = {
           for (const slot of ['hat', 'color']) if (old.wear && old.wear[slot]) p.wear[slot] = old.wear[slot];
           state.petMain = p.id;
           bagAdd('food.kibble', 6); // 新版要喂饭了，先送几份宠物粮
-          notes.push(p.name + '现在也要吃饭了，送你 6 份宠物粮');
+          notes.push('送你 6 份宠物粮');
         }
         for (const g of old.graves || []) state.petGraves.push({ name: g.name, sp: g.species, born: g.born, died: g.died });
         state.petWardrobe = (old.owned || []).filter((id) => ITEMS.has(id));
@@ -8130,7 +8360,6 @@ window.MARGIN_PETS = {
       }
       delete state.pet;
       delete state.forest;
-      if (refund) notes.push('专注种树和解锁品种改成直接买种子、买宠物');
     }
     // 没有位置的树（0.3 迁移过来的）和压在房子、路上的东西，挪到空地上
     // 没有位置的（0.3 迁移过来的树）先排在房子左边一排，再挪到最近的空地
@@ -8619,18 +8848,32 @@ window.MARGIN_PETS = {
 
   // 画面放大几倍：默认大约看到 30 格宽（和星露谷差不多），也可以自己拉近拉远（1–5 倍，整数倍像素才清楚）
   Scene.prototype.autoScale = function () {
-    const avail = Math.max(300, this.wrap.clientWidth || 960);
-    return Math.max(2, Math.min(4, Math.round(avail / 480)));
+    return Math.max(2, Math.min(4, Math.round(this.box()[0] / 480)));
+  };
+
+  // 画面是 4:3：先按页面宽度算，太高了就按窗口高度算
+  Scene.prototype.box = function () {
+    const page = this.wrap.parentElement;
+    const avail = Math.max(280, (page && page.clientWidth) || this.wrap.clientWidth || 960);
+    const maxH = Math.max(210, window.innerHeight - 200);
+    let w = avail;
+    let h = Math.round((w * 3) / 4);
+    if (h > maxH) {
+      h = maxH;
+      w = Math.round((h * 4) / 3);
+    }
+    return [w, h];
   };
 
   Scene.prototype.fit = function () {
     if (!this.canvas) return;
-    const avail = Math.max(300, this.wrap.clientWidth || 960);
-    const maxH = Math.max(300, Math.min(window.innerHeight - 230, 760));
+    const [bw, bh] = this.box();
+    this.wrap.style.width = bw + 'px';
+    this.wrap.style.height = bh + 'px';
     const z = state.settings.zoom;
     const scale = z >= 1 && z <= 5 ? z : this.autoScale();
-    const vw = Math.min(this.w * TILE, Math.floor(avail / scale));
-    const vh = Math.min(this.h * TILE, Math.floor(maxH / scale));
+    const vw = Math.min(this.w * TILE, Math.floor(bw / scale));
+    const vh = Math.min(this.h * TILE, Math.floor(bh / scale));
     this.scale = scale;
     this.vw = vw;
     this.vh = vh;
@@ -9254,8 +9497,8 @@ window.MARGIN_PETS = {
       const show = p && performance.now() < this.bubbleUntil;
       this.bubble.classList.toggle('show', !!show);
       if (show) {
-        this.bubble.style.left = (p.x - cx) * this.scale + 'px';
-        this.bubble.style.top = (p.y - 34 - cy) * this.scale + 'px';
+        this.bubble.style.left = this.canvas.offsetLeft + (p.x - cx) * this.scale + 'px';
+        this.bubble.style.top = this.canvas.offsetTop + (p.y - 34 - cy) * this.scale + 'px';
       }
     }
   };
@@ -9554,14 +9797,10 @@ window.MARGIN_PETS = {
     return n;
   }
 
-  // 一件东西是做什么的（背包和货架上的小字）
+  // 一件东西的效果（背包和杂货店里的小字）
   function itemNote(it) {
     if (it.use === 'feed') return '饱腹 +' + it.food + (it.mood ? ' · 心情 +' + it.mood : '');
     if (it.use === 'toy') return '心情 +' + it.mood;
-    if (it.use === 'fishfood') return '喂饱池塘里所有的鱼';
-    if (it.use === 'medicine') return '治好生病的宠物';
-    if (it.use === 'water') return '浇一次水长一阶';
-    if (it.use === 'fert') return '施一次肥长一阶';
     return '';
   }
 
@@ -9707,7 +9946,7 @@ window.MARGIN_PETS = {
 
   const SHOP_TABS = [
     ['status', '我的宠物'],
-    ['shelf', '货架'],
+    ['shelf', '杂货店'],
     ['adopt', '宠物店'],
     ['goals', '挑战与成就'],
     ['rules', '金币规则'],
@@ -9798,7 +10037,6 @@ window.MARGIN_PETS = {
       '<div class="ph-info"><h2 class="h2">' + esc(p.name) + ' <button class="link" data-act="renamePet" data-pet="' + p.id + '">改名</button></h2>' +
       '<p class="muted">' + sp.name + ' · 第 ' + petAge(p) + ' 天 · <b class="' + (petLow(p) ? 'bad' : '') + '">' + petLabel(p) + '</b></p>' +
       careBar('饱腹', p.food, p.sick) + careBar('心情', p.mood, p.sick) +
-      (p.sick ? '<p class="muted small">要吃药才能好，生病 ' + CARE.sickDays + ' 天没吃药会死</p>' : '') +
       '<div class="use-row">' + careButtons(p) + '<button class="link" data-act="openShelf" data-shelf="petcare">' + (p.sick && !bagHas('medicine') ? '买药' : '买吃的和玩具') + '</button></div>' +
       '<div class="actions">' +
       (main ? '<span class="tag">正在陪你背单词</span>' : '<button class="btn small ghost" data-act="setMain" data-pet="' + p.id + '">陪我背单词</button>') +
@@ -9821,11 +10059,11 @@ window.MARGIN_PETS = {
     const fish = fishList();
     if (!fish.length) return '';
     return (
-      '<section class="panel pond-card"><div class="head-row"><h2 class="h2">观赏鱼</h2><span class="muted">养在花园的池塘里 · ' + fish.length + ' 条</span></div>' +
+      '<section class="panel pond-card"><div class="head-row"><h2 class="h2">观赏鱼</h2><span class="muted">' + fish.length + ' 条</span></div>' +
       '<div class="fish-grid">' +
       fish.map((f) => '<div class="fish' + (f.sick ? ' sick' : '') + '">' + pxImg(petCanvas('idle', f), 3) + '<div><b>' + esc(f.name) + '</b> <button class="link" data-act="renamePet" data-pet="' + f.id + '">改名</button><span class="muted small">' + SPECIES.get(f.sp).name + ' · ' + petLabel(f) + '</span>' + careBar('饱腹', f.food, f.sick) + careBar('心情', f.mood, f.sick) + (f.sick ? '<div class="use-row">' + careButtons(f) + '</div>' : '') + '</div></div>').join('') +
       '</div><div class="actions">' + (bagHas('fishfood') ? '<button class="btn small" data-act="feedFish">撒鱼食 · 还有 ' + state.world.bag.fishfood + ' 份</button>' : '<button class="btn small ghost" data-act="openShelf" data-shelf="petcare">买鱼食</button>') +
-      '<span class="muted small">在花园里点点池塘里的鱼，它们也会开心</span></div></section>'
+      '</div></section>'
     );
   }
 
@@ -9863,7 +10101,7 @@ window.MARGIN_PETS = {
     return (
       '<div class="shelf-tabs">' + PET_KINDS.map(([id, l]) => '<button class="chip' + (id === kind ? ' on' : '') + '" data-act="adoptKind" data-kind="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<section class="panel adopt"><div class="pet-grid">' + cards + '</div>' +
-      '<div class="adopt-pick">' + pxImg(ART.pet(pick, 'happy'), 3) + '<div><b>' + sp.name + '</b><span class="muted small">' + fmt(sp.price) + ' 金币' + (have ? ' · 已经有 ' + have + ' 只' : '') + (sp.fish ? ' · 养在花园的池塘里，每天要喂鱼食' : ' · 每天要喂饭、陪它玩') + '</span></div>' +
+      '<div class="adopt-pick">' + pxImg(ART.pet(pick, 'happy'), 3) + '<div><b>' + sp.name + '</b><span class="muted small">' + fmt(sp.price) + ' 金币' + (have ? ' · 已经有 ' + have + (sp.fish ? ' 条' : ' 只') : '') + '</span></div>' +
       '<button class="btn" data-act="buyPet" data-id="' + pick + '"' + (state.points.bal >= sp.price ? '' : ' disabled') + '>买一只</button></div></section>'
     );
   }
@@ -9874,7 +10112,7 @@ window.MARGIN_PETS = {
     return petCanvas('idle', Object.assign({}, p, { wear: Object.assign({}, p.wear, { [it.slot]: it.id }) }));
   }
 
-  // 货架上一件东西的样子
+  // 杂货店里一件东西的样子
   function shelfPreview(it) {
     if (it.shelf === 'look') {
       const look = Object.assign(avatarLook(), it.look);
@@ -9903,7 +10141,7 @@ window.MARGIN_PETS = {
       act = '<button class="btn small' + (on ? ' ghost' : '') + '" data-act="lookItem" data-id="' + it.id + '">' + (on ? '脱下' : owned ? '穿上' : '买') + '</button>';
     } else if (it.shelf === 'petlook') {
       const owned = state.petWardrobe.includes(it.id);
-      meta = owned ? '已拥有，在「我的宠物」里换' : fmt(it.price) + ' 金币';
+      meta = owned ? '已拥有' : fmt(it.price) + ' 金币';
       act = owned ? '<button class="btn small ghost" data-act="openShop" data-tab="status">去换</button>' : '<button class="btn small" data-act="buyPetLook" data-id="' + it.id + '">买</button>';
     } else {
       const n = state.world.bag[it.id] || 0;
@@ -9944,14 +10182,11 @@ window.MARGIN_PETS = {
       '<li>每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '，每日挑战和成就另有奖励</li>' +
       '<li>以前错过的词再答错 −' + PTS.again + '</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">宠物</h2><ul>' +
-      '<li>在宠物店买，同一种可以买好几只；鱼养在池塘里</li>' +
       '<li>饱腹每天 −' + CARE.food + '，心情每天 −' + CARE.mood + '；喂饭、玩具、在花园玩、陪你背单词、摸摸它都会回升</li>' +
       '<li>饱腹或心情掉到 0 会生病，吃药才能好；生病 ' + CARE.sickDays + ' 天没吃药就会死</li>' +
-      '<li>选一只陪你背单词，其他的在花园里玩</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">花园</h2><ul>' +
       '<li>买种子种下，每天浇一次水长一阶，施一次肥也长一阶</li>' +
       '<li>树从种子长成大树要 4 阶，花 3 阶，草和灌木 2 阶</li>' +
-      '<li>花园一直留着，可以花金币扩建</li>' +
       '</ul></section>'
     );
   }
@@ -9980,14 +10215,14 @@ window.MARGIN_PETS = {
     let sub;
     if (!pets.length) {
       h = '还没有宠物';
-      sub = '背单词攒金币，在宠物店买一只';
+      sub = '';
     } else {
       h = need.length ? need.map((p) => p.name + petLabel(p)).slice(0, 3).join('，') : pets.length + ' 只宠物都很好';
-      sub = thirsty ? '花园里还有 ' + thirsty + ' 株今天没浇水' : '花园今天都照顾好了';
+      sub = thirsty ? thirsty + ' 株今天还没浇水' : '';
     }
     return (
       '<section class="panel gcard"><div class="gc-pets">' + (pics || pxImg(ART.tree('oak', 4), 1)) + '</div>' +
-      '<div class="gc-main"><p class="label">花园</p><h2 class="h2' + (need.length ? ' bad' : '') + '">' + esc(h) + '</h2><p class="muted">' + sub + '</p>' +
+      '<div class="gc-main"><p class="label">花园</p><h2 class="h2' + (need.length ? ' bad' : '') + '">' + esc(h) + '</h2>' + (sub ? '<p class="muted">' + sub + '</p>' : '') +
       '<div class="actions"><button class="btn ghost" data-act="nav" data-view="garden">去花园</button>' + (pets.length ? '<button class="btn ghost" data-act="openShop" data-tab="status">我的宠物</button>' : '<button class="btn ghost" data-act="openShop" data-tab="adopt">宠物店</button>') + '</div></div></section>'
     );
   }
@@ -10024,7 +10259,7 @@ window.MARGIN_PETS = {
       if (!it || !spend(it.price)) return;
       bagAdd(it.id, it.gives || 1);
       save();
-      toast('买了' + it.name + '，放进背包了');
+      toast('买了' + it.name);
       render();
     },
     lookItem(t) {
@@ -10050,7 +10285,7 @@ window.MARGIN_PETS = {
       if (!it || state.petWardrobe.includes(it.id) || !spend(it.price)) return;
       state.petWardrobe.push(it.id);
       save();
-      toast('买了' + it.name + '，在「我的宠物」里给它们戴上');
+      toast('买了' + it.name);
       render();
     },
     wearPet(t) {
@@ -10105,7 +10340,7 @@ window.MARGIN_PETS = {
       const p = newPet(sp.id, name.trim().slice(0, 12) || sp.name);
       save();
       roam.x = null;
-      toast(sp.fish ? p.name + '放进池塘了，记得喂鱼食' : p.name + '住进花园了，记得每天喂它');
+      toast(p.name + (sp.fish ? '游进池塘了' : '来到花园了'));
       ui.shopTab = 'status';
       render();
       if (p === mainPet()) setTimeout(() => petSay('hello'), 300);

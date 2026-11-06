@@ -1892,7 +1892,7 @@
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
       '<div class="set-row"><div><div class="t">宠物在页面上走动</div></div><div>' + chipsHtml('petRoam', [[true, '开'], [false, '关']]) +
-      '<div class="d">陪你背单词的那只宠物会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在花园和「商店 → 我的宠物」里出现。</div></div></div>' +
+      '<div class="d">陪你背单词的宠物在页面上走动、说话。</div></div></div>' +
       '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
@@ -2514,7 +2514,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.0';
+  const APP_VERSION = '0.5.1';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -2910,14 +2910,14 @@
 
   // ================= 金币、宠物、花园 =================
   // 背单词攒金币，在商店买宠物、种子、水、肥料、装饰、家具、宠物用品和装扮。
-  // 花园一直留着：买来的树、花、草、灌木种下以后浇水施肥慢慢长大；每周一给上一周拍一张快照。
+  // 花园：买来的树、花、草、灌木种下以后浇水施肥慢慢长大。
   // 宠物可以养好几只，每只都有饱腹和心情，每天往下掉，掉到 0 会生病，要吃药，生病太久会死。
 
   const PETS = window.MARGIN_PETS || { species: [], trees: [], shop: [], lines: {}, refund: {} };
   const ART = window.MARGIN_ART;
   const SPECIES = new Map(PETS.species.map((s) => [s.id, s]));
   const TREES = new Map(PETS.trees.map((t) => [t.id, t]));
-  // 树种子的货架由树的列表生成
+  // 杂货店里的树种子由树的列表生成
   const SHELVES = PETS.shop.map((sh) =>
     sh.items === 'TREES' ? Object.assign({}, sh, { items: PETS.trees.map((t) => ({ id: 'tseed.' + t.id, name: t.name, price: t.price, use: 'plant', plant: ['tree', t.id] })) }) : sh
   );
@@ -2968,11 +2968,12 @@
   // 左下角是池塘，四周是树林。花园可以花金币扩建三次，往右、往下变大，原来的东西位置不变。
   const TILE = 16;
   const GB = 2; // 外圈两格是树林
+  // 花园都是 4:3，和画面一样
   const LANDS = [
-    { w: 40, h: 28, price: 0 },
-    { w: 50, h: 34, price: 6000 },
-    { w: 60, h: 40, price: 15000 },
-    { w: 72, h: 46, price: 30000 },
+    { w: 40, h: 30, price: 0 },
+    { w: 48, h: 36, price: 6000 },
+    { w: 56, h: 42, price: 15000 },
+    { w: 64, h: 48, price: 30000 },
   ];
   const HOUSE = { x: 16, y: 4, w: 9, h: 4 }; // 房子占的格子，门在下沿正中（第 20 列）
   const DOOR_X = HOUSE.x + Math.floor(HOUSE.w / 2);
@@ -3501,7 +3502,6 @@
         refund += PETS.refund[id];
         old.owned = old.owned.filter((x) => x !== id);
       }
-      if (refund) notes.push('旧的宠物配饰（眼镜、领结、围巾等）新版没有了');
     }
     if (!W.migrated) {
       W.migrated = 1;
@@ -3537,7 +3537,7 @@
           for (const slot of ['hat', 'color']) if (old.wear && old.wear[slot]) p.wear[slot] = old.wear[slot];
           state.petMain = p.id;
           bagAdd('food.kibble', 6); // 新版要喂饭了，先送几份宠物粮
-          notes.push(p.name + '现在也要吃饭了，送你 6 份宠物粮');
+          notes.push('送你 6 份宠物粮');
         }
         for (const g of old.graves || []) state.petGraves.push({ name: g.name, sp: g.species, born: g.born, died: g.died });
         state.petWardrobe = (old.owned || []).filter((id) => ITEMS.has(id));
@@ -3569,7 +3569,6 @@
       }
       delete state.pet;
       delete state.forest;
-      if (refund) notes.push('专注种树和解锁品种改成直接买种子、买宠物');
     }
     // 没有位置的树（0.3 迁移过来的）和压在房子、路上的东西，挪到空地上
     // 没有位置的（0.3 迁移过来的树）先排在房子左边一排，再挪到最近的空地
@@ -4058,18 +4057,32 @@
 
   // 画面放大几倍：默认大约看到 30 格宽（和星露谷差不多），也可以自己拉近拉远（1–5 倍，整数倍像素才清楚）
   Scene.prototype.autoScale = function () {
-    const avail = Math.max(300, this.wrap.clientWidth || 960);
-    return Math.max(2, Math.min(4, Math.round(avail / 480)));
+    return Math.max(2, Math.min(4, Math.round(this.box()[0] / 480)));
+  };
+
+  // 画面是 4:3：先按页面宽度算，太高了就按窗口高度算
+  Scene.prototype.box = function () {
+    const page = this.wrap.parentElement;
+    const avail = Math.max(280, (page && page.clientWidth) || this.wrap.clientWidth || 960);
+    const maxH = Math.max(210, window.innerHeight - 200);
+    let w = avail;
+    let h = Math.round((w * 3) / 4);
+    if (h > maxH) {
+      h = maxH;
+      w = Math.round((h * 4) / 3);
+    }
+    return [w, h];
   };
 
   Scene.prototype.fit = function () {
     if (!this.canvas) return;
-    const avail = Math.max(300, this.wrap.clientWidth || 960);
-    const maxH = Math.max(300, Math.min(window.innerHeight - 230, 760));
+    const [bw, bh] = this.box();
+    this.wrap.style.width = bw + 'px';
+    this.wrap.style.height = bh + 'px';
     const z = state.settings.zoom;
     const scale = z >= 1 && z <= 5 ? z : this.autoScale();
-    const vw = Math.min(this.w * TILE, Math.floor(avail / scale));
-    const vh = Math.min(this.h * TILE, Math.floor(maxH / scale));
+    const vw = Math.min(this.w * TILE, Math.floor(bw / scale));
+    const vh = Math.min(this.h * TILE, Math.floor(bh / scale));
     this.scale = scale;
     this.vw = vw;
     this.vh = vh;
@@ -4693,8 +4706,8 @@
       const show = p && performance.now() < this.bubbleUntil;
       this.bubble.classList.toggle('show', !!show);
       if (show) {
-        this.bubble.style.left = (p.x - cx) * this.scale + 'px';
-        this.bubble.style.top = (p.y - 34 - cy) * this.scale + 'px';
+        this.bubble.style.left = this.canvas.offsetLeft + (p.x - cx) * this.scale + 'px';
+        this.bubble.style.top = this.canvas.offsetTop + (p.y - 34 - cy) * this.scale + 'px';
       }
     }
   };
@@ -4993,14 +5006,10 @@
     return n;
   }
 
-  // 一件东西是做什么的（背包和货架上的小字）
+  // 一件东西的效果（背包和杂货店里的小字）
   function itemNote(it) {
     if (it.use === 'feed') return '饱腹 +' + it.food + (it.mood ? ' · 心情 +' + it.mood : '');
     if (it.use === 'toy') return '心情 +' + it.mood;
-    if (it.use === 'fishfood') return '喂饱池塘里所有的鱼';
-    if (it.use === 'medicine') return '治好生病的宠物';
-    if (it.use === 'water') return '浇一次水长一阶';
-    if (it.use === 'fert') return '施一次肥长一阶';
     return '';
   }
 
@@ -5146,7 +5155,7 @@
 
   const SHOP_TABS = [
     ['status', '我的宠物'],
-    ['shelf', '货架'],
+    ['shelf', '杂货店'],
     ['adopt', '宠物店'],
     ['goals', '挑战与成就'],
     ['rules', '金币规则'],
@@ -5237,7 +5246,6 @@
       '<div class="ph-info"><h2 class="h2">' + esc(p.name) + ' <button class="link" data-act="renamePet" data-pet="' + p.id + '">改名</button></h2>' +
       '<p class="muted">' + sp.name + ' · 第 ' + petAge(p) + ' 天 · <b class="' + (petLow(p) ? 'bad' : '') + '">' + petLabel(p) + '</b></p>' +
       careBar('饱腹', p.food, p.sick) + careBar('心情', p.mood, p.sick) +
-      (p.sick ? '<p class="muted small">要吃药才能好，生病 ' + CARE.sickDays + ' 天没吃药会死</p>' : '') +
       '<div class="use-row">' + careButtons(p) + '<button class="link" data-act="openShelf" data-shelf="petcare">' + (p.sick && !bagHas('medicine') ? '买药' : '买吃的和玩具') + '</button></div>' +
       '<div class="actions">' +
       (main ? '<span class="tag">正在陪你背单词</span>' : '<button class="btn small ghost" data-act="setMain" data-pet="' + p.id + '">陪我背单词</button>') +
@@ -5260,11 +5268,11 @@
     const fish = fishList();
     if (!fish.length) return '';
     return (
-      '<section class="panel pond-card"><div class="head-row"><h2 class="h2">观赏鱼</h2><span class="muted">养在花园的池塘里 · ' + fish.length + ' 条</span></div>' +
+      '<section class="panel pond-card"><div class="head-row"><h2 class="h2">观赏鱼</h2><span class="muted">' + fish.length + ' 条</span></div>' +
       '<div class="fish-grid">' +
       fish.map((f) => '<div class="fish' + (f.sick ? ' sick' : '') + '">' + pxImg(petCanvas('idle', f), 3) + '<div><b>' + esc(f.name) + '</b> <button class="link" data-act="renamePet" data-pet="' + f.id + '">改名</button><span class="muted small">' + SPECIES.get(f.sp).name + ' · ' + petLabel(f) + '</span>' + careBar('饱腹', f.food, f.sick) + careBar('心情', f.mood, f.sick) + (f.sick ? '<div class="use-row">' + careButtons(f) + '</div>' : '') + '</div></div>').join('') +
       '</div><div class="actions">' + (bagHas('fishfood') ? '<button class="btn small" data-act="feedFish">撒鱼食 · 还有 ' + state.world.bag.fishfood + ' 份</button>' : '<button class="btn small ghost" data-act="openShelf" data-shelf="petcare">买鱼食</button>') +
-      '<span class="muted small">在花园里点点池塘里的鱼，它们也会开心</span></div></section>'
+      '</div></section>'
     );
   }
 
@@ -5302,7 +5310,7 @@
     return (
       '<div class="shelf-tabs">' + PET_KINDS.map(([id, l]) => '<button class="chip' + (id === kind ? ' on' : '') + '" data-act="adoptKind" data-kind="' + id + '">' + l + '</button>').join('') + '</div>' +
       '<section class="panel adopt"><div class="pet-grid">' + cards + '</div>' +
-      '<div class="adopt-pick">' + pxImg(ART.pet(pick, 'happy'), 3) + '<div><b>' + sp.name + '</b><span class="muted small">' + fmt(sp.price) + ' 金币' + (have ? ' · 已经有 ' + have + ' 只' : '') + (sp.fish ? ' · 养在花园的池塘里，每天要喂鱼食' : ' · 每天要喂饭、陪它玩') + '</span></div>' +
+      '<div class="adopt-pick">' + pxImg(ART.pet(pick, 'happy'), 3) + '<div><b>' + sp.name + '</b><span class="muted small">' + fmt(sp.price) + ' 金币' + (have ? ' · 已经有 ' + have + (sp.fish ? ' 条' : ' 只') : '') + '</span></div>' +
       '<button class="btn" data-act="buyPet" data-id="' + pick + '"' + (state.points.bal >= sp.price ? '' : ' disabled') + '>买一只</button></div></section>'
     );
   }
@@ -5313,7 +5321,7 @@
     return petCanvas('idle', Object.assign({}, p, { wear: Object.assign({}, p.wear, { [it.slot]: it.id }) }));
   }
 
-  // 货架上一件东西的样子
+  // 杂货店里一件东西的样子
   function shelfPreview(it) {
     if (it.shelf === 'look') {
       const look = Object.assign(avatarLook(), it.look);
@@ -5342,7 +5350,7 @@
       act = '<button class="btn small' + (on ? ' ghost' : '') + '" data-act="lookItem" data-id="' + it.id + '">' + (on ? '脱下' : owned ? '穿上' : '买') + '</button>';
     } else if (it.shelf === 'petlook') {
       const owned = state.petWardrobe.includes(it.id);
-      meta = owned ? '已拥有，在「我的宠物」里换' : fmt(it.price) + ' 金币';
+      meta = owned ? '已拥有' : fmt(it.price) + ' 金币';
       act = owned ? '<button class="btn small ghost" data-act="openShop" data-tab="status">去换</button>' : '<button class="btn small" data-act="buyPetLook" data-id="' + it.id + '">买</button>';
     } else {
       const n = state.world.bag[it.id] || 0;
@@ -5383,14 +5391,11 @@
       '<li>每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '，每日挑战和成就另有奖励</li>' +
       '<li>以前错过的词再答错 −' + PTS.again + '</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">宠物</h2><ul>' +
-      '<li>在宠物店买，同一种可以买好几只；鱼养在池塘里</li>' +
       '<li>饱腹每天 −' + CARE.food + '，心情每天 −' + CARE.mood + '；喂饭、玩具、在花园玩、陪你背单词、摸摸它都会回升</li>' +
       '<li>饱腹或心情掉到 0 会生病，吃药才能好；生病 ' + CARE.sickDays + ' 天没吃药就会死</li>' +
-      '<li>选一只陪你背单词，其他的在花园里玩</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">花园</h2><ul>' +
       '<li>买种子种下，每天浇一次水长一阶，施一次肥也长一阶</li>' +
       '<li>树从种子长成大树要 4 阶，花 3 阶，草和灌木 2 阶</li>' +
-      '<li>花园一直留着，可以花金币扩建</li>' +
       '</ul></section>'
     );
   }
@@ -5419,14 +5424,14 @@
     let sub;
     if (!pets.length) {
       h = '还没有宠物';
-      sub = '背单词攒金币，在宠物店买一只';
+      sub = '';
     } else {
       h = need.length ? need.map((p) => p.name + petLabel(p)).slice(0, 3).join('，') : pets.length + ' 只宠物都很好';
-      sub = thirsty ? '花园里还有 ' + thirsty + ' 株今天没浇水' : '花园今天都照顾好了';
+      sub = thirsty ? thirsty + ' 株今天还没浇水' : '';
     }
     return (
       '<section class="panel gcard"><div class="gc-pets">' + (pics || pxImg(ART.tree('oak', 4), 1)) + '</div>' +
-      '<div class="gc-main"><p class="label">花园</p><h2 class="h2' + (need.length ? ' bad' : '') + '">' + esc(h) + '</h2><p class="muted">' + sub + '</p>' +
+      '<div class="gc-main"><p class="label">花园</p><h2 class="h2' + (need.length ? ' bad' : '') + '">' + esc(h) + '</h2>' + (sub ? '<p class="muted">' + sub + '</p>' : '') +
       '<div class="actions"><button class="btn ghost" data-act="nav" data-view="garden">去花园</button>' + (pets.length ? '<button class="btn ghost" data-act="openShop" data-tab="status">我的宠物</button>' : '<button class="btn ghost" data-act="openShop" data-tab="adopt">宠物店</button>') + '</div></div></section>'
     );
   }
@@ -5463,7 +5468,7 @@
       if (!it || !spend(it.price)) return;
       bagAdd(it.id, it.gives || 1);
       save();
-      toast('买了' + it.name + '，放进背包了');
+      toast('买了' + it.name);
       render();
     },
     lookItem(t) {
@@ -5489,7 +5494,7 @@
       if (!it || state.petWardrobe.includes(it.id) || !spend(it.price)) return;
       state.petWardrobe.push(it.id);
       save();
-      toast('买了' + it.name + '，在「我的宠物」里给它们戴上');
+      toast('买了' + it.name);
       render();
     },
     wearPet(t) {
@@ -5544,7 +5549,7 @@
       const p = newPet(sp.id, name.trim().slice(0, 12) || sp.name);
       save();
       roam.x = null;
-      toast(sp.fish ? p.name + '放进池塘了，记得喂鱼食' : p.name + '住进花园了，记得每天喂它');
+      toast(p.name + (sp.fish ? '游进池塘了' : '来到花园了'));
       ui.shopTab = 'status';
       render();
       if (p === mainPet()) setTimeout(() => petSay('hello'), 300);
