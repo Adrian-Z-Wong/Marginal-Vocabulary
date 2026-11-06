@@ -142,6 +142,7 @@
     rootGoal: 10, // 每天学几个词根
     forceAll: false, // 强制全对：某一步有错，这一步整组重来，直到全对才进入下一步
     petRoam: true, // 宠物在页面上走动
+    zoom: 0, // 花园画面放大几倍，0 是自动
   };
 
   function freshState() {
@@ -157,15 +158,18 @@
       rootStats: {},
       rootWrong: {},
       rootLog: {},
-      // 积分：bal 余额，earned 累计赚到，groups / perfects 累计完成 / 全对的组数，days 每天的明细，ach 已获得的成就
+      // 金币：bal 余额，earned 累计赚到，groups / perfects 累计完成 / 全对的组数，days 每天的明细，ach 已获得的成就
       points: { bal: 0, earned: 0, groups: 0, perfects: 0, days: {}, ach: {} },
-      // 宠物：status none / alive / dead；mood 状态 0–100，moodDay 算到哪天了，sick 生病；since 上次离开时的累计积分；
-      //       unlocked 解锁的品种；owned / wear 装扮
-      pet: { status: 'none', species: 'crab', name: '', born: 0, died: 0, mood: null, moodDay: null, sick: false, sickSince: 0, since: 0, unlocked: [], owned: [], wear: {}, graves: [] },
-      forest: { unlocked: [], pick: 'oak', minutes: 25 }, // 解锁的树种、下次种哪种、专注多久
-      // 花园：week 这周的星期一；plants 这周的树、花、灌木；decor 装饰（每周留着）；room 屋里的家具；bag 背包；
-      //       look / owned 人物的装扮；hist 往期花园（星期一 -> 统计和布局）
-      world: { week: 0, plants: [], decor: [], room: [], bag: {}, look: {}, owned: [], hist: {}, gift: 0, migrated: 0 },
+      // 宠物：每只 { id, sp 品种, name, born, food 饱腹, mood 心情, day 算到哪天了, sick, sickSince, wear 装扮 }；
+      // petMain 陪你背单词的那只；petGraves 去世的宠物；petWardrobe 买过的宠物装扮（每只都能戴）
+      pets: [],
+      petMain: 0,
+      petSeq: 0,
+      petGraves: [],
+      petWardrobe: [],
+      // 花园：land 扩建了几次；plants 树、花、草、灌木；decor 装饰；room 屋里的家具；bag 背包；
+      //       look / owned 人物的装扮；hist 每周的花园快照（星期一 -> 统计和布局）；grown 一共种大了多少（t 树、f 花）
+      world: { land: 0, week: 0, plants: [], decor: [], room: [], bag: {}, look: {}, owned: [], hist: {}, grown: { t: 0, f: 0 }, gift: 0, migrated: 0, v5: 0 },
     };
   }
 
@@ -176,8 +180,13 @@
       if (saved[k] && typeof saved[k] === 'object') s[k] = saved[k];
     }
     Object.assign(s.settings, saved.settings || {});
-    for (const k of ['points', 'pet', 'forest', 'world']) if (saved[k] && typeof saved[k] === 'object') Object.assign(s[k], saved[k]);
-    if (saved.garden && typeof saved.garden === 'object') s.garden = saved.garden; // 0.3 版的森林记录，迁移时用
+    for (const k of ['points', 'world']) if (saved[k] && typeof saved[k] === 'object') Object.assign(s[k], saved[k]);
+    for (const k of ['pets', 'petGraves', 'petWardrobe']) if (Array.isArray(saved[k])) s[k] = saved[k];
+    for (const k of ['petMain', 'petSeq']) if (typeof saved[k] === 'number') s[k] = saved[k];
+    // 旧版本的数据，迁移时用：0.3 的森林记录、0.3 / 0.4 的单只宠物和树种解锁
+    if (saved.garden && typeof saved.garden === 'object') s.garden = saved.garden;
+    if (saved.pet && typeof saved.pet === 'object') s.pet = saved.pet;
+    if (saved.forest && typeof saved.forest === 'object') s.forest = saved.forest;
     return s;
   }
 
@@ -1051,6 +1060,7 @@
 
   function go(view) {
     if (ui.view === 'practice' && view !== 'practice') stopSpeech();
+    if (view !== ui.view) ui.tool = null; // 换页面就把手里的工具放下
     ui.view = view;
     render();
     window.scrollTo(0, 0);
@@ -1299,8 +1309,12 @@
   // ================= 渲染：框架 =================
 
   function render() {
-    petMoodTick();
-    worldTick();
+    petsTick();
+    if (ui.petGone && ui.petGone.length) {
+      const names = ui.petGone;
+      ui.petGone = null;
+      setTimeout(() => toast(names.join('、') + ' 生病太久，去世了'), 600);
+    }
     if (scene && ui.view !== 'garden' && ui.view !== 'room') {
       scene.stop();
       scene = null;
@@ -1326,7 +1340,7 @@
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots', room: 'garden' }[ui.view] || ui.view;
     return (
       '<header class="top"><button class="brand" data-act="nav" data-view="home"><span class="brand-mark">' + ICON_SPARK + '</span>Marginal Vocabulary</button>' +
-      '<div class="top-r">' + focusChipHtml() + '<button class="pts" data-act="nav" data-view="shop" title="积分 · Lv ' + levelOf(state.points.earned) + '"><span class="pts-ic"></span>' + fmt(state.points.bal) + '</button><nav class="nav">' +
+      '<div class="top-r"><button class="pts" data-act="nav" data-view="shop" title="金币 · Lv ' + levelOf(state.points.earned) + '"><span class="pts-ic"></span>' + fmt(state.points.bal) + '</button><nav class="nav">' +
       nav.map(([v, label]) => '<button data-act="nav" data-view="' + v + '" class="' + (active === v ? 'on' : '') + '">' + label + '</button>').join('') +
       '</nav></div></header>'
     );
@@ -1395,7 +1409,7 @@
       '<p class="muted">' + (st ? '已连续打卡 ' + st + ' 天' : '今天背一组，就开始打卡') + '</p>' +
       '<div class="mini"><div><b>' + fmt(day.n) + '</b><span>今天答题</span></div><div><b>' + (day.n ? Math.round((day.r / day.n) * 100) + '%' : '—') + '</b><span>今天正确率</span></div></div></div>' +
       '</div>' +
-      focusCardHtml() +
+      gardenCardHtml() +
       challengesHtml(true) +
       '<section class="panel prefs"><p class="label">背什么</p>' +
       '<div class="pref"><span class="t">词库</span><label class="select"><select data-act="setBook" aria-label="词库">' + bookOptionsHtml(book) + '</select></label></div>' +
@@ -1878,7 +1892,7 @@
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
       '<div class="set-row"><div><div class="t">宠物在页面上走动</div></div><div>' + chipsHtml('petRoam', [[true, '开'], [false, '关']]) +
-      '<div class="d">领养宠物后，它会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在花园和「商店 → 宠物状态」里出现。</div></div></div>' +
+      '<div class="d">陪你背单词的那只宠物会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在花园和「商店 → 我的宠物」里出现。</div></div></div>' +
       '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
@@ -2500,7 +2514,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.4.0';
+  const APP_VERSION = '0.5.0';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -2894,23 +2908,25 @@
     },
   };
 
-  // ================= 积分、宠物、花园 =================
-  // 背单词攒积分，在商店买种子、水、肥料、装饰、家具、宠物用品和装扮。
-  // 花园每周一换新：专注计时种的树、自己种的花和灌木都长在里面，装饰和房子一直留着；
-  // 宠物有「状态」，每天会往下掉，玩玩具、在花园里玩、陪你背单词都会让它好起来，掉到 0 会生病，要吃药。
+  // ================= 金币、宠物、花园 =================
+  // 背单词攒金币，在商店买宠物、种子、水、肥料、装饰、家具、宠物用品和装扮。
+  // 花园一直留着：买来的树、花、草、灌木种下以后浇水施肥慢慢长大；每周一给上一周拍一张快照。
+  // 宠物可以养好几只，每只都有饱腹和心情，每天往下掉，掉到 0 会生病，要吃药，生病太久会死。
 
   const PETS = window.MARGIN_PETS || { species: [], trees: [], shop: [], lines: {}, refund: {} };
   const ART = window.MARGIN_ART;
   const SPECIES = new Map(PETS.species.map((s) => [s.id, s]));
   const TREES = new Map(PETS.trees.map((t) => [t.id, t]));
-  const SHELVES = PETS.shop;
+  // 树种子的货架由树的列表生成
+  const SHELVES = PETS.shop.map((sh) =>
+    sh.items === 'TREES' ? Object.assign({}, sh, { items: PETS.trees.map((t) => ({ id: 'tseed.' + t.id, name: t.name, price: t.price, use: 'plant', plant: ['tree', t.id] })) }) : sh
+  );
   const ITEMS = new Map();
   for (const sh of SHELVES) for (const it of sh.items) ITEMS.set(it.id, Object.assign({ shelf: sh.id }, it));
-  const PTS = { right: 2, combo: 5, perfect: 10, rootDone: 5, rootPerfect: 5, goal: 30, rootGoal: 15, again: 1, adopt: 100 };
-  // 宠物状态：领养时 80，每天掉 20；背单词、在花园玩、摸摸它每天各有上限
-  const MOOD = { start: 80, decay: 20, cure: 50, studyCap: 20, playCap: 25, petCap: 5, sickDays: 3 };
-  // 解锁宠物品种要花的积分
-  const SPECIES_PRICE = { crab: 0, cat: 200, hamster: 200, shiba: 300, rabbit: 300, duck: 400, penguin: 500, frog: 500, fox: 600 };
+  const PTS = { right: 2, combo: 5, perfect: 10, rootDone: 5, rootPerfect: 5, goal: 30, rootGoal: 15, again: 1 };
+  // 照顾宠物：买来时饱腹、心情都是 80；每天饱腹掉 35、心情掉 20（鱼掉得少一点）；
+  // 有一样掉到 0 就生病，吃药能好；生病 3 天没吃药就死了。背单词、在花园玩、摸摸它，每天各有上限
+  const CARE = { start: 80, food: 35, mood: 20, fishFood: 30, fishMood: 12, cure: 50, studyCap: 20, playCap: 25, petCap: 6, sickDays: 3 };
 
   // 每日挑战：每天从里面挑 3 个
   const CHALLENGES = [
@@ -2920,7 +2936,7 @@
     { id: 'combo10', text: '连续答对 10 题', reward: 10, goal: 10, val: (d) => d.combo },
     { id: 'roots1', text: '学完 1 组词根', reward: 10, goal: 1, val: (d) => d.roots },
     { id: 'goal', text: '完成今天的新词目标', reward: 10, goal: 1, val: (d) => (d.goalDone ? 1 : 0) },
-    { id: 'tree1', text: '专注种活一棵树', reward: 15, goal: 1, val: (d) => d.trees || 0 },
+    { id: 'feed2', text: '喂宠物 2 次', reward: 10, goal: 2, val: (d) => d.feed || 0 },
     { id: 'water3', text: '给花园浇 3 次水', reward: 10, goal: 3, val: (d) => d.water || 0 },
   ];
 
@@ -2939,66 +2955,75 @@
     { id: 'perfect50', name: '稳', desc: '累计 50 组全对', reward: 200, goal: 50, val: () => state.points.perfects },
     { id: 'roots50', name: '寻根', desc: '学过 50 个词根', reward: 50, goal: 50, val: () => Object.keys(state.rootStats).length },
     { id: 'roots300', name: '根深', desc: '学过 300 个词根', reward: 150, goal: 300, val: () => Object.keys(state.rootStats).length },
-    { id: 'pet7', name: '好伙伴', desc: '宠物陪你 7 天', reward: 50, goal: 7, val: () => petAge() },
-    { id: 'pet30', name: '老朋友', desc: '宠物陪你 30 天', reward: 200, goal: 30, val: () => petAge() },
-    { id: 'tree1', name: '第一棵树', desc: '专注种活第一棵树', reward: 20, goal: 1, val: () => gardenCount('t') },
-    { id: 'tree10', name: '小树林', desc: '种活 10 棵树', reward: 100, goal: 10, val: () => gardenCount('t') },
-    { id: 'tree50', name: '森林', desc: '种活 50 棵树', reward: 300, goal: 50, val: () => gardenCount('t') },
+    { id: 'pet7', name: '好伙伴', desc: '有一只宠物陪了你 7 天', reward: 50, goal: 7, val: () => petAge() },
+    { id: 'pet30', name: '老朋友', desc: '有一只宠物陪了你 30 天', reward: 200, goal: 30, val: () => petAge() },
+    { id: 'tree1', name: '第一棵树', desc: '种出第一棵大树', reward: 20, goal: 1, val: () => gardenCount('t') },
+    { id: 'tree10', name: '小树林', desc: '种出 10 棵大树', reward: 100, goal: 10, val: () => gardenCount('t') },
+    { id: 'tree50', name: '森林', desc: '种出 50 棵大树', reward: 300, goal: 50, val: () => gardenCount('t') },
     { id: 'flower10', name: '花匠', desc: '养开 10 朵花', reward: 50, goal: 10, val: () => gardenCount('f') },
     { id: 'home5', name: '小家', desc: '屋里摆 5 件家具', reward: 50, goal: 5, val: () => state.world.room.length },
   ];
 
-  // 专注时长：分钟、至少要答的题数、种活的奖励
-  const FOCUS_OPTS = [
-    [10, 20, 10],
-    [25, 50, 30],
-    [45, 90, 60],
-    [60, 120, 90],
-  ];
-  const LEAVE_LIMIT = 60000; // 离开应用超过 1 分钟，树就枯萎
-
-  // 花园的布局：上方是房子，门口有信箱；土路从门口往下，分别通向左边和下边的出口；
-  // 左边一片是果园（专注种的树长在这里），中间和右下是开阔的空地，左下角是池塘，四周是树林
+  // 花园的布局（模仿星露谷的农场）：上方是房子，门口一条小路往下，分别通向左边和下边的出口；
+  // 左下角是池塘，四周是树林。花园可以花金币扩建三次，往右、往下变大，原来的东西位置不变。
   const TILE = 16;
-  const GW = 30;
-  const GH = 20;
   const GB = 2; // 外圈两格是树林
-  const HOUSE = { x: 17, y: 3, w: 5, h: 3 }; // 房子占的格子，门在下沿中间
+  const LANDS = [
+    { w: 40, h: 28, price: 0 },
+    { w: 50, h: 34, price: 6000 },
+    { w: 60, h: 40, price: 15000 },
+    { w: 72, h: 46, price: 30000 },
+  ];
+  const HOUSE = { x: 16, y: 4, w: 9, h: 4 }; // 房子占的格子，门在下沿正中（第 20 列）
+  const DOOR_X = HOUSE.x + Math.floor(HOUSE.w / 2);
+  let GW = 40;
+  let GH = 28;
   const GPATH = new Set();
   const GEXIT = new Set();
   const GPOND = new Set();
-  for (let y = 5; y <= 10; y++) GPATH.add('19,' + y); // 门口往下的小路，正对着门（第 5 行藏在房子后面，路一直接到台阶）
-  for (let x = 0; x <= 19; x++) for (const y of [9, 10]) GPATH.add(x + ',' + y);
-  for (let y = 11; y < GH; y++) for (const x of [10, 11]) GPATH.add(x + ',' + y);
-  for (const k of GPATH) {
-    const [x, y] = k.split(',').map(Number);
-    if (x < GB || y >= GH - GB) GEXIT.add(k);
-  }
-  for (let y = 13; y <= 16; y++) for (let x = 3; x <= 6; x++) GPOND.add(x + ',' + y);
-  for (const k of ['4,12', '5,12', '7,14', '7,15', '4,17']) GPOND.add(k);
-  // 地上本来就有的石头、蘑菇和信箱（不能收走）
-  const GFIXED = [
-    { id: 'sign', x: 22, y: 5 },
-    { id: 'mailbox', x: 21, y: 7 },
-    { id: 'logs', x: 15, y: 5 },
-    { id: 'stone', x: 25, y: 4 },
-    { id: 'stone', x: 15, y: 16 },
-    { id: 'mushroom', x: 26, y: 16 },
-    { id: 'mushroom', x: 3, y: 7 },
-    { id: 'stone', x: 8, y: 12 },
-  ];
-  const ORCHARD = { x0: 3, y0: 3, x1: 14, y1: 7 }; // 果园：专注种的树优先长在这里
-  const RW = 12;
-  const RH = 9;
+  for (let y = 18; y <= 21; y++) for (let x = 4; x <= 8; x++) GPOND.add(x + ',' + y);
+  for (const k of ['5,17', '6,17', '9,19', '9,20', '5,22', '6,22']) GPOND.add(k);
 
-  // ---------- 积分 ----------
+  // 按花园大小重新铺路：门口往下到第 13 行，往左通到西边出口，往下通到南边出口
+  function layoutGarden() {
+    const L = LANDS[Math.max(0, Math.min(LANDS.length - 1, (state.world && state.world.land) || 0))];
+    GW = L.w;
+    GH = L.h;
+    GPATH.clear();
+    GEXIT.clear();
+    for (let y = HOUSE.y + HOUSE.h - 1; y <= 13; y++) GPATH.add(DOOR_X + ',' + y); // 最上面一格藏在房子后面，路一直接到台阶
+    for (let x = 0; x <= DOOR_X; x++) for (const y of [12, 13]) GPATH.add(x + ',' + y);
+    for (let y = 14; y < GH; y++) for (const x of [13, 14]) GPATH.add(x + ',' + y);
+    for (const k of GPATH) {
+      const [x, y] = k.split(',').map(Number);
+      if (x < GB || y >= GH - GB) GEXIT.add(k);
+    }
+  }
+
+  // 地上本来就有的东西（不能收走）
+  const GFIXED = [
+    { id: 'sign', x: 26, y: 7 },
+    { id: 'mailbox', x: 22, y: 8 },
+    { id: 'logs', x: 13, y: 6 },
+    { id: 'stone', x: 31, y: 5 },
+    { id: 'stone', x: 19, y: 22 },
+    { id: 'stone', x: 10, y: 16 },
+    { id: 'mushroom', x: 34, y: 21 },
+    { id: 'mushroom', x: 4, y: 9 },
+    { id: 'mushroom', x: 29, y: 15 },
+  ];
+  const RW = 16;
+  const RH = 11;
+  const RDOOR = [7, 8]; // 小屋的门在下沿正中两格
+
+  // ---------- 金币 ----------
 
   function pday() {
     const k = todayKey();
     return state.points.days[k] || (state.points.days[k] = { e: 0, x: 0, s: 0, groups: 0, perfect: 0, roots: 0, right: 0, combo: 0, ch: {} });
   }
 
-  // 等级看累计赚到的积分：第 n 级需要 50 × n × (n − 1)
+  // 等级看累计赚到的金币：第 n 级需要 50 × n × (n − 1)
   function levelOf(e) {
     let n = 1;
     while (50 * (n + 1) * n <= e) n++;
@@ -3014,6 +3039,8 @@
     p.earned += n;
     pday().e += n;
     floatPts('+' + n, false);
+    const chip = document.querySelector('.pts');
+    if (chip && chip.lastChild) chip.lastChild.textContent = fmt(p.bal);
     const after = levelOf(p.earned);
     if (after > before) {
       petSay('level', { n: after });
@@ -3033,7 +3060,7 @@
   function spend(n) {
     const p = state.points;
     if (p.bal < n) {
-      toast('积分不够（还差 ' + (n - p.bal) + '）');
+      toast('金币不够（还差 ' + fmt(n - p.bal) + '）');
       return false;
     }
     p.bal -= n;
@@ -3051,15 +3078,10 @@
   // 每答一题：答对加分、连对奖励；同一个词再错扣一点；宠物陪你背，状态也会好一点
   function rewardAnswer(holder, ok, repeatWrong) {
     const d = pday();
-    if (focus) {
-      focus.n++;
-      saveFocus();
-      updateFocusUi();
-    }
     if (ok) {
       gain(PTS.right);
       d.right++;
-      moodUp(0.5, 'studyMood', MOOD.studyCap);
+      moodUp(0.5, 'studyMood', CARE.studyCap);
       holder.combo = (holder.combo || 0) + 1;
       d.combo = Math.max(d.combo, holder.combo);
       if (holder.combo % 5 === 0) gain(PTS.combo);
@@ -3168,7 +3190,7 @@
 
   function itemIcon(it) {
     if (!it) return ART.icon('bag');
-    if (it.plant) return ART.icon('seed', it.plant[0] === 'flower' ? ART.FLOWER_COLOR[it.plant[1]] : '#6aa35a');
+    if (it.plant) return ART.icon('seed', it.plant[0] === 'flower' ? ART.FLOWER_COLOR[it.plant[1]] : it.plant[0] === 'tree' ? '#a0703a' : it.plant[0] === 'grass' ? '#9ab84a' : '#6aa35a');
     if (it.decor) return ART.decor(it.decor);
     return ART.icon(it.icon || 'bag');
   }
@@ -3182,97 +3204,144 @@
   }
 
   // ---------- 宠物 ----------
+  // 可以养好几只：都住在花园里，鱼养在池塘里；其中一只（自己选）会跑出来陪你背单词。
+  // 每只都有饱腹和心情，每天往下掉；有一样掉到 0 就生病，吃药能好；生病 3 天没吃药就死了。
+
+  function isFish(p) {
+    return !!(p && (SPECIES.get(p.sp) || {}).fish);
+  }
+
+  function landPets() {
+    return state.pets.filter((p) => SPECIES.has(p.sp) && !isFish(p));
+  }
+
+  function fishList() {
+    return state.pets.filter((p) => SPECIES.has(p.sp) && isFish(p));
+  }
+
+  function petById(id) {
+    return state.pets.find((p) => p.id === id) || null;
+  }
+
+  // 陪你背单词的那只（不是鱼）
+  function mainPet() {
+    const p = petById(state.petMain);
+    return p && SPECIES.has(p.sp) && !isFish(p) ? p : null;
+  }
 
   function petAlive() {
-    return state.pet.status === 'alive' && SPECIES.has(state.pet.species);
+    return !!mainPet();
   }
 
-  function petAge() {
-    return petAlive() ? dayNum() - state.pet.born + 1 : 0;
+  function petAge(p) {
+    if (p) return dayNum() - p.born + 1;
+    return state.pets.reduce((m, x) => Math.max(m, dayNum() - x.born + 1), 0);
   }
 
-  function petSick() {
-    return petAlive() && !!state.pet.sick;
+  function petSick(p) {
+    p = p || mainPet();
+    return !!p && !!p.sick;
   }
 
-  // 需要照顾：生病了，或者状态比较低
+  function petLow(p) {
+    return p.sick || p.food < 30 || p.mood < 30;
+  }
+
+  // 有没有哪只需要照顾：生病、饿了或者不开心
   function petNeedsCare() {
-    return petAlive() && (state.pet.sick || state.pet.mood < 30);
+    return state.pets.some((p) => SPECIES.has(p.sp) && petLow(p));
   }
 
-  // 每过一天状态掉一截；掉到 0 生病；生病几天没吃药，它就离开了
-  function petMoodTick() {
-    const pet = state.pet;
-    if (pet.status !== 'alive') return;
+  function newPet(sp, name) {
+    state.petSeq = (state.petSeq || 0) + 1;
+    const p = { id: state.petSeq, sp, name: name || (SPECIES.get(sp) || {}).name || '宠物', born: dayNum(), food: CARE.start, mood: CARE.start, day: dayNum(), sick: false, sickSince: 0, wear: {} };
+    state.pets.push(p);
+    if (!isFish(p) && !mainPet()) state.petMain = p.id;
+    return p;
+  }
+
+  // 每过一天：饱腹、心情各掉一截；有一样到 0 就生病；生病太久就死了
+  function petsTick() {
     const today = dayNum();
-    if (pet.moodDay == null) pet.moodDay = today;
     let changed = false;
-    while (pet.moodDay < today) {
-      pet.moodDay++;
-      changed = true;
-      if (pet.sick) continue;
-      pet.mood = Math.max(0, (pet.mood == null ? MOOD.start : pet.mood) - MOOD.decay);
-      if (pet.mood <= 0) {
-        pet.sick = true;
-        pet.sickSince = pet.moodDay;
+    const gone = [];
+    for (const p of state.pets) {
+      if (p.day == null) p.day = today;
+      const fish = isFish(p);
+      while (p.day < today) {
+        p.day++;
+        changed = true;
+        if (p.sick) continue;
+        p.food = Math.max(0, p.food - (fish ? CARE.fishFood : CARE.food));
+        p.mood = Math.max(0, p.mood - (fish ? CARE.fishMood : CARE.mood));
+        if (p.food <= 0 || p.mood <= 0) {
+          p.sick = true;
+          p.sickSince = p.day;
+        }
       }
+      if (p.sick && today - p.sickSince >= CARE.sickDays) gone.push(p);
     }
-    if (pet.sick && today - pet.sickSince >= MOOD.sickDays) {
-      pet.status = 'dead';
-      pet.died = today;
-      pet.graves.push({ name: pet.name, species: pet.species, born: pet.born, died: today });
-      pet.since = state.points.earned; // 再领养要重新攒积分
-      pet.sick = false;
-      ui.petGone = true;
+    for (const p of gone) {
+      state.pets = state.pets.filter((x) => x !== p);
+      state.petGraves.push({ name: p.name, sp: p.sp, born: p.born, died: today });
+      ui.petGone = (ui.petGone || []).concat(p.name);
       changed = true;
+    }
+    if (!mainPet()) {
+      const next = landPets()[0];
+      state.petMain = next ? next.id : 0;
     }
     if (changed) save();
   }
 
-  // 状态往上加；capKey 是今天这一类的上限（比如背单词最多加 20）
-  function moodUp(n, capKey, cap) {
-    const pet = state.pet;
-    if (!petAlive() || pet.sick) return 0;
+  // 饱腹 / 心情往上加；capKey 是今天这一类的上限（比如背单词最多加 20），每只分开算
+  function careUp(p, field, n, capKey, cap) {
+    if (!p || p.sick || n <= 0) return 0;
     if (capKey) {
       const d = pday();
-      const used = d[capKey] || 0;
+      const key = capKey + ':' + p.id;
+      const used = d[key] || 0;
       n = Math.min(n, cap - used);
       if (n <= 0) return 0;
-      d[capKey] = used + n;
+      d[key] = used + n;
     }
-    pet.mood = Math.min(100, (pet.mood || 0) + n);
+    p[field] = Math.min(100, (p[field] || 0) + n);
     return n;
   }
 
-  function moodLabel() {
-    const pet = state.pet;
-    if (pet.sick) return '生病了';
-    const m = pet.mood || 0;
-    return m >= 70 ? '精神很好' : m >= 40 ? '还不错' : m >= 15 ? '有点无聊' : '快不开心了';
+  // 陪你背单词的那只心情往上加
+  function moodUp(n, capKey, cap) {
+    return careUp(mainPet(), 'mood', n, capKey, cap);
   }
 
-  function adoptProgress() {
-    return Math.max(0, state.points.earned - state.pet.since);
+  function petLabel(p) {
+    if (p.sick) return '生病了';
+    if (p.food < 30) return '饿了';
+    if (p.mood < 30) return '不太开心';
+    return p.food >= 70 && p.mood >= 70 ? '很好' : '还不错';
   }
 
-  function petLook() {
-    const w = state.pet.wear || {};
+  function lookOf(p) {
+    const w = (p && p.wear) || {};
     const hat = ITEMS.get(w.hat);
     const color = ITEMS.get(w.color);
     return { hat: hat && hat.pet ? hat.pet.hat : '', hue: color && color.pet ? color.pet.hue : 0 };
   }
 
-  function petCanvas(frame, species, look) {
-    const l = look || petLook();
-    return ART.pet(species || state.pet.species, frame, l.hue, l.hat);
+  function petCanvas(frame, p) {
+    p = p || mainPet();
+    if (!p) return null;
+    const l = lookOf(p);
+    return ART.pet(p.sp, frame, l.hue, l.hat);
   }
 
-  function petLine(kind, vars) {
+  function petLine(kind, vars, p) {
+    p = p || mainPet();
     const list = PETS.lines[kind];
-    if (!list || !list.length) return '';
-    const sp = SPECIES.get(state.pet.species);
+    if (!p || !list || !list.length) return '';
+    const sp = SPECIES.get(p.sp);
     const t = list[Math.floor(Math.random() * list.length)];
-    return t.replace(/\{(\w+)\}/g, (_, k) => (k === 'name' ? state.pet.name : k === 'sound' ? (sp ? sp.sound : '') : vars && vars[k] != null ? vars[k] : ''));
+    return t.replace(/\{(\w+)\}/g, (_, k) => (k === 'name' ? p.name : k === 'sound' ? (sp ? sp.sound : '') : vars && vars[k] != null ? vars[k] : ''));
   }
 
   // ---------- 人物 ----------
@@ -3296,20 +3365,14 @@
     return n - dow;
   }
 
-  function weekLabel(ws) {
-    const a = new Date(ws * 86400000);
-    const b = new Date((ws + 6) * 86400000);
-    return a.getUTCMonth() + 1 + ' 月 ' + a.getUTCDate() + ' 日 – ' + (b.getUTCMonth() !== a.getUTCMonth() ? b.getUTCMonth() + 1 + ' 月 ' : '') + b.getUTCDate() + ' 日';
+  // 长到第几阶段：种下以后每浇一天水长一阶，施一次肥也长一阶（b 是迁移过来时已经长好的阶段）
+  // 树 0 种子、1 发芽、2 小树苗、3 小树、4 大树；花 0–3（3 开花）；灌木和草 0–2
+  function plantMax(pl) {
+    return pl.k === 'tree' ? 4 : pl.k === 'flower' ? 3 : 2;
   }
 
   function plantStage(pl) {
-    if (pl.k === 'tree') return pl.ok ? 3 : 0;
-    const max = pl.k === 'flower' ? 3 : 2;
-    return Math.min(max, (pl.w || []).length + (pl.f || 0));
-  }
-
-  function plantMax(pl) {
-    return pl.k === 'flower' ? 3 : pl.k === 'shrub' ? 2 : 3;
+    return Math.min(plantMax(pl), (pl.b || 0) + (pl.w || []).length + (pl.f || 0));
   }
 
   function wateredToday(pl) {
@@ -3317,7 +3380,7 @@
   }
 
   function plantName(pl) {
-    if (pl.k === 'tree') return ((TREES.get(pl.sp) || {}).name || '树') + (pl.ok ? '' : '（枯萎）');
+    if (pl.k === 'tree') return (TREES.get(pl.sp) || {}).name || '树';
     const it = ITEMS.get('seed.' + pl.sp);
     return it ? it.name : pl.sp;
   }
@@ -3331,41 +3394,28 @@
     return d ? [d.tw, d.th] : [1, 1];
   }
 
-  // 每周一：上周的花园存进历史，植物清空，装饰留着
+  // 花园的规模：长大的树、开了的花、长好的灌木和草，还有正在长的
   function summarize(plants, decor) {
-    const s = { t: 0, d: 0, f: 0, s: 0, p: [], dc: [] };
+    const s = { t: 0, y: 0, f: 0, s: 0, g: 0, w: GW, h: GH, p: [], dc: [] };
     for (const pl of plants) {
       const st = plantStage(pl);
-      if (pl.k === 'tree') pl.ok ? s.t++ : s.d++;
-      else if (pl.k === 'flower' && st >= 3) s.f++;
-      else if (pl.k === 'shrub' && st >= 2) s.s++;
-      s.p.push([pl.k, pl.sp, pl.x, pl.y, st, pl.ok ? 1 : 0]);
+      const full = st >= plantMax(pl);
+      if (pl.k === 'tree') full ? s.t++ : s.y++;
+      else if (pl.k === 'flower' && full) s.f++;
+      else if (pl.k === 'shrub' && full) s.s++;
+      else if (pl.k === 'grass' && full) s.g++;
+      s.p.push([pl.k, pl.sp, pl.x, pl.y, st]);
     }
     for (const d of decor || []) s.dc.push([d.id, d.x, d.y]);
     return s;
   }
 
-  function worldTick() {
-    const W = state.world;
-    const wk = weekStart();
-    if (!W.week) W.week = wk;
-    if (W.week !== wk) {
-      if (W.plants.length) W.hist[W.week] = summarize(W.plants, W.decor);
-      W.plants = [];
-      W.week = wk;
-      save();
-    }
-  }
-
-  // 一共种活了多少棵树（t）/ 开了多少朵花（f），连历史一起算
+  // 一共种大了多少棵树（t）/ 养开了多少朵花（f）
   function gardenCount(key) {
-    const cur = summarize(state.world.plants, []);
-    let n = cur[key];
-    for (const k in state.world.hist) n += state.world.hist[k][key] || 0;
-    return n;
+    return (state.world.grown && state.world.grown[key]) || 0;
   }
 
-  // 格子上有什么：房子、植物、装饰
+  // 格子上有什么：房子、池塘、地上本来有的东西、植物、装饰
   function gardenOcc(skip) {
     const occ = new Map();
     for (let y = HOUSE.y; y < HOUSE.y + HOUSE.h; y++) for (let x = HOUSE.x; x < HOUSE.x + HOUSE.w; x++) occ.set(x + ',' + y, { house: true });
@@ -3394,70 +3444,143 @@
         const tx = x + i;
         const ty = y + j;
         if (tx < GB || ty < GB || tx >= GW - GB || ty >= GH - GB) return false;
+        // 房子后面被屋顶挡住的那一条，不种也不摆
+        if (ty < HOUSE.y && tx >= HOUSE.x - 1 && tx <= HOUSE.x + HOUSE.w) return false;
         if (GPATH.has(tx + ',' + ty) || occ.has(tx + ',' + ty)) return false;
       }
     return true;
   }
 
-  // 专注种活的树：随便找一块空地种下
-  function plantTree(sp, ok, min) {
-    const occ = gardenOcc();
-    let spots = [];
-    for (let y = ORCHARD.y0; y <= ORCHARD.y1; y++) for (let x = ORCHARD.x0; x <= ORCHARD.x1 - 1; x++) if (gardenFree(x, y, 2, 1, occ)) spots.push([x, y]);
-    if (!spots.length) for (let y = GB; y < GH - GB; y++) for (let x = GB; x < GW - GB - 1; x++) if (gardenFree(x, y, 2, 1, occ)) spots.push([x, y]);
-    const k = todayKey();
-    const pl = { k: 'tree', sp, ok: ok ? 1 : 0, min, t: dayNum(), w: [], f: 0, x: -1, y: -1, day: k };
-    if (spots.length) {
-      const [x, y] = spots[Math.floor(Math.random() * spots.length)];
-      pl.x = x;
-      pl.y = y;
-    }
-    state.world.plants.push(pl);
-    if (scene) scene.dirty = true;
+  // 布局变了以后（比如旧版本的花园），压在房子、路、池塘上的东西挪到最近的空地；实在没地方，装饰收回背包
+  function relocate() {
+    const W = state.world;
+    let moved = 0;
+    const fix = (item, w, h, list) => {
+      if (gardenFree(item.x, item.y, w, h, gardenOcc(item))) return true;
+      const occ = gardenOcc(item);
+      let best = null;
+      let bestD = Infinity;
+      for (let y = GB; y < GH - GB; y++)
+        for (let x = GB; x < GW - GB; x++) {
+          const d = Math.hypot(x - item.x, y - item.y);
+          if (d < bestD && gardenFree(x, y, w, h, occ)) {
+            best = [x, y];
+            bestD = d;
+          }
+        }
+      if (!best) return false;
+      item.x = best[0];
+      item.y = best[1];
+      moved++;
+      return true;
+    };
+    W.plants = W.plants.filter((pl) => {
+      const [w, h] = plantSize(pl);
+      return fix(pl, w, h);
+    });
+    W.decor = W.decor.filter((d) => {
+      const [w, h] = decorSize(d.id);
+      if (fix(d, w, h)) return true;
+      bagAdd('decor.' + d.id, 1);
+      return false;
+    });
+    return moved;
   }
 
-  // 0.3 版的数据：饱食度换成状态，旧的森林记录挪进花园，退回新版没有的宠物配饰
+  // 旧版本的数据：
+  // 0.3 → 饱食度去掉，退回新版没有的宠物配饰，旧的森林记录挪进花园；
+  // 0.4 → 一只宠物变成可以养好几只（加上饱腹），专注种树去掉（退回解锁树种和宠物品种花的金币，长好的树留着），花园变大
   function migrate() {
-    const pet = state.pet;
     const W = state.world;
-    if (pet.fed) delete pet.fed;
-    if (pet.status === 'alive' && pet.mood == null) {
-      pet.mood = MOOD.start;
-      pet.moodDay = dayNum();
-    }
+    const old = state.pet;
     let refund = 0;
-    for (const id of (pet.owned || []).slice()) {
-      if (!PETS.refund[id]) continue;
-      refund += PETS.refund[id];
-      pet.owned = pet.owned.filter((x) => x !== id);
-    }
-    if (pet.wear) {
-      delete pet.wear.face;
-      delete pet.wear.neck;
-    }
-    if (refund) {
-      state.points.bal += refund;
-      setTimeout(() => toast('旧的宠物配饰（眼镜、领结、围巾等）新版没有了，退回 ' + refund + ' 积分'), 1200);
+    const notes = [];
+    if (old) {
+      for (const id of (old.owned || []).slice()) {
+        if (!PETS.refund[id]) continue;
+        refund += PETS.refund[id];
+        old.owned = old.owned.filter((x) => x !== id);
+      }
+      if (refund) notes.push('旧的宠物配饰（眼镜、领结、围巾等）新版没有了');
     }
     if (!W.migrated) {
       W.migrated = 1;
-      const old = state.garden || {};
+      const garden = state.garden || {};
       const wk = weekStart();
       W.week = W.week || wk;
-      for (const day in old) {
-        if (!Array.isArray(old[day])) continue;
+      for (const day in garden) {
+        if (!Array.isArray(garden[day])) continue;
         const n = Math.round(new Date(day + 'T00:00:00Z').getTime() / 86400000);
         const ws = weekStart(n);
-        for (const [sp, ok, min] of old[day]) {
-          if (ws === wk) plantTree(sp, ok, min);
+        for (const [sp, ok] of garden[day]) {
+          if (!ok) continue;
+          if (ws === wk) W.plants.push({ k: 'tree', sp, ok: 1, x: -1, y: -1, w: [], f: 0 });
           else {
-            const h = W.hist[ws] || (W.hist[ws] = { t: 0, d: 0, f: 0, s: 0, p: [], dc: [] });
-            ok ? h.t++ : h.d++;
+            const h = W.hist[ws] || (W.hist[ws] = { t: 0, y: 0, f: 0, s: 0, g: 0, p: [], dc: [] });
+            h.t++;
           }
         }
       }
       delete state.garden;
     }
+    if (!W.v5) {
+      W.v5 = 1;
+      // 宠物：一只变成一个列表
+      if (old) {
+        if (old.status === 'alive' && SPECIES.has(old.species)) {
+          const p = newPet(old.species, old.name);
+          p.born = old.born || dayNum();
+          p.mood = old.mood == null ? CARE.start : old.mood;
+          p.sick = !!old.sick;
+          p.sickSince = old.sickSince || 0;
+          p.wear = {};
+          for (const slot of ['hat', 'color']) if (old.wear && old.wear[slot]) p.wear[slot] = old.wear[slot];
+          state.petMain = p.id;
+          bagAdd('food.kibble', 6); // 新版要喂饭了，先送几份宠物粮
+          notes.push(p.name + '现在也要吃饭了，送你 6 份宠物粮');
+        }
+        for (const g of old.graves || []) state.petGraves.push({ name: g.name, sp: g.species, born: g.born, died: g.died });
+        state.petWardrobe = (old.owned || []).filter((id) => ITEMS.has(id));
+        // 以前花金币解锁的宠物品种，现在改成直接买，退回解锁花的金币
+        const SP_OLD = { cat: 200, hamster: 200, shiba: 300, rabbit: 300, duck: 400, penguin: 500, frog: 500, fox: 600 };
+        for (const id of old.unlocked || []) refund += SP_OLD[id] || 0;
+      }
+      // 专注种树去掉了：退回解锁树种花的金币；种活的树留在花园里，算长大的树；枯萎的清掉
+      const TR_OLD = { pine: 150, cactus: 200, bamboo: 250, sakura: 300, maple: 300, ginkgo: 400, palm: 400, apple: 500 };
+      if (state.forest) for (const id of state.forest.unlocked || []) refund += TR_OLD[id] || 0;
+      W.plants = W.plants.filter((pl) => pl.k !== 'tree' || pl.ok !== 0);
+      for (const pl of W.plants) {
+        if (pl.k === 'tree' && pl.ok != null) {
+          pl.b = 4;
+          delete pl.ok;
+          delete pl.min;
+        }
+      }
+      W.grown = { t: 0, f: 0 };
+      for (const k in W.hist) {
+        W.grown.t += W.hist[k].t || 0;
+        W.grown.f += W.hist[k].f || 0;
+      }
+      for (const pl of W.plants) if (plantStage(pl) >= plantMax(pl)) W.grown[pl.k === 'tree' ? 't' : 'f'] += pl.k === 'tree' || pl.k === 'flower' ? 1 : 0;
+      try {
+        localStorage.removeItem('margin.focus');
+      } catch (e) {
+        /* 没有就算了 */
+      }
+      delete state.pet;
+      delete state.forest;
+      if (refund) notes.push('专注种树和解锁品种改成直接买种子、买宠物');
+    }
+    // 没有位置的树（0.3 迁移过来的）和压在房子、路上的东西，挪到空地上
+    // 没有位置的（0.3 迁移过来的树）先排在房子左边一排，再挪到最近的空地
+    let slot = 0;
+    for (const pl of W.plants)
+      if (pl.x < 0) {
+        pl.x = 4 + (slot % 4) * 3;
+        pl.y = 5 + Math.floor(slot / 4) * 2;
+        slot++;
+      }
+    relocate();
     if (!W.gift) {
       W.gift = 1;
       bagAdd('water', 5);
@@ -3465,193 +3588,12 @@
       bagAdd('seed.daisy', 2);
       bagAdd('treat', 1);
     }
+    if (refund) {
+      state.points.bal += refund;
+      notes.push('退回 ' + fmt(refund) + ' 金币');
+    }
+    if (notes.length) setTimeout(() => toast(notes.join('；')), 1200);
     save();
-  }
-
-  // ---------- 专注种树 ----------
-
-  const FOCUS_KEY = 'margin.focus';
-  // 正在进行的专注单独存一份，每秒更新也不用重写整个进度
-  let focus = (function () {
-    try {
-      return JSON.parse(localStorage.getItem(FOCUS_KEY) || 'null');
-    } catch (e) {
-      return null;
-    }
-  })();
-
-  function saveFocus() {
-    try {
-      if (focus) localStorage.setItem(FOCUS_KEY, JSON.stringify(focus));
-      else localStorage.removeItem(FOCUS_KEY);
-    } catch (e) {
-      /* 存不了就只在内存里 */
-    }
-  }
-
-  function treeOpen(id) {
-    const t = TREES.get(id);
-    return !!t && (!t.price || state.forest.unlocked.includes(id));
-  }
-
-  function focusOpt(min) {
-    return FOCUS_OPTS.find((o) => o[0] === min) || FOCUS_OPTS[1];
-  }
-
-  function focusLeft() {
-    return focus ? Math.max(0, focus.start + focus.min * 60000 - Date.now()) : 0;
-  }
-
-  function focusProgress() {
-    return focus ? Math.min(1, (Date.now() - focus.start) / (focus.min * 60000)) : 0;
-  }
-
-  function clock(ms) {
-    const sec = Math.ceil(ms / 1000);
-    return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
-  }
-
-  // 正在长的树：先是小苗，过一半长成小树，快到时间就是大树
-  function growingTreeHtml(id, p) {
-    const c = p < 0.15 ? ART.flower('tulip', 1) : p < 0.5 ? ART.tree(id, 'sapling') : ART.tree(id);
-    return pxImg(c, c.width === 16 ? 4 : 3, 'grow');
-  }
-
-  function startFocus() {
-    if (focus) return;
-    const o = focusOpt(state.forest.minutes);
-    const tree = treeOpen(state.forest.pick) ? state.forest.pick : 'oak';
-    focus = { start: Date.now(), min: o[0], need: o[1], reward: o[2], tree, n: 0, beat: Date.now(), hiddenAt: 0 };
-    saveFocus();
-    render();
-    petSay('treeStart');
-  }
-
-  function endFocus(ok, why) {
-    if (!focus) return;
-    const f = focus;
-    focus = null;
-    saveFocus();
-    worldTick();
-    plantTree(f.tree, ok, f.min);
-    const name = (TREES.get(f.tree) || {}).name || '树';
-    if (ok) {
-      const d = pday();
-      d.trees = (d.trees || 0) + 1;
-      gain(f.reward);
-      toast('花园里长出一棵' + name + '！+' + f.reward + ' 积分');
-      petSay('treeDone', { n: f.reward });
-      checkChallenges();
-      checkAchievements();
-    } else {
-      toast(why || name + '枯萎了');
-      petSay('treeDead');
-    }
-    save();
-    if (ui.view !== 'practice' && ui.view !== 'rootquiz') render();
-    else updateFocusUi();
-  }
-
-  function focusTick() {
-    if (!focus) return;
-    if (focus.hiddenAt) return; // 离开期间等回来再算
-    if (focusLeft() <= 0) {
-      const name = (TREES.get(focus.tree) || {}).name || '树';
-      if (focus.n >= focus.need) endFocus(true);
-      else endFocus(false, '时间到了，但只答了 ' + focus.n + ' / ' + focus.need + ' 题，' + name + '没长成');
-      return;
-    }
-    focus.beat = Date.now();
-    saveFocus();
-    updateFocusUi();
-  }
-
-  // 只更新计时相关的几个数字，不重画整页（背诵时不打断输入）
-  let lastGrowStage = -1;
-  function updateFocusUi() {
-    const chip = document.getElementById('focus-chip');
-    if (!focus) {
-      if (chip) chip.remove();
-      return;
-    }
-    const t = clock(focusLeft());
-    if (chip) {
-      chip.querySelector('.fc-t').textContent = t;
-      chip.querySelector('.fc-n').textContent = ' · ' + focus.n + '/' + focus.need;
-    }
-    const el = document.getElementById('focus-time');
-    if (el) el.textContent = t;
-    const n = document.getElementById('focus-n');
-    if (n) n.textContent = '已答 ' + focus.n + ' / ' + focus.need + ' 题';
-    const bar = document.getElementById('focus-bar');
-    if (bar) bar.style.width = (focusProgress() * 100).toFixed(1) + '%';
-    const tree = document.getElementById('focus-tree');
-    const p = focusProgress();
-    const stage = p < 0.15 ? 0 : p < 0.5 ? 1 : 2;
-    if (tree && stage !== lastGrowStage) {
-      lastGrowStage = stage;
-      tree.innerHTML = growingTreeHtml(focus.tree, p);
-    }
-  }
-
-  setInterval(focusTick, 1000);
-
-  document.addEventListener('visibilitychange', () => {
-    if (!focus) return;
-    if (document.hidden) {
-      focus.hiddenAt = Date.now();
-      saveFocus();
-      return;
-    }
-    const away = focus.hiddenAt ? Date.now() - focus.hiddenAt : 0;
-    focus.hiddenAt = 0;
-    saveFocus();
-    if (away > LEAVE_LIMIT) endFocus(false, '离开超过 1 分钟，' + ((TREES.get(focus.tree) || {}).name || '树') + '枯萎了');
-    else focusTick();
-  });
-
-  // 打开应用时：上次关掉时还在专注，而且关了超过 1 分钟，树就枯萎了
-  function focusResume() {
-    if (!focus) return;
-    const last = Math.max(focus.beat || 0, focus.hiddenAt || 0);
-    if (Date.now() - last > LEAVE_LIMIT) endFocus(false, '应用关掉太久，' + ((TREES.get(focus.tree) || {}).name || '树') + '枯萎了');
-  }
-
-  function focusChipHtml() {
-    if (!focus) return '';
-    return (
-      '<button class="focus-chip" id="focus-chip" data-act="nav" data-view="home" title="专注种树">' + pxImg(ART.tree(focus.tree), 0.5, 'fc-ic') +
-      '<span class="fc-t">' + clock(focusLeft()) + '</span><span class="fc-n"> · ' + focus.n + '/' + focus.need + '</span></button>'
-    );
-  }
-
-  function focusCardHtml() {
-    if (focus) {
-      lastGrowStage = -1;
-      const name = (TREES.get(focus.tree) || {}).name || '树';
-      return (
-        '<section class="panel focus running"><div class="focus-tree" id="focus-tree">' + growingTreeHtml(focus.tree, focusProgress()) + '</div>' +
-        '<div class="focus-main"><p class="label">正在种 · ' + name + ' · ' + focus.min + ' 分钟</p>' +
-        '<div class="focus-time" id="focus-time">' + clock(focusLeft()) + '</div>' +
-        '<div class="bar"><i id="focus-bar" style="width:' + (focusProgress() * 100).toFixed(1) + '%"></i></div>' +
-        '<p class="muted" id="focus-n">已答 ' + focus.n + ' / ' + focus.need + ' 题</p>' +
-        '<div class="actions"><button class="btn" data-act="startNew">背新词</button><button class="btn ghost" data-act="nav" data-view="roots">学词根</button><button class="link" data-act="giveUpFocus">放弃</button></div></div></section>'
-      );
-    }
-    const f = state.forest;
-    const o = focusOpt(f.minutes);
-    const open = [...TREES.values()].filter((t) => treeOpen(t.id));
-    const pick = treeOpen(f.pick) ? f.pick : 'oak';
-    return (
-      '<section class="panel focus"><div class="focus-tree">' + pxImg(ART.tree(pick), 3) + '</div>' +
-      '<div class="focus-main"><p class="label">专注种树</p><h2 class="h2">背单词，种一棵树</h2>' +
-      '<p class="muted">时间到、答够题数，花园里长出一棵树；中途放弃或离开超过 1 分钟，树会枯萎。</p>' +
-      '<div class="chips">' + FOCUS_OPTS.map((x) => '<button class="chip' + (x[0] === o[0] ? ' on' : '') + '" data-act="focusMin" data-min="' + x[0] + '">' + x[0] + ' 分钟</button>').join('') + '</div>' +
-      '<p class="muted small">至少答 ' + o[1] + ' 题 · 种活 +' + o[2] + ' 积分</p>' +
-      '<div class="tree-pick">' + open.map((t) => '<button class="tp' + (t.id === pick ? ' on' : '') + '" data-act="pickTree" data-id="' + t.id + '" title="' + t.name + '">' + pxImg(ART.tree(t.id), 1) + '</button>').join('') +
-      (open.length < TREES.size ? '<button class="link" data-act="openShelf" data-shelf="trees">更多树种</button>' : '') + '</div>' +
-      '<div class="actions"><button class="btn" data-act="startFocus">开始种树</button></div></div></section>'
-    );
   }
 
   // ---------- 在页面上走动的宠物 ----------
@@ -3706,9 +3648,10 @@
       return;
     }
     petLayer.hidden = false;
-    const key = state.pet.species + '|' + JSON.stringify(state.pet.wear);
+    const mp = mainPet();
+    const key = mp.id + '|' + mp.sp + '|' + JSON.stringify(mp.wear);
     if (petLayer.dataset.key !== key || !petEl()) {
-      petLayer.innerHTML = '<div class="pet" title="' + esc(state.pet.name) + '"><div class="pet-bubble"></div><div class="pet-hop"><img class="pet-img px" width="' + PET_W + '" height="' + PET_H + '" alt="" draggable="false"></div></div>';
+      petLayer.innerHTML = '<div class="pet" title="' + esc(mp.name) + '"><div class="pet-bubble"></div><div class="pet-hop"><img class="pet-img px" width="' + PET_W + '" height="' + PET_H + '" alt="" draggable="false"></div></div>';
       petLayer.dataset.key = key;
     }
     if (roam.x === null) {
@@ -3812,7 +3755,7 @@
     if (say) petSay('wake');
   }
 
-  // 积分变化时，从宠物头上（没有宠物就从顶栏的积分）飘出一个数字
+  // 金币变化时，从宠物头上（没有宠物就从顶栏的金币）飘出一个数字
   function floatPts(text, neg) {
     let x;
     let y;
@@ -3851,15 +3794,27 @@
       const was = roam.sleeping;
       wakePet(false);
       hopPet(onPet);
-      if (moodUp(1, 'petMood', MOOD.petCap)) save();
+      if (moodUp(1, 'petMood', CARE.petCap)) save();
       petSay(was ? 'wake' : petSick() ? 'sick' : 'click');
       return;
     }
+    // 「我的宠物」里点宠物：跳一下，心情好一点
     const stage = ev.target instanceof Element && ev.target.closest('.pet-stage .pet-hop');
     if (stage) {
-      hopPet(stage.closest('.pet-stage'));
-      if (moodUp(1, 'petMood', MOOD.petCap)) save();
-      petSay(petSick() ? 'sick' : 'click');
+      const box = stage.closest('.pet-stage');
+      const p = petById(+box.dataset.pet);
+      hopPet(box);
+      if (p && careUp(p, 'mood', 1, 'petMood', CARE.petCap)) save();
+      const text = petLine(p && p.sick ? 'sick' : 'click', null, p);
+      const b = box.querySelector('.pet-bubble');
+      if (b && text) {
+        b.textContent = text;
+        b.classList.remove('show');
+        void b.offsetWidth;
+        b.classList.add('show');
+        clearTimeout(box._t);
+        box._t = setTimeout(() => b.classList.remove('show'), 3200);
+      }
       return;
     }
     roam.lastAct = Date.now();
@@ -3908,7 +3863,10 @@
     }
     if (petNeedsCare() && Date.now() - roam.careAt > 10 * 60000 && ui.view !== 'practice' && ui.view !== 'rootquiz') {
       roam.careAt = Date.now();
-      petSay(petSick() ? 'sick' : 'low');
+      const mp = mainPet();
+      const other = state.pets.find((p) => p !== mp && SPECIES.has(p.sp) && petLow(p));
+      if (petLow(mp)) petSay(mp.sick ? 'sick' : mp.food < 30 ? 'hungry' : 'low');
+      else if (other) petSay(other.sick ? 'otherSick' : 'otherLow', { n: other.name });
       return;
     }
     if (petSick()) return;
@@ -3972,7 +3930,7 @@
   }
 
   function roomTerrain() {
-    if (!roomCanvas) roomCanvas = ART.room({ w: RW, h: RH, door: [5, 6], seed: 7 });
+    if (!roomCanvas) roomCanvas = ART.room({ w: RW, h: RH, door: RDOOR, seed: 7 });
     return roomCanvas;
   }
 
@@ -3996,7 +3954,7 @@
         const ty = y + j;
         if (tx < 0 || tx >= RW) return false;
         if (D && D.wall ? ty !== 1 : ty < 2 || ty >= RH) return false;
-        if (!D.wall && ty === RH - 1 && (tx === 5 || tx === 6)) return false;
+        if (!D.wall && ty === RH - 1 && RDOOR.includes(tx)) return false;
         if (occ.has(tx + ',' + ty)) return false;
       }
     return true;
@@ -4030,13 +3988,13 @@
       const y = pl.y != null ? pl.y : pl[3];
       if (x < 0) continue;
       const st = pl.k ? plantStage(pl) : pl[4];
-      const ok = pl.k ? pl.ok : pl[5];
       let img;
-      if (k === 'tree') img = ART.tree(sp, ok ? undefined : 'dead');
+      if (k === 'tree') img = ART.tree(sp, st);
       else if (k === 'flower') img = ART.flower(sp, st);
+      else if (k === 'grass') img = ART.grass(sp, st);
       else img = ART.shrub(sp, st);
       const o = objAt(img, x, y, k === 'tree' ? 2 : 1, 1);
-      if (k === 'tree') o.y += 2;
+      if (k === 'tree' && st >= 3) o.y += 2;
       o.plant = live ? pl : null;
       out.push(o);
     }
@@ -4047,14 +4005,22 @@
     this.kind = kind;
     this.w = kind === 'room' ? RW : GW;
     this.h = kind === 'room' ? RH : GH;
-    const sx = kind === 'room' ? 6 * TILE : HOUSE.x * TILE + (HOUSE.w * TILE) / 2;
+    const sx = kind === 'room' ? (RDOOR[0] + 1) * TILE : DOOR_X * TILE + TILE / 2;
     const sy = kind === 'room' ? (RH - 1) * TILE - 2 : (HOUSE.y + HOUSE.h + 1) * TILE;
     this.av = { x: sx, y: sy, tx: sx, ty: sy, path: [], dir: 'front', flip: false, moving: false, act: 0, then: null };
-    this.pet = null;
-    if (kind === 'garden' && petAlive()) {
-      const px = (HOUSE.x + HOUSE.w + 2) * TILE;
-      const py = (HOUSE.y + HOUSE.h + 1) * TILE;
-      this.pet = { x: px, y: py, tx: px, ty: py, moving: false, next: 0, play: 0, flip: false, blink: 0, hop: 0 };
+    // 花园里所有的宠物都出来玩；鱼在池塘里游
+    this.pets = [];
+    this.fish = [];
+    if (kind === 'garden') {
+      landPets().forEach((pet, i) => {
+        const px = (DOOR_X + 3 + (i % 5) * 2) * TILE;
+        const py = (HOUSE.y + HOUSE.h + 2 + Math.floor(i / 5)) * TILE;
+        this.pets.push({ pid: pet.id, x: px, y: py, tx: px, ty: py, path: [], moving: false, next: performance.now() + 800 + i * 400, play: 0, flip: false, blink: 0, hop: 0 });
+      });
+      fishList().forEach((f) => {
+        const [x, y] = pondSpot();
+        this.fish.push({ pid: f.id, x, y, tx: x, ty: y, flip: false, next: 0, v: 7 + Math.random() * 6, hop: 0 });
+      });
     }
     this.cam = { x: 0, y: 0, init: false };
     this.hover = null;
@@ -4073,16 +4039,35 @@
     canvas.addEventListener('click', (ev) => this.click(ev));
     canvas.addEventListener('mousemove', (ev) => this.move(ev));
     canvas.addEventListener('mouseleave', () => (this.hover = null));
+    let acc = 0;
+    canvas.addEventListener(
+      'wheel',
+      (ev) => {
+        if (!ev.ctrlKey && !ev.metaKey) return;
+        ev.preventDefault();
+        acc += ev.deltaY;
+        if (Math.abs(acc) < 40) return;
+        this.zoomBy(acc > 0 ? -1 : 1);
+        acc = 0;
+      },
+      { passive: false }
+    );
     this.fit();
     this.start();
+  };
+
+  // 画面放大几倍：默认大约看到 30 格宽（和星露谷差不多），也可以自己拉近拉远（1–5 倍，整数倍像素才清楚）
+  Scene.prototype.autoScale = function () {
+    const avail = Math.max(300, this.wrap.clientWidth || 960);
+    return Math.max(2, Math.min(4, Math.round(avail / 480)));
   };
 
   Scene.prototype.fit = function () {
     if (!this.canvas) return;
     const avail = Math.max(300, this.wrap.clientWidth || 960);
     const maxH = Math.max(300, Math.min(window.innerHeight - 230, 760));
-    let scale = 3;
-    while (scale > 2 && (this.w * TILE * scale > avail * 1.6 || avail < 16 * 14 * scale)) scale--;
+    const z = state.settings.zoom;
+    const scale = z >= 1 && z <= 5 ? z : this.autoScale();
     const vw = Math.min(this.w * TILE, Math.floor(avail / scale));
     const vh = Math.min(this.h * TILE, Math.floor(maxH / scale));
     this.scale = scale;
@@ -4093,6 +4078,17 @@
     this.canvas.style.width = vw * scale + 'px';
     this.canvas.style.height = vh * scale + 'px';
     this.ctx.imageSmoothingEnabled = false;
+  };
+
+  Scene.prototype.zoomBy = function (d) {
+    const z = Math.max(1, Math.min(5, this.scale + d));
+    if (z === this.scale) return;
+    state.settings.zoom = z === this.autoScale() ? 0 : z;
+    save();
+    this.fit();
+    this.cam.init = false;
+    const el = document.getElementById('zoom-v');
+    if (el) el.textContent = z + '×';
   };
 
   Scene.prototype.start = function () {
@@ -4314,10 +4310,15 @@
   };
 
   // 宠物在花园里：自己溜达，花园里有树有花就跑过去玩，玩一会儿状态会好起来
+  // 花园里的宠物：每只自己溜达；花园里有长好的树和花，就跑过去玩，玩一会儿心情会好起来
   Scene.prototype.stepPet = function (t, dt) {
-    const p = this.pet;
-    if (!p) return;
-    if (petSick()) {
+    for (const e of this.pets) this.stepOne(e, t, dt);
+    for (const f of this.fish) this.stepFish(f, t, dt);
+  };
+
+  Scene.prototype.stepOne = function (p, t, dt) {
+    const pet = petById(p.pid);
+    if (!pet || pet.sick) {
       p.moving = false;
       return;
     }
@@ -4342,8 +4343,8 @@
           p.goPlay = false;
           p.play = t + 2800;
           this.heart(p.x, p.y - 30);
-          if (moodUp(3, 'playMood', MOOD.playCap)) save();
-          if (Math.random() < 0.35) petSay('play');
+          if (careUp(pet, 'mood', 3, 'playMood', CARE.playCap)) save();
+          if (pet.id === state.petMain && Math.random() < 0.35) petSay('play');
         }
       } else {
         p.x += (dx / d) * v;
@@ -4355,7 +4356,7 @@
     if (t < p.next || t < p.play) return;
     p.next = t + 2500 + Math.random() * 4000;
     const [x0, y0, x1, y1] = this.bounds();
-    const fun = state.world.plants.filter((pl) => pl.x >= 0 && (pl.k === 'tree' ? pl.ok : plantStage(pl) >= 2));
+    const fun = state.world.plants.filter((pl) => plantStage(pl) >= (pl.k === 'tree' ? 3 : 2));
     if (fun.length && Math.random() < 0.5) {
       const pl = fun[Math.floor(Math.random() * fun.length)];
       p.tx = (pl.x + (pl.k === 'tree' ? 1 : 0.5)) * TILE + (Math.random() - 0.5) * 20;
@@ -4375,11 +4376,38 @@
     p.moving = true;
   };
 
+  // 鱼：在池塘里慢慢游，停一停再换个方向；刚撒了鱼食就都游到一处
+  Scene.prototype.stepFish = function (f, t, dt) {
+    const dx = f.tx - f.x;
+    const dy = f.ty - f.y;
+    const d = Math.hypot(dx, dy);
+    const v = (t < f.hop ? f.v * 3 : f.v) * dt;
+    if (d > v) {
+      f.x += (dx / d) * v;
+      f.y += (dy / d) * v;
+      if (Math.abs(dx) > 0.5) f.flip = dx < 0;
+      return;
+    }
+    if (t < f.next) return;
+    f.next = t + 600 + Math.random() * 2600;
+    const fed = this.fishFed && t - this.fishFed < 4000;
+    const [x, y] = fed ? this.fishBowl || (this.fishBowl = pondSpot()) : pondSpot();
+    f.tx = x + (fed ? (Math.random() - 0.5) * 10 : 0);
+    f.ty = y + (fed ? (Math.random() - 0.5) * 6 : 0);
+    if (!fed) this.fishBowl = null;
+  };
+
   // 花园里的小生命：蝴蝶在花间飞、樱花树下飘花瓣、池塘上一闪一闪的波光、慢慢飘过的云影
   const POND_INNER = [...GPOND].filter((k) => {
     const [x, y] = k.split(',').map(Number);
     return GPOND.has(x - 1 + ',' + y) && GPOND.has(x + 1 + ',' + y) && GPOND.has(x + ',' + (y - 1)) && GPOND.has(x + ',' + (y + 1));
   });
+  function pondSpot() {
+    const list = POND_INNER.length ? POND_INNER : [...GPOND];
+    const [tx, ty] = list[Math.floor(Math.random() * list.length)].split(',').map(Number);
+    return [tx * TILE + 3 + Math.random() * 10, ty * TILE + 4 + Math.random() * 8];
+  }
+
   let cloudImgs = null;
   function cloudShadows() {
     if (cloudImgs) return cloudImgs;
@@ -4449,6 +4477,20 @@
 
   // 在地面上、物件下面画：波光
   Scene.prototype.drawGround = function (ctx, t) {
+    for (const f of this.fish) {
+      const fish = petById(f.pid);
+      if (!fish) continue;
+      const img = ART.fishTop(fish.sp, Math.floor(t / (t < f.hop ? 90 : 220)) % 2, fish.sick);
+      ctx.globalAlpha = 0.92;
+      if (f.flip) {
+        ctx.save();
+        ctx.translate(Math.round(f.x) + img.width / 2, Math.round(f.y) - img.height / 2);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+      } else ctx.drawImage(img, Math.round(f.x) - img.width / 2, Math.round(f.y) - img.height / 2);
+      ctx.globalAlpha = 1;
+    }
     const A = this.amb;
     if (!A) return;
     for (const g of A.glints) {
@@ -4516,11 +4558,17 @@
     for (let i = 0; i < 8; i++) this.fx.push({ kind: 'spark', x: x + (Math.random() - 0.5) * 18, y: y - 8 - Math.random() * 18, vy: -12, vx: (Math.random() - 0.5) * 16, life: 0.7 });
   };
 
+  // 陪你背单词的那只在画面里的样子
+  Scene.prototype.mainEnt = function () {
+    return this.pets.find((e) => e.pid === state.petMain) || null;
+  };
+
   Scene.prototype.say = function (text) {
-    if (!this.bubble || !this.pet) return;
+    const e = this.mainEnt();
+    if (!this.bubble || !e) return;
     this.bubble.textContent = text;
     this.bubbleUntil = performance.now() + 3400;
-    this.pet.play = Math.max(this.pet.play, performance.now() + 1800);
+    e.play = Math.max(e.play, performance.now() + 1800);
   };
 
   Scene.prototype.draw = function (t) {
@@ -4567,11 +4615,14 @@
     const af = t < av.act ? 'act' : av.walking ? (Math.floor(t / 150) % 2 ? 'walk2' : 'walk1') : 'idle';
     objs.push({ img: ART.avatar(look, af, av.dir), x: Math.round(av.x) - 8, y: Math.round(av.y) - 31, base: av.y, flip: av.dir === 'side' && av.flip, shadow: true });
     // 宠物
-    const p = this.pet;
-    if (p) {
-      const pf = petSick() ? 'sick' : p.moving ? (Math.floor(t / 140) % 2 ? 'walk2' : 'walk1') : t < p.play || t < this.bubbleUntil ? 'happy' : t < p.blink ? 'blink' : 'idle';
-      const hop = t < p.hop ? Math.round(Math.sin(((p.hop - t) / 400) * Math.PI) * 5) : 0;
-      objs.push({ img: petCanvas(pf), x: Math.round(p.x) - 16, y: Math.round(p.y) - 30 - hop, base: p.y, flip: p.flip, shadow: true, pet: true });
+    const p = this.mainEnt();
+    for (const e of this.pets) {
+      const pet = petById(e.pid);
+      if (!pet) continue;
+      const talking = e === p && t < this.bubbleUntil;
+      const pf = pet.sick ? 'sick' : e.moving ? (Math.floor(t / 140) % 2 ? 'walk2' : 'walk1') : t < e.play || talking ? 'happy' : t < e.blink ? 'blink' : 'idle';
+      const hop = t < e.hop ? Math.round(Math.sin(((e.hop - t) / 400) * Math.PI) * 5) : 0;
+      objs.push({ img: petCanvas(pf, pet), x: Math.round(e.x) - 16, y: Math.round(e.y) - 30 - hop, base: e.y, flip: e.flip, shadow: true, pet: true });
     }
     objs.sort((a, b) => a.base - b.base);
     for (const o of objs) {
@@ -4663,6 +4714,7 @@
   Scene.prototype.toolSize = function () {
     const it = ITEMS.get(ui.tool);
     if (it && it.decor) return decorSize(it.decor);
+    if (it && it.plant && it.plant[0] === 'tree') return [2, 1];
     return [1, 1];
   };
 
@@ -4677,12 +4729,13 @@
     const occ = gardenOcc();
     const here = occ.get(tx + ',' + ty);
     if (tool === 'hand') return !!(here && here.decor);
-    if (tool === 'shovel') return !!(here && here.plant && !(here.plant.k === 'tree' && here.plant.ok));
+    if (tool === 'shovel') return !!(here && here.plant);
     const it = ITEMS.get(tool);
     if (!it) return false;
-    if (it.use === 'plant') return gardenFree(tx, ty, 1, 1, occ);
-    if (it.use === 'water') return !!(here && here.plant && !wateredToday(here.plant));
-    if (it.use === 'fert') return !!(here && here.plant && !here.plant.f && (here.plant.k === 'tree' ? here.plant.ok : plantStage(here.plant) < plantMax(here.plant)));
+    const growing = here && here.plant && plantStage(here.plant) < plantMax(here.plant);
+    if (it.use === 'plant') return it.plant[0] === 'tree' ? gardenFree(tx, ty, 2, 1, occ) : gardenFree(tx, ty, 1, 1, occ);
+    if (it.use === 'water') return !!(growing && !wateredToday(here.plant));
+    if (it.use === 'fert') return !!(growing && here.plant.fd !== dayNum());
     if (it.use === 'place') {
       const [w, h] = decorSize(it.decor);
       return gardenFree(tx, ty, w, h, occ);
@@ -4692,21 +4745,35 @@
 
   Scene.prototype.click = function (ev) {
     const [px, py, tx, ty] = this.toTile(ev);
-    const p = this.pet;
-    if (p && Math.abs(px - p.x) < 14 && py > p.y - 30 && py < p.y + 2) {
-      p.hop = performance.now() + 400;
-      this.heart(p.x, p.y - 32);
-      if (moodUp(1, 'petMood', MOOD.petCap)) save();
-      petSay(petSick() ? 'sick' : 'click');
-      return;
-    }
+    // 手里拿着工具：先用工具，不去摸宠物
     if (ui.tool) {
       this.useTool(tx, ty);
       return;
     }
+    // 点到宠物：跳一下、冒个爱心，心情好一点（每只每天有上限）
+    const hits = this.pets.filter((e) => Math.abs(px - e.x) < 14 && py > e.y - 30 && py < e.y + 2).sort((a, b) => b.y - a.y);
+    if (hits.length) {
+      const e = hits[0];
+      const pet = petById(e.pid);
+      e.hop = performance.now() + 400;
+      this.heart(e.x, e.y - 32);
+      if (pet && careUp(pet, 'mood', 1, 'petMood', CARE.petCap)) save();
+      if (pet && pet.id === state.petMain) petSay(pet.sick ? 'sick' : 'click');
+      return;
+    }
+    // 点到鱼：溅起水花，鱼开心一点
+    const fh = this.fish.find((f) => Math.abs(px - f.x) < 8 && Math.abs(py - f.y) < 6);
+    if (fh) {
+      const f = petById(fh.pid);
+      fh.hop = performance.now() + 500;
+      fh.next = 0;
+      this.drops(fh.x, fh.y + 14);
+      if (f && careUp(f, 'mood', 4, 'fishPlay', 20)) save();
+      return;
+    }
     if (this.kind === 'room') {
-      if (ty >= RH - 1 && (tx === 5 || tx === 6)) {
-        this.walkTo(6 * TILE, RH * TILE - 2, () => goScene('garden'));
+      if (ty >= RH - 1 && RDOOR.includes(tx)) {
+        this.walkTo((RDOOR[0] + 1) * TILE, RH * TILE - 2, () => goScene('garden'));
         return;
       }
       this.walkTo(px, py);
@@ -4714,24 +4781,34 @@
     }
     const here = gardenOcc().get(tx + ',' + ty);
     if (here && here.house) {
-      this.walkTo(HOUSE.x * TILE + (HOUSE.w * TILE) / 2, (HOUSE.y + HOUSE.h) * TILE + 4, () => goScene('room'));
+      this.walkTo(DOOR_X * TILE + TILE / 2, (HOUSE.y + HOUSE.h) * TILE + 4, () => goScene('room'));
       return;
     }
     if (here && here.plant) {
       const pl = here.plant;
       const st = plantStage(pl);
-      const msg = pl.k === 'tree' ? plantName(pl) + ' · ' + pl.min + ' 分钟专注' : plantName(pl) + (st >= plantMax(pl) ? ' · 长好了' : ' · ' + (wateredToday(pl) ? '今天浇过水' : '今天还没浇水'));
+      const names = pl.k === 'tree' ? ['种子', '发芽', '小树苗', '小树', '长成大树了'] : pl.k === 'flower' ? ['刚种下', '发芽', '花苞', '开花了'] : ['刚种下', '发芽', '长好了'];
+      const msg = plantName(pl) + ' · ' + names[st] + (st >= plantMax(pl) ? '' : ' · ' + (wateredToday(pl) ? '今天浇过水' : '今天还没浇水'));
       toast(msg);
     }
     this.walkTo(px, py + 4);
   };
 
-  Scene.prototype.useTool = function (tx, ty) {
+  Scene.prototype.useTool = async function (tx, ty) {
     if (!this.toolOk(tx, ty)) {
-      toast(this.kind === 'room' ? '这里放不下' : '这里不行');
+      const here = this.kind === 'garden' && gardenOcc().get(tx + ',' + ty);
+      const it = ITEMS.get(ui.tool);
+      if (here && here.plant && it && (it.use === 'water' || it.use === 'fert')) {
+        const pl = here.plant;
+        toast(plantStage(pl) >= plantMax(pl) ? plantName(pl) + '已经长好了' : it.use === 'water' ? '今天浇过水了' : '今天施过肥了');
+      } else toast(this.kind === 'room' ? '这里放不下' : '这里不行');
       return;
     }
     const tool = ui.tool;
+    if (tool === 'shovel') {
+      const pl = gardenOcc().get(tx + ',' + ty).plant;
+      if (pl.k === 'tree' && !(await askConfirm('铲掉这棵' + plantName(pl) + '？铲掉就没有了。', '铲掉'))) return;
+    }
     const it = ITEMS.get(tool);
     const [w, h] = this.toolSize();
     this.walkNear(tx, ty, w, h, () => {
@@ -4758,19 +4835,32 @@
         } else if (tool === 'shovel') {
           W.plants = W.plants.filter((x) => x !== here.plant);
         } else if (it.use === 'plant') {
-          W.plants.push({ k: it.plant[0], sp: it.plant[1], x: tx, y: ty, t: dayNum(), w: [], f: 0, ok: 1 });
+          W.plants.push({ k: it.plant[0], sp: it.plant[1], x: tx, y: ty, t: dayNum(), w: [], f: 0 });
           bagAdd(tool, -1);
-        } else if (it.use === 'water') {
-          here.plant.w = (here.plant.w || []).concat(dayNum());
+        } else if (it.use === 'water' || it.use === 'fert') {
+          const pl = here.plant;
+          const before = plantStage(pl);
+          if (it.use === 'water') {
+            pl.w = (pl.w || []).concat(dayNum());
+            const d = pday();
+            d.water = (d.water || 0) + 1;
+            this.drops((pl.x + plantSize(pl)[0] / 2) * TILE, (pl.y + 1) * TILE);
+            checkChallenges();
+          } else {
+            pl.f = (pl.f || 0) + 1;
+            pl.fd = dayNum();
+            this.sparkle((pl.x + plantSize(pl)[0] / 2) * TILE, (pl.y + 1) * TILE);
+          }
           bagAdd(tool, -1);
-          const d = pday();
-          d.water = (d.water || 0) + 1;
-          this.drops(cx, cy);
-          checkChallenges();
-        } else if (it.use === 'fert') {
-          here.plant.f = 1;
-          bagAdd(tool, -1);
-          this.sparkle(cx, cy);
+          // 刚好长好：记一笔，树长成大树宠物会说一句
+          if (before < plantMax(pl) && plantStage(pl) >= plantMax(pl)) {
+            if (!W.grown) W.grown = { t: 0, f: 0 };
+            if (pl.k === 'tree') {
+              W.grown.t++;
+              toast(plantName(pl) + '长成大树了');
+              if (Math.random() < 0.7) petSay('grown');
+            } else if (pl.k === 'flower') W.grown.f++;
+          }
         } else if (it.use === 'place') {
           W.decor.push({ id: it.decor, x: tx, y: ty });
           bagAdd(tool, -1);
@@ -4820,7 +4910,7 @@
       '<div class="toolbar" id="toolbar">' +
       free.map(([id, name, img]) => btn(id, name, img)).join('') +
       '<span class="tsep"></span>' +
-      (tools.length ? tools.map((it) => btn(it.id, it.name, itemIcon(it), state.world.bag[it.id])).join('') : '<span class="muted small">背包里没有' + (kind === 'room' ? '家具' : '种子、水和装饰') + '</span><button class="link" data-act="openShelf" data-shelf="' + (kind === 'room' ? 'furniture' : 'seeds') + '">去买</button>') +
+      (tools.length ? tools.map((it) => btn(it.id, it.name.replace(/ ×\d+$/, ''), itemIcon(it), state.world.bag[it.id])).join('') : '<span class="muted small">背包里没有' + (kind === 'room' ? '家具' : '种子、水和装饰') + '</span><button class="link" data-act="openShelf" data-shelf="' + (kind === 'room' ? 'furniture' : 'treeseeds') + '">去买</button>') +
       '</div>'
     );
   }
@@ -4837,87 +4927,24 @@
 
   function gardenStatsHtml() {
     const s = summarize(state.world.plants, []);
-    const n = state.world.plants.filter((pl) => pl.k !== 'tree').length;
-    return '树 ' + s.t + (s.d ? '（枯 ' + s.d + '）' : '') + ' · 花 ' + s.f + ' · 灌木 ' + s.s + (n - s.f - s.s > 0 ? ' · 在长 ' + (n - s.f - s.s) : '');
+    const parts = ['树 ' + s.t, '花 ' + s.f, '草 ' + s.g, '灌木 ' + s.s];
+    const growing = state.world.plants.filter((pl) => plantStage(pl) < plantMax(pl)).length;
+    if (growing) parts.push('在长 ' + growing);
+    return parts.join(' · ');
   }
 
   // ---------- 花园页 ----------
 
-  function histRows(by) {
-    const groups = new Map();
-    const add = (ws, s) => {
-      const d = new Date(ws * 86400000);
-      const key = by === 'year' ? String(d.getUTCFullYear()) : d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
-      const g = groups.get(key) || { t: 0, d: 0, f: 0, s: 0, weeks: 0 };
-      g.t += s.t;
-      g.d += s.d;
-      g.f += s.f;
-      g.s += s.s;
-      g.weeks++;
-      groups.set(key, g);
-    };
-    for (const k in state.world.hist) add(+k, state.world.hist[k]);
-    add(state.world.week, summarize(state.world.plants, []));
-    return [...groups.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }
-
-  function gardenHistHtml() {
-    const tab = ['week', 'month', 'year'].includes(ui.histTab) ? ui.histTab : 'week';
-    const tabs = [['week', '每周'], ['month', '每月'], ['year', '每年']].map(([id, l]) => '<button class="chip' + (id === tab ? ' on' : '') + '" data-act="histTab" data-tab="' + id + '">' + l + '</button>').join('');
-    let body;
-    if (tab === 'week') {
-      const weeks = Object.keys(state.world.hist).map(Number).sort((a, b) => b - a).slice(0, 12);
-      body = weeks.length
-        ? '<div class="weeks">' +
-          weeks
-            .map((ws) => {
-              const s = state.world.hist[ws];
-              return '<div class="wk-card"><canvas class="snap" data-week="' + ws + '"></canvas><b>' + weekLabel(ws) + '</b><span>树 ' + s.t + ' · 花 ' + s.f + ' · 灌木 ' + s.s + (s.d ? ' · 枯 ' + s.d : '') + '</span></div>';
-            })
-            .join('') +
-          '</div>'
-        : '<p class="muted">每周一花园换新，往期的花园会留在这里。</p>';
-    } else {
-      const rows = histRows(tab);
-      const max = Math.max(1, ...rows.map(([, g]) => g.t + g.f + g.s));
-      body =
-        '<div class="hist-rows">' +
-        rows
-          .map(([k, g]) => {
-            const label = tab === 'year' ? k + ' 年' : +k.slice(0, 4) + ' 年 ' + +k.slice(5) + ' 月';
-            const tot = g.t + g.f + g.s;
-            return (
-              '<div class="hr"><span class="hr-k">' + label + '</span><span class="hr-bar"><i class="t" style="width:' + (g.t / max) * 100 + '%"></i><i class="f" style="width:' + (g.f / max) * 100 + '%"></i><i class="s" style="width:' + (g.s / max) * 100 + '%"></i></span>' +
-              '<span class="hr-v">' + tot + '</span><span class="hr-d">树 ' + g.t + ' · 花 ' + g.f + ' · 灌木 ' + g.s + '</span></div>'
-            );
-          })
-          .join('') +
-        '</div>';
-    }
-    return '<section class="panel hist"><div class="head-row"><h2 class="h2">花园规模</h2><div class="chips">' + tabs + '</div></div>' + body + '</section>';
-  }
-
-  // 往期花园的缩略图
-  function drawSnapshot(canvas, s) {
-    canvas.width = GW * TILE;
-    canvas.height = GH * TILE;
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(gardenTerrain(s.p || []), 0, 0);
-    const objs = gardenObjects(s.p || [], (s.dc || []).map(([id, x, y]) => ({ id, x, y })), false);
-    objs.sort((a, b) => a.base - b.base);
-    for (const o of objs) ctx.drawImage(o.img, Math.round(o.x), Math.round(o.y));
-  }
-
   VIEWS.garden = function () {
-    worldTick();
+    const next = LANDS[(state.world.land || 0) + 1];
     return (
       '<main class="page wide">' +
-      '<div class="g-top"><div><h1 class="h1">花园</h1><p class="muted"><span>' + weekLabel(state.world.week) + '</span> · <span id="g-stats">' + gardenStatsHtml() + '</span></p></div>' +
-      '<div class="actions"><button class="btn ghost small" data-act="goRoom">回家</button></div></div>' +
+      '<div class="g-top"><div><h1 class="h1">花园</h1><p class="muted"><span id="g-stats">' + gardenStatsHtml() + '</span></p></div>' +
+      '<div class="actions"><span class="zoom"><button class="btn ghost small" data-act="zoom" data-d="-1" title="拉远（−）">−</button><span id="zoom-v" class="muted small"></span><button class="btn ghost small" data-act="zoom" data-d="1" title="拉近（+）">+</button></span>' +
+      (next ? '<button class="btn ghost small" data-act="buyLand" title="' + next.w + ' × ' + next.h + ' 格">扩建 · ' + fmt(next.price) + '</button>' : '') +
+      '<button class="btn ghost small" data-act="goRoom">回家</button></div></div>' +
       '<div class="scene-wrap" id="scene-wrap"><canvas class="scene" id="scene"></canvas><div class="scene-bubble"></div></div>' +
       toolbarHtml('garden') +
-      gardenHistHtml() +
       '</main>'
     );
   };
@@ -4946,10 +4973,8 @@
 
   AFTER.garden = function () {
     attachScene('garden');
-    for (const c of document.querySelectorAll('canvas.snap')) {
-      const s = state.world.hist[c.dataset.week];
-      if (s) drawSnapshot(c, s);
-    }
+    const z = document.getElementById('zoom-v');
+    if (z && scene) z.textContent = scene.scale + '×';
   };
 
   AFTER.room = function () {
@@ -4968,6 +4993,17 @@
     return n;
   }
 
+  // 一件东西是做什么的（背包和货架上的小字）
+  function itemNote(it) {
+    if (it.use === 'feed') return '饱腹 +' + it.food + (it.mood ? ' · 心情 +' + it.mood : '');
+    if (it.use === 'toy') return '心情 +' + it.mood;
+    if (it.use === 'fishfood') return '喂饱池塘里所有的鱼';
+    if (it.use === 'medicine') return '治好生病的宠物';
+    if (it.use === 'water') return '浇一次水长一阶';
+    if (it.use === 'fert') return '施一次肥长一阶';
+    return '';
+  }
+
   function renderBag() {
     const ids = Object.keys(state.world.bag).filter((id) => ITEMS.has(id));
     const order = [...ITEMS.keys()];
@@ -4980,9 +5016,13 @@
         const acts = [];
         if (['plant', 'water', 'fert', 'place'].includes(sel.use)) acts.push('<button class="btn small" data-bag="garden">去花园用</button>');
         if (sel.use === 'furnish') acts.push('<button class="btn small" data-bag="room">摆进屋里</button>');
-        if (sel.use === 'toy') acts.push('<button class="btn small" data-bag="toy">给宠物</button>');
-        if (sel.use === 'medicine') acts.push('<button class="btn small" data-bag="medicine">喂药</button>');
-        detail = '<div class="bag-detail"><b>' + esc(sel.name) + '</b><span class="muted">×' + state.world.bag[sel.id] + (sel.mood ? ' · 状态 +' + sel.mood : '') + '</span><div class="actions">' + acts.join('') + '</div></div>';
+        if (sel.use === 'fishfood') acts.push(fishList().length ? '<button class="btn small" data-bag="fish">撒进池塘</button>' : '<span class="muted small">池塘里还没有鱼</span>');
+        if (['feed', 'toy', 'medicine'].includes(sel.use)) {
+          const pets = landPets().concat(sel.use === 'medicine' ? fishList() : []).filter((p) => (sel.use === 'medicine' ? p.sick : !p.sick));
+          if (pets.length) acts.push('<span class="muted small">' + (sel.use === 'feed' ? '喂给' : sel.use === 'toy' ? '给' : '喂药') + '</span>' + pets.map((p) => '<button class="btn small" data-bag="care" data-pet="' + p.id + '">' + esc(p.name) + '</button>').join(''));
+          else acts.push('<span class="muted small">' + (sel.use === 'medicine' ? '没有宠物生病' : state.pets.length ? '宠物生病了，先喂药' : '还没有宠物') + '</span>');
+        }
+        detail = '<div class="bag-detail"><b>' + esc(sel.name) + '</b><span class="muted">×' + state.world.bag[sel.id] + (itemNote(sel) ? ' · ' + itemNote(sel) : '') + '</span><div class="actions">' + acts.join('') + '</div></div>';
       }
       panel =
         '<div class="bag" role="dialog" aria-label="背包"><div class="bag-head"><b>背包</b><button class="link" data-bag="shop">商店</button><button class="bag-x" data-bag="close" aria-label="关上">×</button></div>' +
@@ -4997,28 +5037,58 @@
     bagLayer.innerHTML = panel + '<button class="bag-btn' + (ui.bagOpen ? ' on' : '') + '" data-bag="toggle" title="背包">' + pxImg(ART.icon('bag'), 2) + (n ? '<span class="n">' + n + '</span>' : '') + '</button>';
   }
 
-  function useToy(id) {
+  // 照顾宠物：喂饭、玩玩具、喂药
+  function careUse(p, id) {
     const it = ITEMS.get(id);
-    if (!petAlive()) return toast('还没有宠物');
-    if (petSick()) return toast('它生病了，先喂药');
+    if (!p || !it || !bagHas(id)) return false;
+    if (it.use === 'medicine') {
+      if (!p.sick) return toast(p.name + '没生病，药先留着'), false;
+      bagAdd(id, -1);
+      p.sick = false;
+      p.food = Math.max(p.food, CARE.cure);
+      p.mood = Math.max(p.mood, CARE.cure);
+      p.day = dayNum();
+      save();
+      if (p === mainPet()) setTimeout(() => petSay('cured'), 200);
+      else toast(p.name + '好起来了');
+      return true;
+    }
+    if (p.sick) return toast(p.name + '生病了，先喂药'), false;
     bagAdd(id, -1);
-    state.pet.mood = Math.min(100, (state.pet.mood || 0) + it.mood);
+    if (it.use === 'feed') {
+      careUp(p, 'food', it.food);
+      careUp(p, 'mood', it.mood || 0);
+      const d = pday();
+      d.feed = (d.feed || 0) + 1;
+      floatMood('饱腹 +' + it.food);
+      if (p === mainPet()) petSay('fed');
+      checkChallenges();
+    } else {
+      careUp(p, 'mood', it.mood);
+      floatMood('+' + it.mood);
+      if (p === mainPet()) petSay('toy');
+    }
     save();
-    petSay('toy');
-    floatMood('+' + it.mood);
-    render();
+    return true;
   }
 
-  function useMedicine() {
-    if (!petAlive()) return toast('还没有宠物');
-    if (!petSick()) return toast('它没生病，药先留着');
-    bagAdd('medicine', -1);
-    state.pet.sick = false;
-    state.pet.mood = MOOD.cure;
-    state.pet.moodDay = dayNum();
+  // 撒一份鱼食：池塘里的鱼都吃饱
+  function feedFish() {
+    const fish = fishList().filter((f) => !f.sick);
+    if (!bagHas('fishfood')) return toast('背包里没有鱼食');
+    if (!fish.length) return toast(fishList().length ? '鱼生病了，先喂药' : '池塘里还没有鱼');
+    bagAdd('fishfood', -1);
+    for (const f of fish) {
+      f.food = 100;
+      careUp(f, 'mood', 5);
+    }
+    const d = pday();
+    d.feed = (d.feed || 0) + 1;
+    checkChallenges();
     save();
-    render();
-    setTimeout(() => petSay('cured'), 200);
+    floatMood('鱼都吃饱了');
+    if (scene && scene.kind === 'garden') scene.fishFed = performance.now();
+    return true;
   }
 
   function floatMood(text) {
@@ -5056,14 +5126,18 @@
       ui.tool = ui.bagPick;
       refreshSceneUi();
       return;
-    } else if (a === 'toy') {
-      ui.bagOpen = bagHas(ui.bagPick) && bagTotal() > 1;
-      useToy(ui.bagPick);
-      return;
-    } else if (a === 'medicine') {
-      ui.bagOpen = false;
-      useMedicine();
-      return;
+    } else if (a === 'care') {
+      if (careUse(petById(+t.dataset.pet), ui.bagPick)) {
+        if (!bagHas(ui.bagPick)) ui.bagPick = null;
+        render();
+        return;
+      }
+    } else if (a === 'fish') {
+      if (feedFish()) {
+        if (!bagHas('fishfood')) ui.bagPick = null;
+        render();
+        return;
+      }
     }
     renderBag();
   });
@@ -5071,28 +5145,20 @@
   // ---------- 商店 ----------
 
   const SHOP_TABS = [
-    ['status', '宠物状态'],
+    ['status', '我的宠物'],
     ['shelf', '货架'],
-    ['adopt', '领养'],
+    ['adopt', '宠物店'],
     ['goals', '挑战与成就'],
-    ['rules', '积分规则'],
+    ['rules', '金币规则'],
   ];
 
   function shopTab() {
     return SHOP_TABS.some((t) => t[0] === ui.shopTab) ? ui.shopTab : 'status';
   }
 
-  // 商店的「宠物状态」里有一只大的，页面上走动的那只就先藏起来
+  // 「我的宠物」里每只都有自己的画面，页面上走动的那只就先藏起来
   function onPetTab() {
     return ui.view === 'shop' && shopTab() === 'status';
-  }
-
-  function speciesPrice(id) {
-    return SPECIES_PRICE[id] || 0;
-  }
-
-  function unlocked(id) {
-    return speciesPrice(id) === 0 || state.pet.unlocked.includes(id);
   }
 
   function pointsPanelHtml() {
@@ -5103,7 +5169,7 @@
     const d = pday();
     return (
       '<div class="pts-panel">' +
-      '<div class="pp-main"><p class="label">积分</p><div class="pp-num">' + fmt(p.bal) + '</div>' +
+      '<div class="pp-main"><p class="label">金币</p><div class="pp-num">' + fmt(p.bal) + '</div>' +
       '<p class="muted">今天 +' + fmt(d.e) + (d.x ? ' · 扣 ' + fmt(d.x) : '') + (d.s ? ' · 花了 ' + fmt(d.s) : '') + '</p></div>' +
       '<div class="pp-lv"><p class="label">等级</p><div class="pp-num">Lv ' + lv + '</div>' +
       '<div class="bar"><i style="width:' + Math.min(100, ((p.earned - lo) / (hi - lo)) * 100) + '%"></i></div>' +
@@ -5144,92 +5210,107 @@
     );
   }
 
-  // 宠物状态
-  function petStatusHtml() {
-    const pet = state.pet;
-    if (!petAlive()) {
-      let html = '';
-      if (pet.status === 'dead' && pet.graves.length) {
-        const g = pet.graves[pet.graves.length - 1];
-        html +=
-          '<section class="panel memorial"><div class="pet-stage dead">' + pxImg(ART.pet(g.species, 'sleep'), 4, 'gray') + '</div>' +
-          '<div><h2 class="h2">' + esc(g.name) + ' 离开了</h2><p class="muted">陪了你 ' + (g.died - g.born + 1) + ' 天（' + dayKeyOf(g.born) + ' – ' + dayKeyOf(g.died) + '）</p></div></section>';
-      }
-      return html + '<section class="panel empty-pet"><p class="muted">还没有宠物</p><button class="btn" data-act="openShop" data-tab="adopt">去领养</button></section>';
-    }
-    const sp = SPECIES.get(pet.species);
-    const sick = petSick();
-    const mood = Math.round(pet.mood || 0);
-    const toys = Object.keys(state.world.bag).filter((id) => {
+  function careBar(label, v, sick) {
+    const n = Math.round(v || 0);
+    return '<div class="care"><span>' + label + '</span><div class="bar mood' + (sick ? ' sick' : n < 30 ? ' low' : '') + '"><i style="width:' + (sick ? 100 : n) + '%"></i></div><b>' + (sick ? '—' : n) + '</b></div>';
+  }
+
+  // 背包里能给这只用的东西
+  function careButtons(p) {
+    const uses = p.sick ? ['medicine'] : isFish(p) ? [] : ['feed', 'toy'];
+    const ids = Object.keys(state.world.bag).filter((id) => {
       const it = ITEMS.get(id);
-      return it && (it.use === 'toy' || (it.use === 'medicine' && sick));
+      return it && uses.includes(it.use);
     });
+    return ids.map((id) => '<button class="use" data-act="careUse" data-pet="' + p.id + '" data-id="' + esc(id) + '" title="' + esc(ITEMS.get(id).name + ' · ' + itemNote(ITEMS.get(id))) + '">' + pxImg(itemIcon(ITEMS.get(id)), 2) + '<span class="n">' + state.world.bag[id] + '</span></button>').join('');
+  }
+
+  // 一只宠物的卡片：画面、名字、饱腹和心情、能用的东西
+  function petCardHtml(p) {
+    const sp = SPECIES.get(p.sp);
+    const main = p.id === state.petMain;
+    const ward = ui.wardPet === p.id;
+    const own = SHELVES.find((x) => x.id === 'petlook').items.filter((it) => state.petWardrobe.includes(it.id));
     return (
-      '<section class="panel pet-home"><div class="ph-grid">' +
-      '<div class="pet-stage' + (sick ? ' sick' : '') + '"><div class="pet-bubble"></div><div class="pet-hop">' + pxImg(petCanvas(sick ? 'sick' : 'idle'), 5, 'stage-img') + '</div></div>' +
-      '<div class="ph-info"><h2 class="h2">' + esc(pet.name) + ' <button class="link" data-act="renamePet">改名</button></h2>' +
-      '<p class="muted">' + sp.name + ' · 第 ' + petAge() + ' 天</p>' +
-      '<div class="mood-row"><span class="label">状态</span><b class="' + (sick ? 'bad' : '') + '">' + moodLabel() + '</b></div>' +
-      '<div class="bar wide mood' + (sick ? ' sick' : mood < 30 ? ' low' : '') + '"><i style="width:' + (sick ? 100 : mood) + '%"></i></div>' +
-      '<p class="muted small">' + (sick ? '要吃药才能好' : mood + ' / 100') + '</p>' +
-      '<div class="use-row">' +
-      toys.map((id) => '<button class="use" data-act="useItem" data-id="' + esc(id) + '" title="' + esc(ITEMS.get(id).name) + '">' + pxImg(itemIcon(ITEMS.get(id)), 2) + '<span class="n">' + state.world.bag[id] + '</span></button>').join('') +
-      '<button class="link" data-act="openShelf" data-shelf="petcare">' + (sick && !bagHas('medicine') ? '买药' : '买玩具') + '</button></div>' +
-      '</div></div></section>' +
-      petLookHtml()
+      '<section class="panel pet-home' + (p.sick ? ' sick' : '') + '"><div class="ph-grid">' +
+      '<div class="pet-stage' + (p.sick ? ' sick' : '') + '" data-pet="' + p.id + '"><div class="pet-bubble"></div><div class="pet-hop">' + pxImg(petCanvas(p.sick ? 'sick' : 'idle', p), 4, 'stage-img') + '</div></div>' +
+      '<div class="ph-info"><h2 class="h2">' + esc(p.name) + ' <button class="link" data-act="renamePet" data-pet="' + p.id + '">改名</button></h2>' +
+      '<p class="muted">' + sp.name + ' · 第 ' + petAge(p) + ' 天 · <b class="' + (petLow(p) ? 'bad' : '') + '">' + petLabel(p) + '</b></p>' +
+      careBar('饱腹', p.food, p.sick) + careBar('心情', p.mood, p.sick) +
+      (p.sick ? '<p class="muted small">要吃药才能好，生病 ' + CARE.sickDays + ' 天没吃药会死</p>' : '') +
+      '<div class="use-row">' + careButtons(p) + '<button class="link" data-act="openShelf" data-shelf="petcare">' + (p.sick && !bagHas('medicine') ? '买药' : '买吃的和玩具') + '</button></div>' +
+      '<div class="actions">' +
+      (main ? '<span class="tag">正在陪你背单词</span>' : '<button class="btn small ghost" data-act="setMain" data-pet="' + p.id + '">陪我背单词</button>') +
+      (own.length ? '<button class="btn small ghost" data-act="wardPet" data-pet="' + p.id + '">' + (ward ? '收起衣柜' : '换装扮') + '</button>' : '') +
+      '</div></div></div>' +
+      (ward
+        ? '<div class="shop-grid ward">' +
+          own.map((it) => {
+            const on = p.wear[it.slot] === it.id;
+            return '<button class="shop-item' + (on ? ' on' : '') + '" data-act="wearPet" data-pet="' + p.id + '" data-id="' + it.id + '">' + pxImg(petCanvas('idle', Object.assign({}, p, { wear: Object.assign({}, p.wear, { [it.slot]: it.id }) })), 2) + '<span class="si-name">' + it.name + '</span><span class="si-meta">' + (on ? '戴着' : '戴上') + '</span></button>';
+          }).join('') +
+          '</div>'
+        : '') +
+      '</section>'
     );
   }
 
-  function petLookHtml() {
-    const pet = state.pet;
-    const items = SHELVES.find((s) => s.id === 'petlook').items.filter((it) => pet.owned.includes(it.id));
-    if (!items.length) return '';
+  // 池塘里的鱼：一起喂
+  function pondHtml() {
+    const fish = fishList();
+    if (!fish.length) return '';
     return (
-      '<section class="panel"><div class="head-row"><h2 class="h2">衣柜</h2></div><div class="shop-grid">' +
-      items
-        .map((it) => {
-          const on = pet.wear[it.slot] === it.id;
-          return '<button class="shop-item' + (on ? ' on' : '') + '" data-act="wearPet" data-id="' + it.id + '">' + pxImg(petCanvas('idle', null, lookWith(it)), 2) + '<span class="si-name">' + it.name + '</span><span class="si-meta">' + (on ? '戴着' : '戴上') + '</span></button>';
-        })
-        .join('') +
-      '</div></section>'
+      '<section class="panel pond-card"><div class="head-row"><h2 class="h2">观赏鱼</h2><span class="muted">养在花园的池塘里 · ' + fish.length + ' 条</span></div>' +
+      '<div class="fish-grid">' +
+      fish.map((f) => '<div class="fish' + (f.sick ? ' sick' : '') + '">' + pxImg(petCanvas('idle', f), 3) + '<div><b>' + esc(f.name) + '</b> <button class="link" data-act="renamePet" data-pet="' + f.id + '">改名</button><span class="muted small">' + SPECIES.get(f.sp).name + ' · ' + petLabel(f) + '</span>' + careBar('饱腹', f.food, f.sick) + careBar('心情', f.mood, f.sick) + (f.sick ? '<div class="use-row">' + careButtons(f) + '</div>' : '') + '</div></div>').join('') +
+      '</div><div class="actions">' + (bagHas('fishfood') ? '<button class="btn small" data-act="feedFish">撒鱼食 · 还有 ' + state.world.bag.fishfood + ' 份</button>' : '<button class="btn small ghost" data-act="openShelf" data-shelf="petcare">买鱼食</button>') +
+      '<span class="muted small">在花园里点点池塘里的鱼，它们也会开心</span></div></section>'
     );
   }
 
-  // 宠物戴上 it 之后的样子
-  function lookWith(it) {
-    const l = petLook();
-    if (it.pet.hat) l.hat = it.pet.hat;
-    if (it.pet.hue) l.hue = it.pet.hue;
-    return l;
+  function petStatusHtml() {
+    const land = landPets();
+    let html = '';
+    if (!state.pets.length) html += '<section class="panel empty-pet"><p class="muted">还没有宠物</p><button class="btn" data-act="openShop" data-tab="adopt">去宠物店</button></section>';
+    html += land.map(petCardHtml).join('') + pondHtml();
+    if (state.petGraves.length)
+      html +=
+        '<section class="panel memorial"><h2 class="h2">纪念</h2><div class="graves">' +
+        state.petGraves.slice(-12).reverse().map((g) => '<div class="grave">' + pxImg(ART.pet(g.sp, 'sleep'), 2, 'gray') + '<span><b>' + esc(g.name) + '</b><span class="muted small">陪了你 ' + (g.died - g.born + 1) + ' 天</span></span></div>').join('') +
+        '</div></section>';
+    return html;
   }
+
+  const PET_KINDS = [
+    ['all', '全部'],
+    ['dog', '猫狗'],
+    ['small', '小动物'],
+    ['bird', '鸟'],
+    ['wild', '野生动物'],
+    ['fish', '观赏鱼'],
+  ];
 
   function adoptHtml() {
-    const pick = ui.petPick && SPECIES.has(ui.petPick) ? ui.petPick : 'crab';
-    const prog = adoptProgress();
-    const ready = prog >= PTS.adopt && state.points.bal >= PTS.adopt && unlocked(pick);
-    const cards = PETS.species
-      .map((sp) => {
-        const open = unlocked(sp.id);
-        return (
-          '<button class="pet-card' + (sp.id === pick ? ' on' : '') + (open ? '' : ' locked') + '" data-act="petPick" data-id="' + sp.id + '">' +
-          pxImg(ART.pet(sp.id, 'idle'), 2) + '<span class="pc-name">' + sp.name + '</span>' +
-          '<span class="pc-meta">' + (open ? '可以领养' : speciesPrice(sp.id) + ' 积分解锁') + '</span></button>'
-        );
-      })
-      .join('');
+    const kind = PET_KINDS.some((k) => k[0] === ui.petKind) ? ui.petKind : 'all';
+    const list = PETS.species.filter((sp) => kind === 'all' || sp.kind === kind);
+    const pick = list.some((sp) => sp.id === ui.petPick) ? ui.petPick : list[0].id;
     const sp = SPECIES.get(pick);
-    const alive = petAlive();
-    let action;
-    if (!unlocked(pick)) action = '<button class="btn" data-act="unlockSpecies" data-id="' + pick + '">' + speciesPrice(pick) + ' 积分解锁' + sp.name + '</button>';
-    else if (alive) action = '<span class="muted">已经有 ' + esc(state.pet.name) + ' 了</span>';
-    else action = '<button class="btn" data-act="adoptPet"' + (ready ? '' : ' disabled') + '>领养' + sp.name + ' · ' + PTS.adopt + ' 积分</button>';
+    const have = state.pets.filter((p) => p.sp === pick).length;
+    const cards = list
+      .map((x) => '<button class="pet-card' + (x.id === pick ? ' on' : '') + '" data-act="petPick" data-id="' + x.id + '">' + pxImg(ART.pet(x.id, 'idle'), 2) + '<span class="pc-name">' + x.name + '</span><span class="pc-meta">' + fmt(x.price) + ' 金币</span></button>')
+      .join('');
     return (
-      '<section class="panel adopt">' +
-      (alive ? '' : '<div class="bar wide"><i style="width:' + Math.min(100, (prog / PTS.adopt) * 100) + '%"></i></div><p class="muted small">新攒的积分 ' + fmt(Math.min(prog, PTS.adopt)) + ' / ' + PTS.adopt + '</p>') +
-      '<div class="pet-grid">' + cards + '</div>' +
-      '<div class="actions" style="margin-top:18px">' + action + '</div></section>'
+      '<div class="shelf-tabs">' + PET_KINDS.map(([id, l]) => '<button class="chip' + (id === kind ? ' on' : '') + '" data-act="adoptKind" data-kind="' + id + '">' + l + '</button>').join('') + '</div>' +
+      '<section class="panel adopt"><div class="pet-grid">' + cards + '</div>' +
+      '<div class="adopt-pick">' + pxImg(ART.pet(pick, 'happy'), 3) + '<div><b>' + sp.name + '</b><span class="muted small">' + fmt(sp.price) + ' 金币' + (have ? ' · 已经有 ' + have + ' 只' : '') + (sp.fish ? ' · 养在花园的池塘里，每天要喂鱼食' : ' · 每天要喂饭、陪它玩') + '</span></div>' +
+      '<button class="btn" data-act="buyPet" data-id="' + pick + '"' + (state.points.bal >= sp.price ? '' : ' disabled') + '>买一只</button></div></section>'
     );
+  }
+
+  // 戴上 it 之后的样子（预览用陪你背单词的那只，没有宠物就用小螃蟹）
+  function petPreview(it) {
+    const p = mainPet() || { sp: 'crab', wear: {} };
+    return petCanvas('idle', Object.assign({}, p, { wear: Object.assign({}, p.wear, { [it.slot]: it.id }) }));
   }
 
   // 货架上一件东西的样子
@@ -5238,13 +5319,16 @@
       const look = Object.assign(avatarLook(), it.look);
       return pxImg(ART.avatar(look, 'idle', 'front'), 2);
     }
-    if (it.shelf === 'petlook') return pxImg(petCanvas('idle', petAlive() ? state.pet.species : 'crab', lookWith(it)), 2);
-    if (it.tree) return pxImg(ART.tree(it.tree), 1.5);
+    if (it.shelf === 'petlook') return pxImg(petPreview(it), 2);
     if (it.decor) {
       const c = ART.decor(it.decor);
       return pxImg(c, c.width > 32 ? 1 : 2);
     }
-    if (it.plant) return pxImg(it.plant[0] === 'flower' ? ART.flower(it.plant[1], 3) : ART.shrub(it.plant[1], 2), 3);
+    if (it.plant) {
+      const [k, sp] = it.plant;
+      if (k === 'tree') return pxImg(ART.tree(sp, 4), 1);
+      return pxImg(k === 'flower' ? ART.flower(sp, 3) : k === 'grass' ? ART.grass(sp, 2) : ART.shrub(sp, 2), 3);
+    }
     return pxImg(itemIcon(it), 3);
   }
 
@@ -5254,59 +5338,65 @@
     if (it.shelf === 'look') {
       const owned = state.world.owned.includes(it.id);
       const on = state.world.look[it.slot] === it.id;
-      meta = on ? '穿着' : owned ? '已拥有' : it.price + ' 积分';
+      meta = on ? '穿着' : owned ? '已拥有' : fmt(it.price) + ' 金币';
       act = '<button class="btn small' + (on ? ' ghost' : '') + '" data-act="lookItem" data-id="' + it.id + '">' + (on ? '脱下' : owned ? '穿上' : '买') + '</button>';
     } else if (it.shelf === 'petlook') {
-      const owned = state.pet.owned.includes(it.id);
-      const on = state.pet.wear[it.slot] === it.id;
-      meta = on ? '戴着' : owned ? '已拥有' : it.price + ' 积分';
-      act = '<button class="btn small' + (on ? ' ghost' : '') + '" data-act="wearPet" data-id="' + it.id + '">' + (on ? '取下' : owned ? '戴上' : '买') + '</button>';
-    } else if (it.shelf === 'trees') {
-      const open = treeOpen(it.tree);
-      meta = open ? (state.forest.pick === it.tree ? '下次种这个' : '已解锁') : it.price + ' 积分';
-      act = open ? '<button class="btn small ghost" data-act="pickTree" data-id="' + it.tree + '">选它</button>' : '<button class="btn small" data-act="unlockTree" data-id="' + it.tree + '">解锁</button>';
+      const owned = state.petWardrobe.includes(it.id);
+      meta = owned ? '已拥有，在「我的宠物」里换' : fmt(it.price) + ' 金币';
+      act = owned ? '<button class="btn small ghost" data-act="openShop" data-tab="status">去换</button>' : '<button class="btn small" data-act="buyPetLook" data-id="' + it.id + '">买</button>';
     } else {
       const n = state.world.bag[it.id] || 0;
-      meta = it.price + ' 积分' + (n ? ' · 有 ' + n : '');
+      meta = fmt(it.price) + ' 金币' + (n ? ' · 有 ' + n : '');
       act = '<button class="btn small" data-act="buyItem" data-id="' + it.id + '">买</button>';
     }
-    return '<div class="shop-item">' + '<div class="si-pic">' + shelfPreview(it) + '</div><span class="si-name">' + esc(it.name) + '</span><span class="si-meta">' + meta + '</span>' + act + '</div>';
+    const note = itemNote(it);
+    return '<div class="shop-item">' + '<div class="si-pic">' + shelfPreview(it) + '</div><span class="si-name">' + esc(it.name) + '</span>' + (note ? '<span class="si-note">' + note + '</span>' : '') + '<span class="si-meta">' + meta + '</span>' + act + '</div>';
   }
 
-  const TREE_SHELF = { id: 'trees', name: '树种' };
+  // 扩建花园的卡片
+  function landHtml() {
+    const lv = state.world.land || 0;
+    const next = LANDS[lv + 1];
+    if (!next) return '<div class="shop-item land"><div class="si-pic">' + pxImg(ART.icon('shovel'), 3) + '</div><span class="si-name">花园已经扩建到最大</span><span class="si-meta">' + LANDS[lv].w + ' × ' + LANDS[lv].h + ' 格</span></div>';
+    return (
+      '<div class="shop-item land"><div class="si-pic">' + pxImg(ART.icon('shovel'), 3) + '</div><span class="si-name">扩建花园</span>' +
+      '<span class="si-note">' + LANDS[lv].w + ' × ' + LANDS[lv].h + ' → ' + next.w + ' × ' + next.h + ' 格</span>' +
+      '<span class="si-meta">' + fmt(next.price) + ' 金币</span><button class="btn small" data-act="buyLand">扩建</button></div>'
+    );
+  }
 
   function shelfHtml() {
-    const shelves = SHELVES.concat([TREE_SHELF]);
-    const cur = shelves.some((s) => s.id === ui.shelf) ? ui.shelf : 'seeds';
-    const items = cur === 'trees' ? [...TREES.values()].map((t) => ({ id: 'tree.' + t.id, shelf: 'trees', tree: t.id, name: t.name, price: t.price })) : SHELVES.find((s) => s.id === cur).items.map((it) => ITEMS.get(it.id));
+    const cur = SHELVES.some((s) => s.id === ui.shelf) ? ui.shelf : SHELVES[0].id;
+    const items = SHELVES.find((s) => s.id === cur).items.map((it) => ITEMS.get(it.id));
     return (
-      '<div class="shelf-tabs">' + shelves.map((s) => '<button class="chip' + (s.id === cur ? ' on' : '') + '" data-act="openShelf" data-shelf="' + s.id + '">' + s.name + '</button>').join('') + '</div>' +
-      '<section class="panel"><div class="shop-grid">' + items.map(shelfItemHtml).join('') + '</div></section>'
+      '<div class="shelf-tabs">' + SHELVES.map((s) => '<button class="chip' + (s.id === cur ? ' on' : '') + '" data-act="openShelf" data-shelf="' + s.id + '">' + s.name + '</button>').join('') + '</div>' +
+      '<section class="panel"><div class="shop-grid">' + items.map(shelfItemHtml).join('') + (cur === 'garden' ? landHtml() : '') + '</div></section>'
     );
   }
 
   function rulesHtml() {
     return (
-      '<section class="panel rules"><h2 class="h2">积分</h2><ul>' +
+      '<section class="panel rules"><h2 class="h2">金币</h2><ul>' +
       '<li>答对一题 +' + PTS.right + '，每连对 5 题再 +' + PTS.combo + '</li>' +
       '<li>背完一组新词：组里有几个词就 +几；全对再 +' + PTS.perfect + '</li>' +
       '<li>学完一组词根 +' + PTS.rootDone + '，全对再 +' + PTS.rootPerfect + '</li>' +
-      '<li>每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '</li>' +
-      '<li>专注种树：' + FOCUS_OPTS.map((o) => o[0] + ' 分钟答够 ' + o[1] + ' 题 +' + o[2]).join('，') + '</li>' +
+      '<li>每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '，每日挑战和成就另有奖励</li>' +
       '<li>以前错过的词再答错 −' + PTS.again + '</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">宠物</h2><ul>' +
-      '<li>领养 ' + PTS.adopt + ' 积分（要从上次之后新攒）</li>' +
-      '<li>状态每天 −' + MOOD.decay + '；玩具、在花园玩、陪你背单词、摸摸它都会回升</li>' +
-      '<li>状态到 0 会生病，吃药才能好；生病 ' + MOOD.sickDays + ' 天没吃药，它会离开</li>' +
+      '<li>在宠物店买，同一种可以买好几只；鱼养在池塘里</li>' +
+      '<li>饱腹每天 −' + CARE.food + '，心情每天 −' + CARE.mood + '；喂饭、玩具、在花园玩、陪你背单词、摸摸它都会回升</li>' +
+      '<li>饱腹或心情掉到 0 会生病，吃药才能好；生病 ' + CARE.sickDays + ' 天没吃药就会死</li>' +
+      '<li>选一只陪你背单词，其他的在花园里玩</li>' +
       '</ul><h2 class="h2" style="margin-top:22px">花园</h2><ul>' +
-      '<li>每周一换新，装饰和房子留着</li>' +
-      '<li>花和灌木每天浇一次水长一截，肥料再长一截</li>' +
+      '<li>买种子种下，每天浇一次水长一阶，施一次肥也长一阶</li>' +
+      '<li>树从种子长成大树要 4 阶，花 3 阶，草和灌木 2 阶</li>' +
+      '<li>花园一直留着，可以花金币扩建</li>' +
       '</ul></section>'
     );
   }
 
   VIEWS.shop = function () {
-    petMoodTick();
+    petsTick();
     const tab = shopTab();
     const body = { status: petStatusHtml, shelf: shelfHtml, adopt: adoptHtml, goals: () => challengesHtml(false) + achievementsHtml(), rules: rulesHtml }[tab]();
     return (
@@ -5319,13 +5409,27 @@
     );
   };
 
-  AFTER.shop = function () {
-    if (ui.petGone) {
-      ui.petGone = false;
-      const g = state.pet.graves[state.pet.graves.length - 1];
-      if (g) toast(g.name + ' 生病太久，离开了');
+  // 首页的花园卡片：宠物好不好、今天还有多少株没浇水
+  function gardenCardHtml() {
+    const pets = state.pets.filter((p) => SPECIES.has(p.sp));
+    const need = pets.filter(petLow);
+    const thirsty = state.world.plants.filter((pl) => plantStage(pl) < plantMax(pl) && !wateredToday(pl)).length;
+    const pics = landPets().slice(0, 4).map((p) => pxImg(petCanvas(p.sick ? 'sick' : 'idle', p), 2)).join('');
+    let h;
+    let sub;
+    if (!pets.length) {
+      h = '还没有宠物';
+      sub = '背单词攒金币，在宠物店买一只';
+    } else {
+      h = need.length ? need.map((p) => p.name + petLabel(p)).slice(0, 3).join('，') : pets.length + ' 只宠物都很好';
+      sub = thirsty ? '花园里还有 ' + thirsty + ' 株今天没浇水' : '花园今天都照顾好了';
     }
-  };
+    return (
+      '<section class="panel gcard"><div class="gc-pets">' + (pics || pxImg(ART.tree('oak', 4), 1)) + '</div>' +
+      '<div class="gc-main"><p class="label">花园</p><h2 class="h2' + (need.length ? ' bad' : '') + '">' + esc(h) + '</h2><p class="muted">' + sub + '</p>' +
+      '<div class="actions"><button class="btn ghost" data-act="nav" data-view="garden">去花园</button>' + (pets.length ? '<button class="btn ghost" data-act="openShop" data-tab="status">我的宠物</button>' : '<button class="btn ghost" data-act="openShop" data-tab="adopt">宠物店</button>') + '</div></div></section>'
+    );
+  }
 
   Object.assign(ACTIONS, {
     openShop(t) {
@@ -5339,17 +5443,6 @@
       if (ui.view !== 'shop') go('shop');
       else render();
     },
-    histTab(t) {
-      ui.histTab = t.dataset.tab;
-      const sec = document.querySelector('.hist');
-      if (sec) {
-        sec.outerHTML = gardenHistHtml();
-        for (const c of document.querySelectorAll('canvas.snap')) {
-          const s = state.world.hist[c.dataset.week];
-          if (s) drawSnapshot(c, s);
-        }
-      }
-    },
     tool(t) {
       const id = t.dataset.id;
       ui.tool = ui.tool === id ? null : id;
@@ -5360,6 +5453,10 @@
     },
     goGarden() {
       goScene('garden');
+    },
+    zoom(t) {
+      if (!scene) return;
+      scene.zoomBy(+t.dataset.d);
     },
     buyItem(t) {
       const it = ITEMS.get(t.dataset.id);
@@ -5387,99 +5484,95 @@
       save();
       render();
     },
+    buyPetLook(t) {
+      const it = ITEMS.get(t.dataset.id);
+      if (!it || state.petWardrobe.includes(it.id) || !spend(it.price)) return;
+      state.petWardrobe.push(it.id);
+      save();
+      toast('买了' + it.name + '，在「我的宠物」里给它们戴上');
+      render();
+    },
     wearPet(t) {
       const it = ITEMS.get(t.dataset.id);
-      if (!it) return;
-      const pet = state.pet;
-      if (pet.wear[it.slot] === it.id) delete pet.wear[it.slot];
+      const p = petById(+t.dataset.pet);
+      if (!it || !p || !state.petWardrobe.includes(it.id)) return;
+      if (p.wear[it.slot] === it.id) delete p.wear[it.slot];
       else {
-        if (!pet.owned.includes(it.id)) {
-          if (!spend(it.price)) return;
-          pet.owned.push(it.id);
-        }
-        pet.wear[it.slot] = it.id;
-        setTimeout(() => petSay('dressed'), 200);
+        p.wear[it.slot] = it.id;
+        if (p === mainPet()) setTimeout(() => petSay('dressed'), 200);
       }
       save();
       render();
     },
-    useItem(t) {
-      const it = ITEMS.get(t.dataset.id);
-      if (!it) return;
-      if (it.use === 'medicine') useMedicine();
-      else useToy(it.id);
+    wardPet(t) {
+      const id = +t.dataset.pet;
+      ui.wardPet = ui.wardPet === id ? null : id;
+      render();
+    },
+    careUse(t) {
+      if (careUse(petById(+t.dataset.pet), t.dataset.id)) render();
+    },
+    feedFish() {
+      if (feedFish()) render();
+    },
+    setMain(t) {
+      const p = petById(+t.dataset.pet);
+      if (!p || isFish(p)) return;
+      state.petMain = p.id;
+      save();
+      roam.x = null;
+      toast(p.name + '会陪你背单词');
+      render();
     },
     petPick(t) {
       ui.petPick = t.dataset.id;
       render();
     },
-    unlockSpecies(t) {
-      const id = t.dataset.id;
-      if (unlocked(id) || !spend(speciesPrice(id))) return;
-      state.pet.unlocked.push(id);
-      save();
-      toast('解锁了' + SPECIES.get(id).name);
+    adoptKind(t) {
+      ui.petKind = t.dataset.kind;
+      ui.petPick = null;
       render();
     },
-    async adoptPet() {
-      const pick = ui.petPick && SPECIES.has(ui.petPick) ? ui.petPick : 'crab';
-      if (!unlocked(pick) || petAlive()) return;
-      if (adoptProgress() < PTS.adopt) {
-        toast('还要再攒 ' + (PTS.adopt - adoptProgress()) + ' 积分');
-        return;
-      }
-      const sp = SPECIES.get(pick);
-      const name = await askText('给你的' + sp.name + '起个名字', sp.name);
+    async buyPet(t) {
+      const sp = SPECIES.get(t.dataset.id);
+      if (!sp) return;
+      if (state.points.bal < sp.price) return toast('金币不够（还差 ' + fmt(sp.price - state.points.bal) + '）');
+      const n = state.pets.filter((p) => p.sp === sp.id).length;
+      const name = await askText('给你的' + sp.name + '起个名字', sp.name + (n ? ' ' + (n + 1) : ''));
       if (name === null) return;
-      if (!spend(PTS.adopt)) return;
-      const pet = state.pet;
-      pet.status = 'alive';
-      pet.species = pick;
-      pet.name = name.trim().slice(0, 12) || sp.name;
-      pet.born = dayNum();
-      pet.mood = MOOD.start;
-      pet.moodDay = dayNum();
-      pet.sick = false;
+      if (!spend(sp.price)) return;
+      const p = newPet(sp.id, name.trim().slice(0, 12) || sp.name);
       save();
       roam.x = null;
+      toast(sp.fish ? p.name + '放进池塘了，记得喂鱼食' : p.name + '住进花园了，记得每天喂它');
       ui.shopTab = 'status';
       render();
-      setTimeout(() => petSay('hello'), 300);
+      if (p === mainPet()) setTimeout(() => petSay('hello'), 300);
     },
-    async renamePet() {
-      const name = await askText('改个名字', state.pet.name);
+    async renamePet(t) {
+      const p = petById(+t.dataset.pet);
+      if (!p) return;
+      const name = await askText('改个名字', p.name);
       if (name === null || !name.trim()) return;
-      state.pet.name = name.trim().slice(0, 12);
+      p.name = name.trim().slice(0, 12);
       save();
       render();
     },
-    startFocus() {
-      startFocus();
-    },
-    async giveUpFocus() {
-      if (!focus) return;
-      if (!(await askConfirm('放弃这次专注？正在长的树会枯萎。', '放弃'))) return;
-      endFocus(false, '放弃了，' + ((TREES.get(focus ? focus.tree : '') || {}).name || '树') + '枯萎了');
-    },
-    focusMin(t) {
-      state.forest.minutes = +t.dataset.min;
+    async buyLand() {
+      const lv = state.world.land || 0;
+      const next = LANDS[lv + 1];
+      if (!next) return;
+      if (state.points.bal < next.price) return toast('金币不够（还差 ' + fmt(next.price - state.points.bal) + '）');
+      if (!(await askConfirm('花 ' + fmt(next.price) + ' 金币把花园扩建到 ' + next.w + ' × ' + next.h + ' 格？', '扩建'))) return;
+      if (!spend(next.price)) return;
+      state.world.land = lv + 1;
+      layoutGarden();
+      terrainCache.key = '';
       save();
-      render();
-    },
-    pickTree(t) {
-      if (!treeOpen(t.dataset.id)) return;
-      state.forest.pick = t.dataset.id;
-      save();
-      render();
-    },
-    unlockTree(t) {
-      const tr = TREES.get(t.dataset.id);
-      if (!tr || treeOpen(tr.id) || !spend(tr.price)) return;
-      state.forest.unlocked.push(tr.id);
-      state.forest.pick = tr.id;
-      save();
-      toast('解锁了' + tr.name);
-      render();
+      toast('花园扩建好了');
+      if (scene) scene.stop();
+      scene = null;
+      go('garden');
     },
   });
 
@@ -5491,6 +5584,11 @@
     if (ev.key === 'Escape' && ui.tool) {
       ui.tool = null;
       refreshSceneUi();
+      return;
+    }
+    if (ev.key === '+' || ev.key === '=' || ev.key === '-' || ev.key === '_') {
+      scene.zoomBy(ev.key === '-' || ev.key === '_' ? -1 : 1);
+      ev.preventDefault();
       return;
     }
     if (scene.key(ev, true)) ev.preventDefault();
@@ -5681,18 +5779,16 @@
 
   // 给自动化测试用的入口（只有测试脚本会设置 __MARGIN_TEST）
   if (window.__MARGIN_TEST) window.__margin = { zhMatch, similarity, judgeZhLines, meaningHtml, layersOf };
-  if (window.__MARGIN_TEST) window.__sceneDebug = () => (scene ? { cx: scene.cam.x, cy: scene.cam.y, av: scene.av, pet: scene.pet, blocked: () => scene.blocked(), walk: (x, y) => scene.walkTo(x, y) } : null);
+  if (window.__MARGIN_TEST) window.__sceneDebug = () => (scene ? { cx: scene.cam.x, cy: scene.cam.y, av: scene.av, pet: scene.mainEnt(), pets: scene.pets, fish: scene.fish, scale: scene.scale, vw: scene.vw, blocked: () => scene.blocked(), walk: (x, y) => scene.walkTo(x, y) } : null);
 
+  layoutGarden();
   migrate();
   applyTheme();
   render();
-  focusResume();
   checkAchievements(true);
-  if (petAlive()) setTimeout(() => petSay(petSick() ? 'sick' : petNeedsCare() ? 'low' : 'hello'), 1500);
-  else if (state.pet.status === 'dead' && ui.petGone) {
-    ui.petGone = false;
-    const g = state.pet.graves[state.pet.graves.length - 1];
-    if (g) setTimeout(() => toast(g.name + ' 生病太久，离开了'), 800);
+  if (petAlive()) {
+    const mp = mainPet();
+    setTimeout(() => petSay(mp.sick ? 'sick' : mp.food < 30 ? 'hungry' : mp.mood < 30 ? 'low' : 'hello'), 1500);
   }
   autoCheckUpdate();
 })();

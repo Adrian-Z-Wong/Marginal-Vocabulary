@@ -322,6 +322,38 @@ window.MARGIN_ART = (function () {
     blush(p, 23, 16 + y0);
   }
 
+  // 鱼：圆圆的身子、大眼睛、会摆的尾巴
+  function cuteFish(p, f, body, fin, o) {
+    o = o || {};
+    const y0 = (f === 'walk1' ? -1 : f === 'happy' ? -2 : 0) + 2;
+    const sw = f === 'walk1' ? -2 : f === 'walk2' ? 2 : f === 'happy' ? -3 : 0;
+    // 尾巴
+    p.poly([[22, 16 + y0], [30, 8 + y0 + sw], [31, 16 + y0], [30, 24 + y0 - sw]], fin);
+    if (o.fancy) {
+      p.poly([[23, 16 + y0], [31, 5 + y0 + sw], [29, 14 + y0]], o.fin2 || ramp(fin).mid);
+      p.poly([[23, 16 + y0], [31, 27 + y0 - sw], [29, 18 + y0]], o.fin3 || ramp(fin).mid);
+    }
+    // 背鳍和腹鳍
+    p.poly([[11, 9 + y0], [18, 5 + y0], [20, 10 + y0]], fin);
+    p.poly([[13, 22 + y0], [17, 27 + y0], [19, 22 + y0]], fin);
+    p.sEll(14, 16 + y0, 10, 8, body);
+    p.ell(13, 19 + y0, 6.5, 3.5, lighten(body, 0.08));
+    if (o.spots) {
+      p.ell(15, 12 + y0, 3.5, 2.5, o.spots);
+      p.ell(20, 17 + y0, 2.2, 2.4, o.spots);
+      p.ell(10, 10 + y0, 1.8, 1.4, o.spots);
+    }
+    if (o.line) p.rect(8, 16 + y0, 13, 1, o.line);
+    if (o.shine) for (const [x, y] of [[12, 12], [17, 14], [15, 19]]) p.set(x, y + y0, '#fff1b8');
+    // 胸鳍
+    p.sEll(15, 19 + y0, 2.2, 1.4, ramp(fin).mid);
+    const k = eyeKind(f);
+    eye(p, 8, 13 + y0, k, 3);
+    if (f === 'happy' || f === 'sick') p.rect(5, 18 + y0, 2, 1, f === 'sick' ? INK : '#c0505a');
+    else p.set(5, 18 + y0, ramp(body).lo);
+    blush(p, 9, 18 + y0);
+  }
+
   const PETS = {
     crab(p, f) {
       const B = '#d97757';
@@ -564,6 +596,358 @@ window.MARGIN_ART = (function () {
       blush(p, 6, 17 + y0);
       blush(p, 24, 17 + y0);
     },
+
+    piglet(p, f) {
+      const B = '#f4b0aa';
+      const D = '#e08a86';
+      chibi(p, f, {
+        body: B,
+        belly: '#fbd3cf',
+        paw: D,
+        tail(p, y0) {
+          p.line(23, 24 + y0, 25, 22 + y0, D);
+          p.line(25, 22 + y0, 26, 24 + y0, D);
+          p.set(27, 23 + y0, D);
+        },
+        ears(p, y0) {
+          p.poly([[6, 9 + y0], [7, 2 + y0], [13, 6 + y0]], ramp(B).base);
+          p.poly([[26, 9 + y0], [25, 2 + y0], [19, 6 + y0]], ramp(B).mid);
+          p.poly([[8, 7 + y0], [8.5, 4 + y0], [11, 6 + y0]], D);
+          p.poly([[24, 7 + y0], [23.5, 4 + y0], [21, 6 + y0]], D);
+        },
+        face(p, y0) {
+          p.sEll(16, 17 + y0, 3.8, 2.6, '#f29a94');
+          p.rect(14, 17 + y0, 1, 1, '#a8524e');
+          p.rect(17, 17 + y0, 1, 1, '#a8524e');
+        },
+      });
+    },
+
+    lamb(p, f) {
+      const W = '#f6f0e4';
+      const F = '#f3d8bc';
+      chibi(p, f, {
+        body: W,
+        belly: '#fffaf2',
+        paw: '#8a7a6a',
+        ears(p, y0) {
+          p.sEll(5, 12 + y0, 3.6, 2, '#e8cfb2');
+          p.sEll(27, 12 + y0, 3.6, 2, '#e8cfb2');
+        },
+        face(p, y0) {
+          // 一圈卷卷的羊毛，中间是脸
+          for (const [x, y] of [[8, 6], [12, 4], [16, 3.5], [20, 4], [24, 6], [6, 10], [26, 10]]) p.sEll(x, y + y0, 3, 2.8, W);
+          p.sEll(16, 14 + y0, 7.5, 6, F);
+          p.rect(15, 17 + y0, 2, 1, '#c8806a');
+          p.set(15, 18 + y0, '#a86a5a');
+          p.set(16, 18 + y0, '#a86a5a');
+        },
+      });
+    },
+
+    corgi(p, f) {
+      const B = '#e9974e';
+      const C = '#fff4e6';
+      chibi(p, f, {
+        body: B,
+        belly: C,
+        paw: C,
+        tail(p, y0) {
+          p.sEll(25, 23 + y0, 2.6, 2.2, B);
+        },
+        ears(p, y0) {
+          p.poly([[5, 9 + y0], [6, -1 + y0], [13, 5 + y0]], ramp(B).base);
+          p.poly([[27, 9 + y0], [26, -1 + y0], [19, 5 + y0]], ramp(B).mid);
+          p.poly([[7, 7 + y0], [7.5, 2 + y0], [11, 5.5 + y0]], '#f4b0a0');
+          p.poly([[25, 7 + y0], [24.5, 2 + y0], [21, 5.5 + y0]], '#f4b0a0');
+        },
+        face(p, y0) {
+          p.rect(15, 5 + y0, 2, 7, C);
+          p.ell(16, 17 + y0, 6, 3.6, C);
+          p.ell(16, 12 + y0, 2.5, 2, C);
+          p.rect(15, 15 + y0, 2, 2, INK);
+          p.set(15, 15 + y0, '#6a5a5a');
+        },
+      });
+    },
+
+    hedgehog(p, f) {
+      const S = '#7a5a3e';
+      const T = '#c4a07a';
+      const F = '#f2dcc0';
+      const y0 = bob(f);
+      const [a, b] = feet(f);
+      // 背上的刺：一个圆顶，边上一圈短短的尖，尖上发白
+      p.sEll(16, 17 + y0, 13, 12, S);
+      for (let k = 0; k <= 16; k++) {
+        const t = Math.PI * (1 + k / 16);
+        const x = 16 + Math.cos(t) * 12.5;
+        const y = 17 + y0 + Math.sin(t) * 11.5;
+        const x2 = 16 + Math.cos(t) * 15;
+        const y2 = 17 + y0 + Math.sin(t) * 14;
+        p.poly([[x - 1.5, y + 0.5], [x + 1.5, y + 0.5], [x2, y2]], k % 2 ? S : ramp(S).mid);
+        p.set(Math.round(x2), Math.round(y2), T);
+      }
+      // 刺上的纹理：一排排浅色的小短线
+      for (let row = 0; row < 3; row++)
+        for (let k = 0; k < 9; k++) {
+          const x = 6 + k * 2.5 + (row % 2) * 1.2;
+          const y = 8 + row * 3 + y0 + Math.abs(k - 4) * 0.6;
+          p.set(Math.round(x), Math.round(y), T);
+          p.set(Math.round(x), Math.round(y) + 1, ramp(S).lo);
+        }
+      // 脸和肚子
+      p.sEll(16, 22 + y0, 9.5, 8, F);
+      p.sEll(11.5, 29.5 + y0 - a, 2.4, 1.6, '#c8a07a');
+      p.sEll(20.5, 29.5 + y0 - b, 2.4, 1.6, '#c8a07a');
+      p.sEll(8, 13 + y0, 2.2, 2, '#e8c8a8');
+      p.sEll(24, 13 + y0, 2.2, 2, '#e8c8a8');
+      const k = eyeKind(f);
+      eye(p, 11, 18 + y0, k, 3);
+      eye(p, 20, 18 + y0, k, 3);
+      p.sEll(16, 23 + y0, 1.8, 1.3, INK);
+      if (f === 'happy') p.rect(15, 26 + y0, 2, 1, '#c0505a');
+      blush(p, 8, 23 + y0);
+      blush(p, 22, 23 + y0);
+    },
+
+    squirrel(p, f) {
+      const B = '#c97a3e';
+      const C = '#f6e3c8';
+      chibi(p, f, {
+        body: B,
+        belly: C,
+        tail(p, y0) {
+          const up = f === 'happy' ? -2 : 0;
+          p.sEll(26, 15 + y0 + up, 5.5, 9, B);
+          p.sEll(27, 10 + y0 + up, 3.5, 4.5, ramp(B).hi);
+          p.ell(29, 16 + y0 + up, 1.5, 6, ramp(B).mid);
+        },
+        ears(p, y0) {
+          p.poly([[7, 9 + y0], [8, 1 + y0], [13, 6 + y0]], ramp(B).base);
+          p.poly([[25, 9 + y0], [24, 1 + y0], [19, 6 + y0]], ramp(B).mid);
+          p.set(8, 0 + y0, ramp(B).lo);
+          p.set(24, 0 + y0, ramp(B).lo);
+        },
+        face(p, y0) {
+          p.ell(10.5, 17 + y0, 3.8, 3, C);
+          p.ell(21.5, 17 + y0, 3.8, 3, C);
+          p.rect(15, 16 + y0, 2, 1, '#6a3a2a');
+          p.set(15, 18 + y0, '#fbf7ef');
+          p.set(16, 18 + y0, '#fbf7ef');
+        },
+      });
+    },
+
+    owl(p, f) {
+      const B = '#9a7556';
+      const L = '#e8d4b4';
+      const y0 = bob(f);
+      const [a, b] = feet(f);
+      const flap = f === 'happy' ? -3 : 0;
+      p.sEll(5, 20 + y0 + flap, 3, 7, ramp(B).mid);
+      p.sEll(27, 20 + y0 + flap, 3, 7, ramp(B).mid);
+      p.sEll(16, 18 + y0, 11.5, 12.5, B);
+      // 耳羽
+      p.poly([[6, 9 + y0], [7, 2 + y0], [11, 7 + y0]], B);
+      p.poly([[26, 9 + y0], [25, 2 + y0], [21, 7 + y0]], B);
+      p.ell(16, 24 + y0, 7, 6, L);
+      for (const [x, y] of [[13, 21], [17, 21], [15, 24], [19, 24], [12, 25], [16, 27]]) {
+        p.set(x, y + y0, ramp(L).lo);
+        p.set(x + 1, y + 1 + y0, ramp(L).lo);
+        p.set(x - 1, y + 1 + y0, ramp(L).lo);
+      }
+      // 大眼圈
+      p.sEll(10.5, 12.5 + y0, 5, 4.8, '#f6ecd8');
+      p.sEll(21.5, 12.5 + y0, 5, 4.8, '#f6ecd8');
+      const k = eyeKind(f);
+      if (k === 'open') {
+        p.ell(10.5, 12.5 + y0, 2.4, 2.4, '#f2a23a');
+        p.ell(21.5, 12.5 + y0, 2.4, 2.4, '#f2a23a');
+        p.rect(10, 12 + y0, 2, 2, INK);
+        p.rect(21, 12 + y0, 2, 2, INK);
+        p.set(10, 12 + y0, WHITE);
+        p.set(21, 12 + y0, WHITE);
+      } else {
+        eye(p, 10, 11 + y0, k, 3);
+        eye(p, 21, 11 + y0, k, 3);
+      }
+      p.poly([[14.5, 15 + y0], [17.5, 15 + y0], [16, 18.5 + y0]], '#f2a23a');
+      p.rect(11, 30 + y0 - a, 4, 1, '#f2a23a');
+      p.rect(17, 30 + y0 - b, 4, 1, '#f2a23a');
+    },
+
+    otter(p, f) {
+      const B = '#8a6248';
+      const C = '#ecd6ba';
+      chibi(p, f, {
+        body: B,
+        belly: C,
+        paw: ramp(B).lo,
+        tail(p, y0) {
+          p.sEll(26, 25 + y0, 4.5, 2.2, ramp(B).mid);
+        },
+        ears(p, y0) {
+          p.sEll(6.5, 8 + y0, 2.4, 2.2, B);
+          p.sEll(25.5, 8 + y0, 2.4, 2.2, B);
+        },
+        face(p, y0) {
+          p.ell(16, 17 + y0, 6.5, 4, C);
+          p.ell(16, 15.5 + y0, 2.2, 1.4, '#4a2e22');
+          for (const [x, y] of [[11, 17], [11, 19], [21, 17], [21, 19]]) p.set(x, y + y0, ramp(C).lo);
+          p.set(16, 17 + y0, '#4a2e22');
+        },
+      });
+    },
+
+    raccoon(p, f) {
+      const B = '#9a9aa2';
+      const W = '#f0eee8';
+      const M = '#3e3e46';
+      chibi(p, f, {
+        body: B,
+        belly: '#dcdad4',
+        paw: M,
+        tail(p, y0) {
+          p.sEll(25.5, 19 + y0, 3.5, 7, B);
+          for (const y of [14, 18, 22]) p.rect(23, y + y0, 6, 2, M);
+        },
+        ears(p, y0) {
+          p.poly([[6, 9 + y0], [7, 2 + y0], [13, 6 + y0]], ramp(B).base);
+          p.poly([[26, 9 + y0], [25, 2 + y0], [19, 6 + y0]], ramp(B).mid);
+          p.poly([[8, 7 + y0], [8.5, 4 + y0], [11, 6 + y0]], W);
+          p.poly([[24, 7 + y0], [23.5, 4 + y0], [21, 6 + y0]], W);
+        },
+        face(p, y0) {
+          p.ell(16, 17 + y0, 6, 3.6, W);
+          p.rect(8, 9 + y0, 5, 1, W);
+          p.rect(19, 9 + y0, 5, 1, W);
+          // 眼罩
+          p.ell(10.5, 13.5 + y0, 4, 2.6, M);
+          p.ell(21.5, 13.5 + y0, 4, 2.6, M);
+          p.ell(11, 13.5 + y0, 2, 2, '#62626c');
+          p.ell(22, 13.5 + y0, 2, 2, '#62626c');
+          p.rect(15, 15 + y0, 2, 2, INK);
+        },
+      });
+    },
+
+    koala(p, f) {
+      const B = '#a8acb6';
+      const W = '#eceef2';
+      chibi(p, f, {
+        body: B,
+        belly: W,
+        paw: ramp(B).mid,
+        ears(p, y0) {
+          p.sEll(5.5, 8 + y0, 5, 5, B);
+          p.sEll(26.5, 8 + y0, 5, 5, B);
+          p.ell(5.5, 8.5 + y0, 2.8, 2.8, W);
+          p.ell(26.5, 8.5 + y0, 2.8, 2.8, W);
+        },
+        face(p, y0) {
+          p.sEll(16, 16.5 + y0, 2.8, 3.4, '#3a3a44');
+          p.set(15, 15 + y0, '#6a6a76');
+        },
+      });
+    },
+
+    redpanda(p, f) {
+      const B = '#d0663a';
+      const D = '#4a2a22';
+      const W = '#fbf2e6';
+      chibi(p, f, {
+        body: B,
+        belly: D,
+        paw: D,
+        hw: 11.5,
+        tail(p, y0) {
+          p.sEll(26, 19 + y0, 4, 7.5, B);
+          for (const y of [15, 19, 23]) p.rect(23, y + y0, 7, 2, ramp(B).lo);
+        },
+        ears(p, y0) {
+          p.poly([[5, 10 + y0], [6, 2 + y0], [13, 6 + y0]], ramp(B).base);
+          p.poly([[27, 10 + y0], [26, 2 + y0], [19, 6 + y0]], ramp(B).mid);
+          p.poly([[7, 8 + y0], [7.5, 4 + y0], [11, 6.5 + y0]], W);
+          p.poly([[25, 8 + y0], [24.5, 4 + y0], [21, 6.5 + y0]], W);
+        },
+        face(p, y0) {
+          p.ell(9.5, 17 + y0, 4, 3.2, W);
+          p.ell(22.5, 17 + y0, 4, 3.2, W);
+          p.ell(16, 18 + y0, 3.6, 2.4, W);
+          p.rect(9, 9 + y0, 3, 1, W);
+          p.rect(20, 9 + y0, 3, 1, W);
+          p.rect(15, 16 + y0, 2, 2, INK);
+          p.rect(10, 14 + y0, 1, 3, ramp(B).lo);
+          p.rect(21, 14 + y0, 1, 3, ramp(B).lo);
+        },
+      });
+    },
+
+    panda(p, f) {
+      const W = '#f6f4ee';
+      const K = '#2e2e36';
+      chibi(p, f, {
+        body: W,
+        belly: '#fffdf8',
+        paw: K,
+        ears(p, y0) {
+          p.sEll(6, 6 + y0, 3.6, 3.4, K);
+          p.sEll(26, 6 + y0, 3.6, 3.4, K);
+        },
+        face(p, y0) {
+          // 黑眼圈：斜一点的椭圆，里面浅一点好看清眼睛
+          p.poly([[7, 14 + y0], [9, 10 + y0], [14, 11 + y0], [13, 16 + y0], [9, 17 + y0]], K);
+          p.poly([[25, 14 + y0], [23, 10 + y0], [18, 11 + y0], [19, 16 + y0], [23, 17 + y0]], K);
+          p.ell(11, 13.5 + y0, 1.8, 2.2, '#5c5c68');
+          p.ell(22, 13.5 + y0, 1.8, 2.2, '#5c5c68');
+          p.sEll(16, 17 + y0, 1.8, 1.2, K);
+          p.rect(15, 19 + y0, 2, 1, '#8a8a92');
+          // 肩膀上一圈黑
+          p.ell(16, 22 + y0, 9, 2, K);
+        },
+      });
+    },
+
+    chick(p, f) {
+      const Y = '#f8d54a';
+      const O = '#f2902e';
+      const y0 = bob(f);
+      const [a, b] = feet(f);
+      const flap = f === 'happy' ? -3 : f === 'walk1' ? -1 : 0;
+      p.rect(11, 29 + y0 - a, 3, 2, O);
+      p.rect(18, 29 + y0 - b, 3, 2, O);
+      p.sEll(6.5, 20 + y0 + flap, 3, 4, ramp(Y).mid);
+      p.sEll(25.5, 20 + y0 + flap, 3, 4, ramp(Y).mid);
+      p.sEll(16, 19 + y0, 10.5, 10, Y);
+      p.ell(16, 23 + y0, 6, 4.5, lighten(Y, 0.1));
+      for (const [x, y] of [[15, 7], [16, 6], [17, 7], [16, 8]]) p.set(x, y + y0, Y);
+      p.set(14, 6 + y0, ramp(Y).mid);
+      const k = eyeKind(f);
+      eye(p, 11, 14 + y0, k, 3);
+      eye(p, 20, 14 + y0, k, 3);
+      p.poly([[14, 18 + y0], [18, 18 + y0], [16, 20.5 + y0]], O);
+      p.rect(14, 17 + y0, 4, 1, ramp(O).hi);
+      blush(p, 8, 18 + y0);
+      blush(p, 22, 18 + y0);
+    },
+
+    // 鱼（侧面，给商店和「我的宠物」用）
+    medaka(p, f) {
+      cuteFish(p, f, '#d8c68a', '#c8b070', { line: '#7aa0c0' });
+    },
+    goldfish(p, f) {
+      cuteFish(p, f, '#f0742e', '#f6b07a', { fancy: true });
+    },
+    guppy(p, f) {
+      cuteFish(p, f, '#a8bccf', '#e85d75', { fancy: true, fin2: '#9b7fd1', fin3: '#5ab0e0' });
+    },
+    koi(p, f) {
+      cuteFish(p, f, '#f8f4ec', '#f2e6dc', { spots: '#d8452e' });
+    },
+    goldkoi(p, f) {
+      cuteFish(p, f, '#f2c14e', '#f7dc85', { shine: true });
+    },
   };
 
   // ================= 人物（16×32，正面） =================
@@ -620,7 +1004,7 @@ window.MARGIN_ART = (function () {
     },
   };
   // 宠物戴帽子的位置：帽子画在 16 宽的格子里，挪到宠物头顶
-  const PET_HAT_AT = { crab: 4, cat: 0, shiba: 0, fox: -1, rabbit: 1, hamster: 4, penguin: 1, duck: -1, frog: 3 };
+  const PET_HAT_AT = { crab: 4, cat: 0, shiba: 0, fox: -1, rabbit: 1, hamster: 4, penguin: 1, duck: -1, frog: 3, piglet: 1, lamb: 0, corgi: -1, hedgehog: 2, squirrel: 0, owl: 1, otter: 2, raccoon: 0, koala: 1, redpanda: 0, panda: 1, chick: 4, medaka: 4, goldfish: 4, guppy: 4, koi: 4, goldkoi: 4 };
 
   function person(p, look, f, dir) {
     dir = dir || 'front';
@@ -785,101 +1169,213 @@ window.MARGIN_ART = (function () {
   const ROUND = [[16, 23, 12, 8], [8, 17, 7, 7], [24, 17, 7, 7], [16, 11, 9, 8], [11, 9, 5, 4], [21, 9, 5, 4]];
   const SPECK = [[12, 14], [19, 12], [9, 21], [25, 22], [16, 26]];
 
-  const TREES = {
-    oak(p) {
-      trunk(p, 14, 30, 15);
-      canopy(p, ROUND, '#5f9e4f', SPECK);
-    },
-    apple(p) {
-      trunk(p, 14, 30, 15);
-      canopy(p, ROUND, '#5c9a4a', SPECK, [[9, 15, '#d64545'], [21, 12, '#d64545'], [16, 21, '#d64545'], [24, 21, '#d64545'], [12, 24, '#d64545'], [17, 8, '#d64545']]);
-    },
-    sakura(p) {
-      trunk(p, 14, 30, 15, '#7a4a3a');
-      canopy(p, ROUND, '#f2a6c0', SPECK, [[10, 12, '#fbd3e0'], [22, 16, '#fbd3e0'], [15, 22, '#fbd3e0'], [19, 7, '#ffffff']]);
-      for (const [x, y] of [[5, 34], [26, 37], [9, 41], [22, 43]]) p.set(x, y, '#f2a6c0');
-    },
-    maple(p) {
-      trunk(p, 14, 30, 15, '#7a4a3a');
-      canopy(p, [[16, 22, 12, 8], [7, 16, 6, 6], [25, 16, 6, 6], [16, 10, 9, 8], [16, 4, 4, 3]], '#e0663a', SPECK, [[11, 13, '#f2a24a'], [21, 19, '#c8463a'], [15, 25, '#f2a24a']]);
-    },
-    ginkgo(p) {
-      trunk(p, 14, 31, 14);
-      canopy(p, [[16, 24, 12, 7], [16, 16, 10, 7], [16, 9, 7, 6], [16, 4, 4, 3]], '#f2c14e', SPECK, [[11, 20, '#f7dc85'], [20, 12, '#f7dc85']]);
-    },
-    pine(p) {
-      trunk(p, 14, 36, 9);
-      const G = '#3f7d4f';
-      const R = ramp(G);
-      for (const [y, w] of [[32, 13], [24, 11], [16, 9], [9, 6]]) {
-        p.poly([[16 - w - 1, y + 4], [16 + w + 1, y + 4], [16, y - 9]], R.lo);
-        p.poly([[16 - w, y + 3], [16 + w, y + 3], [16, y - 9]], G);
-        p.poly([[16 - w, y + 3], [16, y + 3], [16, y - 9]], R.base);
-        p.poly([[16 - w + 2, y + 1], [15, y + 1], [15, y - 6]], R.hi);
-        p.rect(16, y - 7, 1, y > 20 ? 9 : 6, R.mid);
-      }
-      p.set(16, 0, '#f2c14e');
-    },
-    palm(p) {
-      shadow(p, 16, 45.5, 9);
-      const T = '#a77b52';
-      for (let y = 14; y < 45; y++) {
-        const x = 14 + Math.round(Math.sin((y - 14) / 9) * 2);
-        p.rect(x, y, 4, 1, y % 3 ? ramp(T).base : ramp(T).mid);
-        p.set(x + 3, y, ramp(T).lo);
-      }
-      const F = '#5aa05a';
-      for (const [x1, y1, x2, y2] of [[16, 13, 3, 18], [16, 13, 29, 18], [16, 12, 6, 6], [16, 12, 26, 5], [16, 12, 16, 2], [16, 13, 1, 12], [16, 13, 31, 12]]) {
-        p.line(x1, y1, x2, y2, F);
-        p.line(x1, y1 + 1, x2, y2 + 1, ramp(F).mid);
-        p.line((x1 + x2) / 2, (y1 + y2) / 2 + 1, (x1 + x2) / 2 + (x2 > x1 ? 1 : -1), (y1 + y2) / 2 + 3, ramp(F).lo);
-      }
-      p.sEll(14, 15, 2, 2, '#6b4a2b');
-      p.sEll(18, 15, 2, 2, '#6b4a2b');
-    },
-    bamboo(p) {
-      shadow(p, 16, 45.5, 10);
-      const B = '#6aa35a';
-      for (const [x, top] of [[8, 14], [14, 4], [21, 10]]) {
-        p.sRect(x, top, 3, 44 - top, B, { noHi: true });
-        for (let y = top + 6; y < 44; y += 7) p.rect(x, y, 3, 1, ramp(B).lo);
-        p.poly([[x + 3, top + 7], [x + 9, top + 3], [x + 4, top + 9]], ramp(B).hi);
-        p.poly([[x, top + 13], [x - 6, top + 10], [x - 1, top + 15]], ramp(B).base);
-      }
-    },
-    cactus(p) {
-      shadow(p, 16, 45.5, 9);
-      const C = '#5f9e4f';
-      p.sRect(12, 12, 8, 33, C);
-      p.sRect(4, 20, 5, 12, C);
-      p.sRect(5, 29, 8, 4, C);
-      p.sRect(23, 16, 5, 13, C);
-      p.sRect(19, 26, 6, 4, C);
-      for (let y = 14; y < 44; y += 4) {
-        p.set(14, y, ramp(C).hi);
-        p.set(17, y + 2, ramp(C).lo);
-      }
-      p.sEll(16, 11, 3, 2.4, '#ef7fa0');
-      p.set(16, 11, '#f6d35b');
-    },
+  // 树：同一套画法按比例 S 画两种大小——S = 1 是小树（32×48），S = 1.5 是长大的树（48×72）。
+  // 坐标都按 32×48 写，画的时候乘以 S；叶子的纹理按像素生成，放大以后细节更多，不会糊。
+  const TREE_SPECS = {
+    oak: { shape: 'round', leaf: '#5f9e4f' },
+    apple: { shape: 'round', leaf: '#5c9a4a', dots: '#d64545' },
+    orange: { shape: 'round', leaf: '#4f8f45', dots: '#f29a2e' },
+    peach: { shape: 'round', leaf: '#68a552', dots: '#f6a07a', blossom: '#f7c1cf' },
+    sakura: { shape: 'round', leaf: '#f2a6c0', trunk: '#7a4a3a', dots: '#fbd3e0', petals: '#f2a6c0' },
+    jacaranda: { shape: 'round', leaf: '#9b8be0', trunk: '#6e5040', dots: '#c3b6f2', petals: '#a99ae6' },
+    maple: { shape: 'maple', leaf: '#e0663a', trunk: '#7a4a3a', dots: '#f2a24a' },
+    ginkgo: { shape: 'fan', leaf: '#f2c14e', dots: '#f7dc85' },
+    birch: { shape: 'oval', leaf: '#8cc36a', trunk: '#efeae0', marks: '#3a3a3a' },
+    willow: { shape: 'willow', leaf: '#8cbf5a', trunk: '#7a5a3a' },
+    wisteria: { shape: 'wisteria', leaf: '#6aa35a', trunk: '#7a5a3a', hang: '#9b7fd1' },
+    plum: { shape: 'blossom', trunk: '#4a3530', flower: '#e85d75', center: '#f6d35b' },
+    magnolia: { shape: 'blossom', trunk: '#6a5040', flower: '#f8e8f0', center: '#e8a0c0' },
+    pine: { shape: 'pine', leaf: '#3f7d4f' },
+    cypress: { shape: 'column', leaf: '#3f6f4a' },
+    palm: { shape: 'palm', leaf: '#5aa05a' },
+    bamboo: { shape: 'bamboo', leaf: '#6aa35a' },
+    cactus: { shape: 'cactus', leaf: '#5f9e4f' },
   };
 
-  function sapling(p) {
-    shadow(p, 16, 45.5, 6);
-    p.sRect(15, 32, 2, 13, '#8a5a3b');
-    canopy(p, [[16, 30, 6, 5], [12, 27, 3.5, 3], [20, 27, 3.5, 3]], '#6aa35a');
+  function drawTree(p, sp, S) {
+    const t = typeof sp === 'string' ? TREE_SPECS[sp] || TREE_SPECS.oak : sp;
+    const q = (v) => v * S;
+    const B = (list) => list.map(([x, y, rx, ry]) => [q(x), q(y), q(rx), q(ry)]);
+    const TR = t.trunk || '#8a5a3b';
+    const shade = (rx) => p.ell(q(16), q(46) - 0.5, q(rx), 2.2 * S, 'rgba(40,30,20,.24)');
+    const stem = (top, h, w) => {
+      w = Math.round(q(w || 5));
+      const x = Math.round(q(16) - w / 2);
+      const R = ramp(TR);
+      p.sRect(x, Math.round(q(top)), w, Math.round(q(46) - q(top)), TR, { bottom: 1 });
+      p.rect(x - Math.round(S * 2), Math.round(q(46)) - 2, Math.round(S * 2), 2, R.mid);
+      p.rect(x + w, Math.round(q(46)) - 2, Math.round(S * 2), 2, R.lo);
+      for (let k = 0; k < 3 * S; k++) p.set(x + 1 + ((k * 3) % (w - 1)), Math.round(q(top + 4 + k * 4)), R.lo);
+      if (t.marks) for (let y = Math.round(q(top)) + 2; y < q(44); y += 4 + (y % 3)) p.rect(x + ((y * 7) % (w - 1)), y, 2, 1, t.marks);
+    };
+    const speck = (list) => list.map(([x, y]) => [Math.round(q(x)), Math.round(q(y))]);
+    const dots = (list, c) => (c ? list.map(([x, y]) => [Math.round(q(x)), Math.round(q(y)), c]) : null);
+    const DOTS = [[9, 15], [21, 12], [16, 21], [24, 21], [12, 24], [17, 8], [7, 20], [26, 15]];
+    switch (t.shape) {
+      case 'round':
+      case 'maple':
+      case 'fan':
+      case 'oval': {
+        shade(t.shape === 'oval' ? 8 : 11);
+        const top = t.shape === 'oval' ? 26 : 30;
+        stem(top, 0, t.shape === 'oval' ? 4 : 5);
+        const blobs =
+          t.shape === 'maple' ? [[16, 22, 12, 8], [7, 16, 6, 6], [25, 16, 6, 6], [16, 10, 9, 8], [16, 4, 4, 3]]
+          : t.shape === 'fan' ? [[16, 24, 12, 7], [16, 16, 10, 7], [16, 9, 7, 6], [16, 4, 4, 3]]
+          : t.shape === 'oval' ? [[16, 22, 9, 7], [16, 14, 9, 8], [11, 18, 5, 5], [21, 18, 5, 5], [16, 7, 6, 5]]
+          : ROUND;
+        canopy(p, B(blobs), t.leaf, speck(SPECK), dots(DOTS.slice(0, S > 1 ? 8 : 6), t.dots));
+        if (t.blossom) for (const [x, y] of [[11, 11], [20, 17], [14, 25], [23, 9]]) p.ell(q(x), q(y), 1.2 * S, 1.2 * S, t.blossom);
+        if (t.petals) for (const [x, y] of [[5, 41], [26, 43], [9, 45], [22, 46], [29, 39]]) p.set(Math.round(q(x)), Math.round(q(y)), t.petals);
+        break;
+      }
+      case 'willow': {
+        shade(12);
+        stem(26, 0, 5);
+        canopy(p, B([[16, 16, 12, 8], [10, 12, 7, 6], [22, 12, 7, 6], [16, 8, 8, 6]]), t.leaf);
+        const R = ramp(t.leaf);
+        // 垂下来的柳条
+        for (let x = Math.round(q(5)); x <= Math.round(q(27)); x += S > 1 ? 2 : 2) {
+          const y0 = Math.round(q(18 + Math.abs(16 - x / S) * 0.25));
+          const len = Math.round(q(14 + ((x * 7) % 9)));
+          for (let y = y0; y < Math.min(y0 + len, q(44)); y++) p.set(x + (y % 7 === 0 ? 1 : 0), y, y > y0 + len - 3 ? R.hi : (x + y) % 3 ? R.base : R.mid);
+        }
+        break;
+      }
+      case 'wisteria': {
+        shade(12);
+        stem(28, 0, 5);
+        canopy(p, B([[16, 18, 13, 8], [9, 13, 7, 6], [23, 13, 7, 6], [16, 9, 9, 6]]), t.leaf);
+        const H = ramp(t.hang);
+        for (const [x, y, n] of [[6, 20, 9], [10, 23, 11], [14, 24, 8], [18, 24, 12], [22, 23, 9], [26, 20, 10], [12, 15, 6], [21, 15, 6]]) {
+          for (let k = 0; k < n * S; k++) {
+            const w = Math.max(1, Math.round((1 - k / (n * S)) * 1.6 * S));
+            p.rect(Math.round(q(x)) - Math.floor(w / 2), Math.round(q(y)) + k, w, 1, k % 3 === 0 ? H.hi : k % 3 === 1 ? t.hang : H.mid);
+          }
+        }
+        break;
+      }
+      case 'blossom': {
+        shade(10);
+        stem(26, 0, 4);
+        const R = ramp(t.trunk);
+        // 枝条：从树干往上分叉
+        for (const [x1, y1, x2, y2] of [[16, 28, 7, 12], [16, 27, 25, 10], [16, 26, 16, 4], [11, 19, 4, 14], [21, 18, 28, 16], [16, 15, 11, 6], [16, 14, 21, 5]]) {
+          p.line(q(x1), q(y1), q(x2), q(y2), t.trunk);
+          if (S > 1) p.line(q(x1) + 1, q(y1), q(x2) + 1, q(y2), R.mid);
+        }
+        const F = ramp(t.flower);
+        const spots = [[7, 12], [4, 14], [25, 10], [28, 16], [16, 4], [11, 6], [21, 5], [9, 16], [22, 13], [13, 10], [19, 9], [14, 18], [18, 17], [6, 9], [26, 7], [16, 11]];
+        for (const [x, y] of spots) {
+          const cx = q(x);
+          const cy = q(y);
+          p.ell(cx, cy, 1.9 * S, 1.7 * S, t.flower);
+          p.set(Math.round(cx - 0.5 * S), Math.round(cy - 0.6 * S), F.hi);
+          p.set(Math.round(cx), Math.round(cy), t.center);
+        }
+        for (const [x, y] of [[6, 42], [24, 44], [11, 45]]) p.set(Math.round(q(x)), Math.round(q(y)), t.flower);
+        break;
+      }
+      case 'pine':
+      case 'column': {
+        shade(t.shape === 'column' ? 7 : 10);
+        stem(36, 0, 4);
+        const G = t.leaf;
+        const R = ramp(G);
+        if (t.shape === 'column') {
+          canopy(p, B([[16, 31, 6.5, 8], [16, 22, 7, 9], [16, 13, 5.5, 8], [16, 5, 3.5, 4.5]]), G, speck([[14, 12], [15, 20], [14, 28]]));
+          break;
+        }
+        for (const [y, w] of [[32, 14], [24, 12], [16, 9], [9, 6]]) {
+          p.poly([[q(16 - w - 1), q(y + 4)], [q(16 + w + 1), q(y + 4)], [q(16), q(y - 9)]], R.lo);
+          p.poly([[q(16 - w), q(y + 3)], [q(16 + w), q(y + 3)], [q(16), q(y - 9)]], G);
+          p.poly([[q(16 - w), q(y + 3)], [q(16), q(y + 3)], [q(16), q(y - 9)]], R.base);
+          p.poly([[q(16 - w + 2), q(y + 1)], [q(15), q(y + 1)], [q(15), q(y - 6)]], R.hi);
+          p.rect(Math.round(q(16)), Math.round(q(y - 7)), 1, Math.round(q(y > 20 ? 9 : 6)), R.mid);
+          // 枝叶边上一排小锯齿
+          for (let x = Math.round(q(16 - w)); x < q(16 + w); x += 3) p.set(x, Math.round(q(y + 3)), R.lo);
+        }
+        break;
+      }
+      case 'palm': {
+        shade(9);
+        const T = '#a77b52';
+        for (let y = Math.round(q(14)); y < q(46); y++) {
+          const x = Math.round(q(14) + Math.sin((y / S - 14) / 9) * 2 * S);
+          p.rect(x, y, Math.round(4 * S), 1, y % 3 ? ramp(T).base : ramp(T).mid);
+          p.set(x + Math.round(4 * S) - 1, y, ramp(T).lo);
+        }
+        const F = t.leaf;
+        for (const [x1, y1, x2, y2] of [[16, 13, 3, 18], [16, 13, 29, 18], [16, 12, 6, 6], [16, 12, 26, 5], [16, 12, 16, 2], [16, 13, 1, 12], [16, 13, 31, 12]]) {
+          for (let k = 0; k < S; k++) {
+            p.line(q(x1), q(y1) + k, q(x2), q(y2) + k, F);
+            p.line(q(x1), q(y1) + 1 + k, q(x2), q(y2) + 1 + k, ramp(F).mid);
+          }
+          p.line(q((x1 + x2) / 2), q((y1 + y2) / 2) + 1, q((x1 + x2) / 2 + (x2 > x1 ? 1 : -1)), q((y1 + y2) / 2 + 3), ramp(F).lo);
+        }
+        p.sEll(q(14), q(15), 2 * S, 2 * S, '#6b4a2b');
+        p.sEll(q(18), q(15), 2 * S, 2 * S, '#6b4a2b');
+        break;
+      }
+      case 'bamboo': {
+        shade(10);
+        const G = t.leaf;
+        for (const [x, top] of [[8, 14], [14, 4], [21, 10]]) {
+          p.sRect(Math.round(q(x)), Math.round(q(top)), Math.round(3 * S), Math.round(q(46) - q(top)), G, { noHi: true });
+          for (let y = top + 6; y < 44; y += 7) p.rect(Math.round(q(x)), Math.round(q(y)), Math.round(3 * S), 1, ramp(G).lo);
+          p.poly([[q(x + 3), q(top + 7)], [q(x + 9), q(top + 3)], [q(x + 4), q(top + 9)]], ramp(G).hi);
+          p.poly([[q(x), q(top + 13)], [q(x - 6), q(top + 10)], [q(x - 1), q(top + 15)]], ramp(G).base);
+        }
+        break;
+      }
+      case 'cactus': {
+        shade(9);
+        const C = t.leaf;
+        p.sRect(Math.round(q(12)), Math.round(q(12)), Math.round(q(8)), Math.round(q(34)), C);
+        p.sRect(Math.round(q(4)), Math.round(q(20)), Math.round(q(5)), Math.round(q(12)), C);
+        p.sRect(Math.round(q(5)), Math.round(q(29)), Math.round(q(8)), Math.round(q(4)), C);
+        p.sRect(Math.round(q(23)), Math.round(q(16)), Math.round(q(5)), Math.round(q(13)), C);
+        p.sRect(Math.round(q(19)), Math.round(q(26)), Math.round(q(6)), Math.round(q(4)), C);
+        for (let y = 14; y < 44; y += 4) {
+          p.set(Math.round(q(14)), Math.round(q(y)), ramp(C).hi);
+          p.set(Math.round(q(17)), Math.round(q(y + 2)), ramp(C).lo);
+        }
+        p.sEll(q(16), q(11), 3 * S, 2.4 * S, '#ef7fa0');
+        p.set(Math.round(q(16)), Math.round(q(11)), '#f6d35b');
+        break;
+      }
+    }
   }
-  function deadTree(p) {
-    shadow(p, 16, 45.5, 8);
-    const T = '#8a7a66';
-    p.sRect(14, 22, 5, 23, T);
-    p.line(15, 26, 8, 16, T);
-    p.line(15, 27, 8, 17, ramp(T).mid);
-    p.line(18, 24, 25, 14, T);
-    p.line(18, 25, 25, 15, ramp(T).mid);
-    p.line(10, 19, 7, 19, T);
-    p.line(23, 17, 26, 18, T);
+
+  // 树长大的几个阶段（stage）：0 刚种下的种子、1 发芽、2 小树苗、3 小树、4 长大
+  function treeSeed(p) {
+    p.ell(8, 13.5, 5.5, 2.4, '#7a5238');
+    p.ell(8, 12.8, 4.5, 1.8, '#8a5e40');
+    p.sEll(8, 11.5, 1.6, 1.3, '#c8a06a');
   }
+  function treeSprout(p, sp) {
+    const t = TREE_SPECS[sp] || TREE_SPECS.oak;
+    p.ell(8, 14, 4.5, 1.6, '#7a5238');
+    p.rect(8, 8, 1, 6, '#5f8a42');
+    const leaf = t.shape === 'cactus' ? t.leaf : '#6aa35a';
+    p.sEll(5.5, 8, 2.6, 1.6, leaf);
+    p.sEll(10.5, 7, 2.6, 1.6, leaf);
+  }
+  function treeSapling(p, sp) {
+    const t = TREE_SPECS[sp] || TREE_SPECS.oak;
+    p.ell(8, 30.5, 5, 1.5, 'rgba(40,30,20,.22)');
+    p.sRect(7, 16, 2, 15, t.trunk && t.shape !== 'blossom' ? t.trunk : '#8a5a3b', { noHi: true });
+    const c = t.shape === 'blossom' ? '#6aa35a' : t.leaf;
+    canopy(p, [[8, 14, 5, 4], [4.5, 18, 3, 2.4], [11.5, 17, 3, 2.4], [8, 9, 3.5, 3]], c);
+    if (t.shape === 'blossom') for (const [x, y] of [[6, 12], [10, 10], [9, 16]]) p.set(x, y, t.flower);
+  }
+
+  const forestCacheSpecs = {
+    round: { shape: 'round', leaf: '#4f8f42', trunk: '#6a4632' },
+    round2: { shape: 'oval', leaf: '#4a8a4a', trunk: '#6a4632' },
+    round3: { shape: 'maple', leaf: '#4f8f42', trunk: '#6a4632' },
+    pine: { shape: 'pine', leaf: '#2f6a45', trunk: '#6a4632' },
+  };
 
   // 花（16×16）：stage 0 刚种下、1 发芽、2 花苞、3 开花
   const FLOWERS = {
@@ -980,6 +1476,88 @@ window.MARGIN_ART = (function () {
           p.set(x, y, S.dots);
           p.set(x + 1, y, lighten(S.dots, 0.15));
         }
+      }
+    }
+  }
+
+  // 草（16×16，蒲苇和狼尾草长大后是 16×24）：stage 0 刚种下、1 发芽、2 长好
+  const GRASSES = {
+    clover: { c: '#5fae4a' },
+    foxtail: { c: '#7ba84a', head: '#c8c27a' },
+    fountain: { c: '#6a9e4a', head: '#e0a8b8', tall: true },
+    pampas: { c: '#8aa86a', head: '#f2ead2', tall: true },
+  };
+  function grassPlant(p, kind, stage) {
+    const G = GRASSES[kind] || GRASSES.clover;
+    const H = p.h;
+    const R = ramp(G.c);
+    if (stage === 0) {
+      p.ell(8, H - 2.5, 4.5, 1.8, '#7a5238');
+      p.ell(8, H - 3, 3.5, 1.2, '#8a5e40');
+      p.set(7, H - 3, '#e8d8b0');
+      p.set(9, H - 3, '#e8d8b0');
+      return;
+    }
+    p.ell(8, H - 1.5, 5.5, 1.3, 'rgba(40,30,20,.22)');
+    // 一根弯弯的草叶：从 (x0, 底) 往上长 h，往 lean 那边弯
+    const blade = (x0, h, lean, c) => {
+      let x = x0;
+      for (let k = 0; k < h; k++) {
+        const t = k / h;
+        x = x0 + lean * t * t * h * 0.5;
+        p.set(Math.round(x), H - 2 - k, k < 2 ? R.lo : t > 0.8 ? R.hi : c || (k % 3 ? G.c : R.mid));
+      }
+      return [Math.round(x), H - 2 - h];
+    };
+    if (stage === 1) {
+      blade(7, 4, -0.6);
+      blade(8, 5, 0.2);
+      blade(9, 4, 0.7);
+      return;
+    }
+    if (kind === 'clover') {
+      // 贴地的一丛三叶草，开一朵小白花
+      for (const [cx, cy] of [[5, H - 4], [10, H - 5], [7.5, H - 7.5], [11.5, H - 2.5], [4, H - 2]]) {
+        for (const [dx, dy] of [[-1.2, 0], [1.2, 0], [0, -1.2]]) p.ell(cx + dx, cy + dy, 1.3, 1.2, G.c);
+        p.set(Math.round(cx - 1), Math.round(cy - 1), R.hi);
+        p.set(Math.round(cx), Math.round(cy + 1), R.lo);
+      }
+      p.rect(9, H - 10, 1, 4, R.mid);
+      p.ell(9.5, H - 11, 1.6, 1.6, '#fbf7ef');
+      p.set(9, H - 11, '#f2d0dc');
+      return;
+    }
+    // 底下一丛叶子
+    const n = G.tall ? 8 : 6;
+    const top = [];
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1) - 0.5;
+      const h = (G.tall ? 9 : 7) + Math.round((1 - Math.abs(t) * 1.6) * 3);
+      top.push(blade(8 + Math.round(t * 4), h, t * 2.6, i % 2 ? G.c : R.mid));
+    }
+    if (kind === 'foxtail') {
+      // 狗尾草：三根细茎，顶上毛茸茸的穗子往一边垂
+      for (const [x0, h, lean] of [[6, 11, -1.2], [8, 13, 0.4], [10, 10, 1.4]]) {
+        const [x, y] = blade(x0, h, lean, R.mid);
+        const d = lean < 0 ? -1 : 1;
+        for (let k = 0; k < 4; k++) {
+          p.set(x + d * Math.floor(k / 2), y - 1 + k, G.head);
+          p.set(x + d * Math.floor(k / 2) + 1, y - 1 + k, ramp(G.head).mid);
+        }
+        p.set(x, y - 2, ramp(G.head).hi);
+      }
+      return;
+    }
+    // 狼尾草 / 蒲苇：几根长茎，顶上一束细长的花穗
+    const stalks = kind === 'pampas' ? [[6, 19, -1.4], [8, 21, 0.2], [10, 18, 1.5]] : [[5, 12, -2.4], [8, 14, 0.3], [11, 12, 2.6]];
+    for (const [x0, h, lean] of stalks) {
+      const [x, y] = blade(x0, h, lean, R.mid);
+      const len = kind === 'pampas' ? 7 : 5;
+      const w = kind === 'pampas' ? 3 : 2;
+      for (let k = 0; k < len; k++) {
+        const ww = k === 0 || k === len - 1 ? w - 1 : w;
+        const xx = x - Math.floor(ww / 2) + Math.round(lean * 0.3 * (k / len));
+        for (let i = 0; i < ww; i++) p.set(xx + i, y - k, (k + i) % 3 === 0 ? ramp(G.head).mid : i === 0 ? ramp(G.head).hi : G.head);
       }
     }
   }
@@ -1189,114 +1767,148 @@ window.MARGIN_ART = (function () {
       p.rect(13, 10, 6, 1, '#c8463a');
     } },
     // 农舍：瓦片屋顶、木板墙、石头地基，门上有小雨棚，窗户带百叶和花箱，砖砌烟囱
-    house: { w: 80, h: 84, tw: 5, th: 3, draw(p) {
+    // 农舍：9 格宽，四坡屋顶，正中一个山墙对着门；木板墙、石头地基、两扇带百叶和花箱的窗户、门口两级台阶
+    house: { w: 144, h: 128, tw: 9, th: 4, draw(p) {
       const WALL = '#d6a167';
       const WR = ramp(WALL);
       const TRIM = '#f1e2c2';
+      const TR = ramp(TRIM);
       const ROOF = '#b9553f';
       const RR = ramp(ROOF);
       const STONE = '#9d978c';
-      // 地上的影子
-      p.ell(40, 82, 40, 2.6, 'rgba(30,25,15,.28)');
+      const SR = ramp(STONE);
+      const WOOD = '#8a5a3b';
+      p.ell(72, 125, 74, 3.2, 'rgba(30,25,15,.28)');
       // 石头地基
-      for (let y = 74; y < 82; y++) for (let x = 5; x < 75; x++) p.set(x, y, STONE);
-      for (let row = 0; row < 2; row++) {
-        const y = 74 + row * 4;
-        p.rect(5, y + 3, 70, 1, ramp(STONE).lo);
-        for (let x = 5 + (row ? 4 : 0); x < 75; x += 8) {
-          p.rect(x, y, 1, 3, ramp(STONE).lo);
-          p.rect(x + 1, y, 5, 1, ramp(STONE).hi);
+      for (let y = 108; y < 120; y++) for (let x = 8; x < 136; x++) p.set(x, y, STONE);
+      for (let row = 0; row < 3; row++) {
+        const y = 108 + row * 4;
+        p.rect(8, y + 3, 128, 1, SR.lo);
+        for (let x = 8 + (row % 2 ? 5 : 0); x < 136; x += 10) {
+          p.rect(x, y, 1, 3, SR.lo);
+          p.rect(x + 1, y, 7, 1, SR.hi);
         }
       }
-      // 木板墙：一条条横木板，转角有竖木条
-      for (let y = 42; y < 74; y++) {
-        const k = (y - 42) % 4;
-        const c = k === 0 ? WR.hi : k === 3 ? WR.lo : WALL;
-        p.rect(6, y, 68, 1, c);
+      p.rect(8, 119, 128, 1, SR.lo);
+      // 木板墙
+      for (let y = 62; y < 108; y++) {
+        const k = (y - 62) % 5;
+        p.rect(10, y, 124, 1, k === 0 ? WR.hi : k === 4 ? WR.lo : WALL);
       }
-      for (let y = 44; y < 74; y += 4) for (let x = 12 + ((y >> 2) % 3) * 9; x < 72; x += 27) p.set(x, y + 1, WR.mid);
-      p.sRect(5, 42, 4, 32, TRIM, { noHi: true });
-      p.sRect(71, 42, 4, 32, TRIM, { noHi: true });
+      for (let y = 63; y < 108; y += 5) for (let x = 18 + ((y / 5) % 3) * 13; x < 132; x += 39) p.set(x, y + 2, WR.mid);
+      // 转角的竖木条
+      p.sRect(8, 60, 5, 48, TRIM, { noHi: true });
+      p.sRect(131, 60, 5, 48, TRIM, { noHi: true });
       // 屋檐下的影子
-      p.rect(6, 42, 68, 3, 'rgba(60,30,15,.28)');
-      // 屋顶：一排排瓦片，裁成山墙的三角形
-      const top = 3;
-      const eave = 42;
-      const inRoof = (x, y) => y >= top && y < eave && Math.abs(x - 39.5) <= ((y - top) / (eave - top)) * 41 + 0.5;
-      for (let y = top; y < eave; y++)
-        for (let x = -2; x < 82; x++) {
-          if (!inRoof(x, y)) continue;
-          const row = Math.floor((y - top) / 5);
-          const ry = (y - top) % 5;
-          const off = row % 2 ? 4 : 0;
-          const tab = (x + off) % 8;
-          let c = ROOF;
-          if (ry === 4) c = RR.lo;
-          else if (tab === 0) c = RR.mid;
-          else if (ry === 0 && tab < 4) c = RR.hi;
-          if (x < 40 && ry < 3 && tab > 1 && tab < 4) c = ry === 0 ? RR.hi : c;
-          p.set(x, y, c);
-        }
-      // 山墙边的木封檐板和屋脊
-      for (let y = top; y < eave + 1; y++) {
-        const half = ((y - top) / (eave - top)) * 41;
-        p.set(Math.round(39.5 - half), y, TRIM);
-        p.set(Math.round(39.5 - half) + 1, y, ramp(TRIM).mid);
-        p.set(Math.round(39.5 + half), y, ramp(TRIM).mid);
-        p.set(Math.round(39.5 + half) - 1, y, TRIM);
+      p.rect(13, 62, 118, 4, 'rgba(60,30,15,.3)');
+      // 四坡屋顶：上窄下宽的梯形，一排排瓦片
+      const RT = 10;
+      const RB = 62;
+      const inMain = (x, y) => y >= RT && y < RB && x >= 24 - ((y - RT) / (RB - RT)) * 26 && x <= 119 + ((y - RT) / (RB - RT)) * 26;
+      const shingle = (x, y, off) => {
+        const row = Math.floor((y - RT) / 6);
+        const ry = (y - RT) % 6;
+        const tab = (x + (row % 2 ? 5 : 0) + off) % 10;
+        if (ry === 5) return RR.lo;
+        if (tab === 0) return RR.mid;
+        if (ry === 0 && tab < 5) return RR.hi;
+        return ROOF;
+      };
+      for (let y = RT; y < RB; y++) for (let x = -2; x < 146; x++) if (inMain(x, y)) p.set(x, y, shingle(x, y, 0));
+      // 屋脊和两边的斜脊
+      p.rect(24, RT - 2, 96, 3, RR.lo);
+      p.rect(24, RT - 2, 96, 1, RR.hi);
+      for (let y = RT; y < RB; y++) {
+        const dx = ((y - RT) / (RB - RT)) * 26;
+        p.set(Math.round(24 - dx), y, RR.lo);
+        p.set(Math.round(24 - dx) + 1, y, RR.hi);
+        p.set(Math.round(119 + dx), y, RR.lo);
       }
-      p.rect(36, top - 1, 8, 2, ramp(TRIM).mid);
-      // 屋檐：一条木板
-      p.sRect(-1, eave - 1, 82, 3, '#8a5a3b', { noHi: true });
-      // 砖烟囱
-      for (let y = 6; y < 28; y++)
-        for (let x = 56; x < 64; x++) {
-          if (!inRoof(x, y + 8) && y > 20) continue;
-          const brick = (y % 4 === 3) || ((x + (Math.floor(y / 4) % 2) * 2) % 4 === 0);
+      // 砖烟囱（在屋顶后面）
+      for (let y = 0; y < 22; y++)
+        for (let x = 100; x < 111; x++) {
+          const brick = y % 4 === 3 || (x + (Math.floor(y / 4) % 2) * 2) % 5 === 0;
           p.set(x, y, brick ? '#7a3a2e' : y % 4 === 0 ? '#c46a50' : '#a8503c');
         }
-      p.sRect(55, 4, 10, 3, '#8a847a', { noHi: false });
-      // 窗户：白框、十字窗棂、绿色百叶、花箱
-      for (const wx of [14, 53]) {
-        p.sRect(wx - 4, 52, 3, 13, '#5f8a52', { noHi: true });
-        p.sRect(wx + 13, 52, 3, 13, '#5f8a52', { noHi: true });
-        for (let y = 53; y < 64; y += 3) {
-          p.rect(wx - 4, y, 3, 1, ramp('#5f8a52').lo);
-          p.rect(wx + 13, y, 3, 1, ramp('#5f8a52').lo);
-        }
-        p.sRect(wx - 1, 51, 14, 15, TRIM);
-        p.rect(wx + 1, 53, 10, 11, '#7fb6d8');
-        p.rect(wx + 1, 53, 10, 2, '#a9d4ec');
-        p.line(wx + 2, 62, wx + 8, 54, '#cdeaf8');
-        p.line(wx + 3, 62, wx + 9, 54, '#cdeaf8');
-        p.rect(wx + 6, 53, 1, 11, TRIM);
-        p.rect(wx + 1, 58, 10, 1, TRIM);
-        p.sRect(wx - 2, 66, 16, 3, '#8a5a3b');
-        for (let i = 0; i < 6; i++) {
-          const c = ['#e85d75', '#f6d35b', '#ef7fa0', '#ffffff', '#e85d75', '#9b7fd1'][i];
-          p.set(wx + i * 2 + 1, 65, '#5f9e4f');
-          p.set(wx + i * 2, 64, c);
-          p.set(wx + i * 2 + 1, 64, c);
+      p.sRect(99, 0, 13, 3, '#8a847a');
+      for (let y = RT; y < 22; y++) for (let x = 100; x < 111; x++) if (inMain(x, y + 4)) p.set(x, y, shingle(x, y, 0));
+      // 正中的山墙：三角形，自己的封檐板，里面一扇小圆窗
+      const GT = 14;
+      const inGable = (x, y) => y >= GT && y < RB && Math.abs(x - 71.5) <= ((y - GT) / (RB - GT)) * 30 + 0.5;
+      for (let y = GT; y < RB; y++) for (let x = 40; x < 104; x++) if (inGable(x, y)) p.set(x, y, shingle(x, y, 3));
+      // 山墙正面是木板墙（下面一截）
+      for (let y = 40; y < RB; y++) {
+        const half = ((y - GT) / (RB - GT)) * 30 - 3;
+        for (let x = Math.ceil(71.5 - half); x <= Math.floor(71.5 + half); x++) p.set(x, y, (y - 40) % 5 === 0 ? WR.hi : (y - 40) % 5 === 4 ? WR.lo : WALL);
+      }
+      for (let y = GT - 1; y < RB + 1; y++) {
+        const half = ((y - GT) / (RB - GT)) * 30;
+        for (const [dx, c] of [[0, TRIM], [1, TR.mid], [2, TR.lo]]) {
+          p.set(Math.round(71.5 - half) + dx, y, c);
+          p.set(Math.round(71.5 + half) - dx, y, dx === 0 ? TR.mid : c);
         }
       }
-      // 门：门框、两块门板、把手；上面一个小雨棚，下面两级石阶
-      p.sRect(31, 50, 18, 24, TRIM, { noHi: true });
-      p.sRect(33, 52, 14, 22, '#8a5a3b');
-      p.sRect(35, 54, 4, 8, ramp('#8a5a3b').mid, { noHi: true });
-      p.sRect(41, 54, 4, 8, ramp('#8a5a3b').mid, { noHi: true });
-      p.sRect(35, 64, 4, 8, ramp('#8a5a3b').mid, { noHi: true });
-      p.sRect(41, 64, 4, 8, ramp('#8a5a3b').mid, { noHi: true });
-      p.rect(44, 63, 2, 2, '#f2c14e');
-      p.poly([[27, 50], [53, 50], [49, 45], [31, 45]], ROOF);
-      for (let x = 32; x < 49; x += 4) p.rect(x, 46, 1, 4, RR.lo);
-      p.rect(27, 49, 26, 1, RR.lo);
-      p.rect(29, 50, 2, 6, '#8a5a3b');
-      p.rect(49, 50, 2, 6, '#8a5a3b');
-      p.sRect(28, 74, 24, 3, '#b9b2a6');
-      p.sRect(30, 77, 20, 3, '#a8a196');
-      // 门边的小灯
-      p.sRect(51, 54, 3, 4, '#3a3a42');
-      p.set(52, 55, '#ffe28a');
+      p.rect(68, GT - 3, 8, 3, TR.mid);
+      p.rect(69, GT - 3, 6, 1, TRIM);
+      // 山墙上的小圆窗
+      p.sEll(72, 31, 6, 6, TRIM);
+      p.ell(72, 31, 4.2, 4.2, '#7fb6d8');
+      p.ell(71, 30, 2, 2, '#a9d4ec');
+      p.rect(72, 27, 1, 8, TRIM);
+      p.rect(68, 31, 9, 1, TRIM);
+      // 屋檐的木板
+      p.sRect(-1, RB - 1, 146, 3, WOOD, { noHi: true });
+      // 窗户：白框、十字窗棂、绿色百叶、花箱
+      for (const wx of [27, 101]) {
+        p.sRect(wx - 6, 72, 4, 19, '#5f8a52', { noHi: true });
+        p.sRect(wx + 18, 72, 4, 19, '#5f8a52', { noHi: true });
+        for (let y = 73; y < 90; y += 3) {
+          p.rect(wx - 6, y, 4, 1, ramp('#5f8a52').lo);
+          p.rect(wx + 18, y, 4, 1, ramp('#5f8a52').lo);
+        }
+        p.sRect(wx - 2, 70, 20, 22, TRIM);
+        p.rect(wx + 1, 73, 14, 16, '#7fb6d8');
+        p.rect(wx + 1, 73, 14, 3, '#a9d4ec');
+        p.line(wx + 3, 87, wx + 11, 75, '#cdeaf8');
+        p.line(wx + 4, 87, wx + 12, 75, '#cdeaf8');
+        p.rect(wx + 8, 73, 1, 16, TRIM);
+        p.rect(wx + 1, 80, 14, 1, TRIM);
+        // 窗帘
+        p.rect(wx + 1, 73, 2, 9, '#f4ece0');
+        p.rect(wx + 13, 73, 2, 9, '#f4ece0');
+        p.sRect(wx - 3, 93, 22, 4, WOOD);
+        for (let i = 0; i < 9; i++) {
+          const c = ['#e85d75', '#f6d35b', '#ef7fa0', '#ffffff', '#9b7fd1'][i % 5];
+          p.set(wx - 1 + i * 2 + 1, 92, '#5f9e4f');
+          p.set(wx - 1 + i * 2, 91, c);
+          p.set(wx - 1 + i * 2 + 1, 91, c);
+          p.set(wx - 1 + i * 2, 92, '#4c8a36');
+        }
+      }
+      // 门：门框、两扇门板、把手；上面一个小雨棚和一盏灯
+      p.sRect(60, 74, 24, 34, TRIM, { noHi: true });
+      p.sRect(63, 77, 18, 31, WOOD);
+      for (const [x, y] of [[65, 80], [73, 80], [65, 93], [73, 93]]) p.sRect(x, y, 6, 11, ramp(WOOD).mid, { noHi: true });
+      p.rect(72, 77, 1, 31, ramp(WOOD).lo);
+      p.rect(77, 92, 2, 2, '#f2c14e');
+      p.rect(67, 92, 2, 2, '#f2c14e');
+      p.poly([[54, 74], [90, 74], [85, 67], [59, 67]], ROOF);
+      for (let x = 60; x < 86; x += 5) p.rect(x, 68, 1, 6, RR.lo);
+      p.rect(54, 73, 36, 1, RR.lo);
+      p.rect(55, 74, 3, 8, WOOD);
+      p.rect(86, 74, 3, 8, WOOD);
+      p.sRect(90, 79, 4, 6, '#3a3a42');
+      p.rect(91, 81, 2, 2, '#ffe28a');
+      // 门口的台阶和门垫
+      p.sRect(56, 119, 32, 4, '#b9b2a6');
+      p.sRect(59, 123, 26, 4, '#a8a196');
+      p.rect(64, 106, 16, 2, '#a85a3a');
+      // 墙根的小花丛
+      for (const [x, c] of [[16, '#ef7fa0'], [20, '#f6d35b'], [124, '#9b7fd1'], [128, '#e85d75']]) {
+        p.sEll(x, 105, 3, 2.5, '#5f9e4f');
+        p.set(x - 1, 103, c);
+        p.set(x + 1, 104, c);
+      }
     } },
     // 家具
     bed: { w: 32, h: 32, tw: 2, th: 2, room: true, draw(p) {
@@ -1389,6 +2001,31 @@ window.MARGIN_ART = (function () {
   // ================= 物品图标（16×16） =================
 
   const ICONS = {
+    kibble(p) {
+      p.sEll(8, 11.5, 6.5, 3, '#c8463a');
+      p.ell(8, 10, 5.5, 1.8, '#8a5a3b');
+      for (const [x, y] of [[5, 9], [7, 8], [9, 9], [11, 8], [6, 10], [10, 10], [8, 9]]) {
+        p.set(x, y, '#c08850');
+        p.set(x + 1, y, '#a06a3a');
+      }
+      p.rect(3, 12, 10, 1, ramp('#c8463a').lo);
+    },
+    tin(p) {
+      p.sRect(4, 5, 9, 9, '#c0c6cc');
+      p.rect(4, 7, 9, 4, '#e8793a');
+      p.sEll(8.5, 9, 2, 1.5, '#fbf7ef');
+      p.set(8, 9, '#e85d75');
+      p.sEll(8.5, 5, 4.5, 1.6, '#dfe4e8');
+      p.rect(6, 4, 4, 1, '#9aa2aa');
+    },
+    fishfood(p) {
+      p.sRect(4, 3, 8, 11, '#5aa2dc');
+      p.rect(4, 3, 8, 2, '#3a74b0');
+      p.sEll(8, 9, 2.6, 1.6, '#f0742e');
+      p.poly([[10, 9], [12, 7.5], [12, 10.5]], '#f0742e');
+      p.set(7, 9, INK);
+      for (const [x, y] of [[13, 13], [14, 11], [13, 15]]) p.set(x, y, '#e0b050');
+    },
     water(p) {
       p.poly([[8, 1], [3, 9], [13, 9]], '#5a9ad0');
       p.sEll(8, 10, 5, 4.5, '#5a9ad0');
@@ -1473,26 +2110,9 @@ window.MARGIN_ART = (function () {
   const forestCache = new Map();
   function forestTree(kind) {
     if (forestCache.has(kind)) return forestCache.get(kind);
-    const q = build(kind === 'bush' ? 16 : 32, kind === 'bush' ? 16 : 48, (p) => {
-      if (kind === 'bush') {
-        canopy(p, [[8, 10, 7, 5.5], [5, 7, 4, 4], [11, 6, 4.5, 4]], '#3f7d3c');
-      } else if (kind === 'pine') {
-        trunk(p, 14, 36, 9, '#6a4632');
-        const G = '#2f6a45';
-        const R = ramp(G);
-        for (const [y, w] of [[32, 14], [24, 12], [16, 9], [9, 6]]) {
-          p.poly([[16 - w - 1, y + 4], [16 + w + 1, y + 4], [16, y - 9]], R.lo);
-          p.poly([[16 - w, y + 3], [16 + w, y + 3], [16, y - 9]], G);
-          p.poly([[16 - w, y + 3], [16, y + 3], [16, y - 9]], R.base);
-          p.poly([[16 - w + 2, y + 1], [15, y + 1], [15, y - 6]], R.hi);
-          p.rect(16, y - 7, 1, y > 20 ? 9 : 6, R.mid);
-        }
-      } else {
-        trunk(p, 14, 30, 15, '#6a4632');
-        const blobs = kind === 'round2' ? [[16, 22, 13, 9], [7, 15, 7, 7], [25, 15, 7, 7], [16, 9, 10, 8]] : kind === 'round3' ? [[16, 23, 12, 8], [9, 14, 8, 8], [23, 13, 8, 8], [16, 6, 7, 5]] : ROUND;
-        canopy(p, blobs, kind === 'round3' ? '#4a8a4a' : '#4f8f42', SPECK);
-      }
-    });
+    const q = kind === 'bush'
+      ? build(16, 16, (p) => canopy(p, [[8, 10, 7, 5.5], [5, 7, 4, 4], [11, 6, 4.5, 4]], '#3f7d3c'))
+      : build(48, 72, (p) => drawTree(p, forestCacheSpecs[kind] || forestCacheSpecs.round, 1.5));
     forestCache.set(kind, q);
     return q;
   }
@@ -1858,23 +2478,23 @@ window.MARGIN_ART = (function () {
       const trees = [];
       const add = (cx, base, dark, k) => trees.push({ cx: Math.round(cx), base: Math.round(base), dark, kind: kinds[k % kinds.length] });
       let k = 0;
-      // 上边：三排
-      for (let x = -12; x < W + 16; x += 17) add(x + hash2(x, 1, seed) * 6, b * T - 24 + hash2(x, 2, seed) * 4, 0.5, k++);
-      for (let x = -4; x < W + 16; x += 19) add(x + hash2(x, 3, seed) * 6, b * T - 12 + hash2(x, 4, seed) * 4, 0.28, k++);
-      for (let x = 2; x < W + 16; x += 22) add(x + hash2(x, 5, seed) * 6, b * T + 1 + hash2(x, 6, seed) * 3, 0, k++);
+      // 树是 48×72 的；上边三排，越往前越亮
+      for (let x = -16; x < W + 24; x += 24) add(x + hash2(x, 1, seed) * 8, b * T - 26 + hash2(x, 2, seed) * 5, 0.5, k++);
+      for (let x = -6; x < W + 24; x += 27) add(x + hash2(x, 3, seed) * 8, b * T - 12 + hash2(x, 4, seed) * 5, 0.28, k++);
+      for (let x = 4; x < W + 24; x += 31) add(x + hash2(x, 5, seed) * 8, b * T + 1 + hash2(x, 6, seed) * 3, 0, k++);
       // 下边：两排，只露出树冠上半截
-      for (let x = -6; x < W + 16; x += 18) add(x + hash2(x, 7, seed) * 6, H + 6 + hash2(x, 8, seed) * 4, 0.2, k++);
-      for (let x = 4; x < W + 16; x += 21) add(x + hash2(x, 9, seed) * 6, H + 18 + hash2(x, 10, seed) * 3, 0, k++);
+      for (let x = -8; x < W + 24; x += 25) add(x + hash2(x, 7, seed) * 8, H + 26 + hash2(x, 8, seed) * 5, 0.2, k++);
+      for (let x = 6; x < W + 24; x += 29) add(x + hash2(x, 9, seed) * 8, H + 40 + hash2(x, 10, seed) * 4, 0, k++);
       // 左右：两列
-      for (let y = b * T + 8; y < H; y += 14) {
-        add(4 + hash2(y, 11, seed) * 4, y + hash2(y, 12, seed) * 4, 0.35, k++);
-        add(b * T - 12 + hash2(y, 13, seed) * 3, y + 7 + hash2(y, 14, seed) * 4, 0, k++);
-        add(W - 4 - hash2(y, 15, seed) * 4, y + hash2(y, 16, seed) * 4, 0.35, k++);
-        add(W - b * T + 12 - hash2(y, 17, seed) * 3, y + 7 + hash2(y, 18, seed) * 4, 0, k++);
+      for (let y = b * T + 10; y < H + 30; y += 18) {
+        add(0 + hash2(y, 11, seed) * 4, y + hash2(y, 12, seed) * 5, 0.35, k++);
+        add(b * T - 18 + hash2(y, 13, seed) * 3, y + 9 + hash2(y, 14, seed) * 5, 0, k++);
+        add(W - hash2(y, 15, seed) * 4, y + hash2(y, 16, seed) * 5, 0.35, k++);
+        add(W - b * T + 18 - hash2(y, 17, seed) * 3, y + 9 + hash2(y, 18, seed) * 5, 0, k++);
       }
       // 出口：挡住小路的树不要
       const blocks = (t) => {
-        for (let y = t.base - 44; y <= t.base + 2; y += 3) for (let x = t.cx - 15; x <= t.cx + 15; x += 3) if (open(x, y)) return true;
+        for (let y = t.base - 66; y <= t.base + 2; y += 3) for (let x = t.cx - 22; x <= t.cx + 22; x += 3) if (open(x, y)) return true;
         return false;
       };
       const SHADOWC = '#1e2a16';
@@ -1888,8 +2508,8 @@ window.MARGIN_ART = (function () {
       for (const t of trees) {
         if (blocks(t)) continue;
         const src = forestTree(t.kind);
-        const ox = t.cx - 16;
-        const oy = t.base - 47;
+        const ox = t.cx - Math.floor(src.w / 2);
+        const oy = t.base - src.h + 1;
         const mirror = hash2(t.cx, t.base, seed + 97) < 0.5;
         for (let y = 0; y < src.h; y++)
           for (let x = 0; x < src.w; x++) {
@@ -2026,6 +2646,48 @@ window.MARGIN_ART = (function () {
     return p.toCanvas();
   }
 
+  // ================= 池塘里的鱼（从上往下看） =================
+  const FISH_LOOK = {
+    medaka: { body: '#d8c68a', fin: '#c8b070', spots: null },
+    goldfish: { body: '#f0742e', fin: '#f6b07a', spots: null, fancy: true },
+    guppy: { body: '#9ab0c8', fin: '#e85d75', fin2: '#9b7fd1', spots: null, fancy: true },
+    koi: { body: '#f8f4ec', fin: '#f2e6dc', spots: '#d8452e' },
+    goldkoi: { body: '#f2c14e', fin: '#f7dc85', spots: null, shine: true },
+  };
+  function fishTopDraw(p, sp, frame) {
+    const L = FISH_LOOK[sp] || FISH_LOOK.goldfish;
+    const sw = frame ? 1 : -1;
+    // 尾巴
+    p.poly([[11, 5], [15, 2 + sw], [15, 8 + sw]], L.fin);
+    if (L.fancy) p.poly([[12, 5], [16, 1 + sw], [16, 9 + sw]], L.fin2 || L.fin);
+    // 身子
+    p.sEll(7, 5, 5, 2.6, L.body);
+    p.ell(7, 4.3, 3.5, 1, lighten(L.body, 0.08));
+    // 胸鳍
+    p.set(6, 2 + (frame ? 0 : 1), L.fin);
+    p.set(6, 8 - (frame ? 0 : 1), L.fin);
+    if (L.spots) {
+      p.ell(6, 4.5, 1.6, 1.4, L.spots);
+      p.set(9, 5, L.spots);
+      p.set(10, 4, L.spots);
+    }
+    if (L.shine) {
+      p.set(5, 4, '#fff1b8');
+      p.set(8, 4, '#fff1b8');
+    }
+    p.set(3, 4, INK);
+    p.set(3, 6, INK);
+  }
+  function fishTop(sp, frame, sick) {
+    return cached('fishtop:' + sp + ':' + frame + ':' + (sick ? 1 : 0), () => {
+      const p = new Pix(17, 11);
+      fishTopDraw(p, sp, frame);
+      p.outline();
+      if (sick) p.recolor((c) => mix(desat(c, 0.5), '#9fbf8f', 0.15));
+      return p;
+    });
+  }
+
   // ================= 注册和缓存 =================
 
   const cache = new Map();
@@ -2068,10 +2730,21 @@ window.MARGIN_ART = (function () {
     return cached('avatar:' + JSON.stringify(look) + ':' + frame + ':' + (dir || 'front'), () => build(16, 32, (q) => person(q, look, frame, dir)));
   }
 
+  // stage：0 种子、1 发芽、2 小树苗、3 小树、4（默认）长大的树
   function tree(kind, stage) {
-    return cached('tree:' + kind + ':' + (stage || 'full'), () =>
-      build(32, 48, (q) => (stage === 'sapling' ? sapling(q) : stage === 'dead' ? deadTree(q) : (TREES[kind] || TREES.oak)(q)))
-    );
+    const st = stage == null ? 4 : stage;
+    return cached('tree:' + kind + ':' + st, () => {
+      if (st <= 0) return build(16, 16, (q) => treeSeed(q));
+      if (st === 1) return build(16, 16, (q) => treeSprout(q, kind));
+      if (st === 2) return build(16, 32, (q) => treeSapling(q, kind));
+      if (st === 3) return build(32, 48, (q) => drawTree(q, kind, 1));
+      return build(48, 72, (q) => drawTree(q, kind, 1.5));
+    });
+  }
+
+  function grassSprite(kind, stage) {
+    const tall = (GRASSES[kind] || {}).tall && stage >= 2;
+    return cached('grass:' + kind + ':' + stage, () => build(16, tall ? 24 : 16, (q) => grassPlant(q, kind, stage), { outline: false }));
   }
 
   function flowerSprite(kind, stage) {
@@ -2104,9 +2777,9 @@ window.MARGIN_ART = (function () {
   }
 
   return {
-    Pix, ramp, lighten, mix, url, terrain, room,
-    pet, avatar, tree, flower: flowerSprite, shrub: shrubSprite, ground, decor, icon,
-    PETS: Object.keys(PETS), TREES: Object.keys(TREES), FLOWERS: Object.keys(FLOWERS), SHRUBS: Object.keys(SHRUBS),
+    Pix, ramp, lighten, mix, url, terrain,
+    pet, avatar, tree, flower: flowerSprite, shrub: shrubSprite, grass: grassSprite, fishTop, room, ground, decor, icon,
+    PETS: Object.keys(PETS), TREES: Object.keys(TREE_SPECS), FLOWERS: Object.keys(FLOWERS), SHRUBS: Object.keys(SHRUBS),
     DECOR: Object.fromEntries(Object.entries(DECOR).map(([k, v]) => [k, { w: v.w, h: v.h, tw: v.tw, th: v.th, room: !!v.room, wall: !!v.wall, flat: !!v.flat }])),
     HATS: Object.keys(HATS), ICONS: Object.keys(ICONS),
     FLOWER_COLOR: Object.fromEntries(Object.entries(FLOWERS).map(([k, v]) => [k, v.c])),
