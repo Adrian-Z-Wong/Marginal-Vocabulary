@@ -2514,7 +2514,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.1';
+  const APP_VERSION = '0.5.2';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -2900,8 +2900,7 @@
     },
     async resetAll() {
       if (!(await askConfirm('清空所有数据？自己导入的词表、背诵记录、错题本都会删除，无法恢复。', '清空'))) return;
-      state = freshState();
-      save();
+      adoptState(freshState(), true);
       applyTheme();
       render();
       toast('已清空');
@@ -2917,7 +2916,7 @@
   const ART = window.MARGIN_ART;
   const SPECIES = new Map(PETS.species.map((s) => [s.id, s]));
   const TREES = new Map(PETS.trees.map((t) => [t.id, t]));
-  // 杂货店里的树种子由树的列表生成
+  // 商店里的树种子由树的列表生成
   const SHELVES = PETS.shop.map((sh) =>
     sh.items === 'TREES' ? Object.assign({}, sh, { items: PETS.trees.map((t) => ({ id: 'tseed.' + t.id, name: t.name, price: t.price, use: 'plant', plant: ['tree', t.id] })) }) : sh
   );
@@ -2975,37 +2974,61 @@
     { w: 56, h: 42, price: 15000 },
     { w: 64, h: 48, price: 30000 },
   ];
-  const HOUSE = { x: 16, y: 4, w: 9, h: 4 }; // 房子占的格子，门在下沿正中（第 20 列）
-  const DOOR_X = HOUSE.x + Math.floor(HOUSE.w / 2);
+  // 房子可以一级级扩建：小木屋 → 农舍 → 两层小楼 → 别墅；门一直在第 20 列，房子往两边、往上变大，屋里也跟着变大
+  const HOUSES = [
+    { name: '小木屋', sprite: 'cabin', w: 7, h: 3, room: [16, 9], price: 0, oy: 0 },
+    { name: '农舍', sprite: 'house', w: 9, h: 4, room: [20, 11], price: 8000, oy: 0 },
+    { name: '两层小楼', sprite: 'house2', w: 11, h: 4, room: [24, 13], price: 20000, oy: 3 },
+    { name: '别墅', sprite: 'villa', w: 13, h: 5, room: [28, 15], price: 40000, oy: 4 },
+  ];
+  // 房子越高，花园上边多出几行给它（oy），花园里的东西整体往下挪这么多
+  const DOOR_X = 20;
+  const HOUSE = { x: 16, y: 4, w: 9, h: 4, sprite: 'house' }; // 房子占的格子，门在下沿正中
   let GW = 40;
   let GH = 28;
   const GPATH = new Set();
   const GEXIT = new Set();
   const GPOND = new Set();
-  for (let y = 18; y <= 21; y++) for (let x = 4; x <= 8; x++) GPOND.add(x + ',' + y);
-  for (const k of ['5,17', '6,17', '9,19', '9,20', '5,22', '6,22']) GPOND.add(k);
+  let POND_INNER = [];
+  let OY = 0;
 
   // 按花园大小重新铺路：门口往下到第 13 行，往左通到西边出口，往下通到南边出口
   function layoutGarden() {
     const L = LANDS[Math.max(0, Math.min(LANDS.length - 1, (state.world && state.world.land) || 0))];
     GW = L.w;
-    GH = L.h;
+    const Hs = HOUSES[houseLevel()];
+    OY = Hs.oy;
+    GH = L.h + OY;
+    Object.assign(HOUSE, { w: Hs.w, h: Hs.h, x: DOOR_X - Math.floor(Hs.w / 2), y: 8 + OY - Hs.h, sprite: Hs.sprite });
+    RW = Hs.room[0];
+    RH = Hs.room[1];
+    RDOOR = [RW / 2 - 1, RW / 2];
     GPATH.clear();
     GEXIT.clear();
-    for (let y = HOUSE.y + HOUSE.h - 1; y <= 13; y++) GPATH.add(DOOR_X + ',' + y); // 最上面一格藏在房子后面，路一直接到台阶
-    for (let x = 0; x <= DOOR_X; x++) for (const y of [12, 13]) GPATH.add(x + ',' + y);
-    for (let y = 14; y < GH; y++) for (const x of [13, 14]) GPATH.add(x + ',' + y);
+    for (let y = HOUSE.y + HOUSE.h - 1; y <= 13 + OY; y++) GPATH.add(DOOR_X + ',' + y); // 最上面一格藏在房子后面，路一直接到台阶
+    for (let x = 0; x <= DOOR_X; x++) for (const y of [12, 13]) GPATH.add(x + ',' + (y + OY));
+    for (let y = 14 + OY; y < GH; y++) for (const x of [13, 14]) GPATH.add(x + ',' + y);
     for (const k of GPATH) {
       const [x, y] = k.split(',').map(Number);
       if (x < GB || y >= GH - GB) GEXIT.add(k);
     }
+    GPOND.clear();
+    for (let y = 18; y <= 21; y++) for (let x = 4; x <= 8; x++) GPOND.add(x + ',' + (y + OY));
+    for (const [x, y] of [[5, 17], [6, 17], [9, 19], [9, 20], [5, 22], [6, 22]]) GPOND.add(x + ',' + (y + OY));
+    POND_INNER = [...GPOND].filter((k) => {
+      const [x, y] = k.split(',').map(Number);
+      return GPOND.has(x - 1 + ',' + y) && GPOND.has(x + 1 + ',' + y) && GPOND.has(x + ',' + (y - 1)) && GPOND.has(x + ',' + (y + 1));
+    });
+    GFIXED.length = 0;
+    for (const d of GFIXED_AT) GFIXED.push({ id: d.id, x: d.x, y: d.y + OY });
   }
 
   // 地上本来就有的东西（不能收走）
-  const GFIXED = [
-    { id: 'sign', x: 26, y: 7 },
+  const GFIXED = [];
+  const GFIXED_AT = [
+    { id: 'sign', x: 27, y: 8 },
     { id: 'mailbox', x: 22, y: 8 },
-    { id: 'logs', x: 13, y: 6 },
+    { id: 'logs', x: 11, y: 6 },
     { id: 'stone', x: 31, y: 5 },
     { id: 'stone', x: 19, y: 22 },
     { id: 'stone', x: 10, y: 16 },
@@ -3013,9 +3036,15 @@
     { id: 'mushroom', x: 4, y: 9 },
     { id: 'mushroom', x: 29, y: 15 },
   ];
-  const RW = 16;
-  const RH = 11;
-  const RDOOR = [7, 8]; // 小屋的门在下沿正中两格
+  // 屋里的大小跟着房子变；门在下沿正中两格
+  let RW = 18;
+  let RH = 11;
+  let RDOOR = [8, 9];
+
+  function houseLevel() {
+    const h = state.world && state.world.house;
+    return h >= 0 && h < HOUSES.length ? h : 0;
+  }
 
   // ---------- 金币 ----------
 
@@ -3493,6 +3522,13 @@
   // 0.4 → 一只宠物变成可以养好几只（加上饱腹），专注种树去掉（退回解锁树种和宠物品种花的金币，长好的树留着），花园变大
   function migrate() {
     const W = state.world;
+    // 以前的版本都是农舍；新来的从小木屋开始
+    if (W.house == null) {
+      W.house = W.v5 || W.migrated ? 1 : 0;
+      // 以前的农舍屋里是 18 格宽，现在 20 格：家具往右挪一格，还是对着门
+      if (W.house === 1) for (const d of W.room) d.x += 1;
+    }
+    layoutGarden();
     const old = state.pet;
     let refund = 0;
     const notes = [];
@@ -3580,6 +3616,7 @@
         slot++;
       }
     relocate();
+    roomRelocate();
     if (!W.gift) {
       W.gift = 1;
       bagAdd('water', 5);
@@ -3929,7 +3966,7 @@
   }
 
   function roomTerrain() {
-    if (!roomCanvas) roomCanvas = ART.room({ w: RW, h: RH, door: RDOOR, seed: 7 });
+    if (!roomCanvas || roomCanvas.width !== RW * TILE || roomCanvas.height !== RH * TILE) roomCanvas = ART.room({ w: RW, h: RH, door: RDOOR, seed: 7 });
     return roomCanvas;
   }
 
@@ -3941,6 +3978,42 @@
       for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occ.set(d.x + i + ',' + (d.y + j), d);
     }
     return occ;
+  }
+
+  // 换了一份数据（清空、导入备份、别的标签页改了）：旧备份照样升级，花园和屋子按新数据重新排
+  function adoptState(s, fresh) {
+    state = s;
+    if (fresh) migrate();
+    else layoutGarden();
+    terrainCache.key = '';
+    roomCanvas = null;
+    if (scene) scene.stop();
+    scene = null;
+  }
+
+  function roomRelocate() {
+    const W = state.world;
+    W.room = W.room.filter((d) => {
+      if (roomFree(d.id, d.x, d.y, roomOcc(d))) return true;
+      const occ = roomOcc(d);
+      let best = null;
+      let bestD = Infinity;
+      for (let y = 1; y < RH; y++)
+        for (let x = 0; x < RW; x++) {
+          const dd = Math.hypot(x - d.x, y - d.y);
+          if (dd < bestD && roomFree(d.id, x, y, occ)) {
+            best = [x, y];
+            bestD = dd;
+          }
+        }
+      if (best) {
+        d.x = best[0];
+        d.y = best[1];
+        return true;
+      }
+      bagAdd('furn.' + d.id, 1);
+      return false;
+    });
   }
 
   function roomFree(id, x, y, occ) {
@@ -3967,7 +4040,7 @@
 
   function gardenObjects(plants, decor, live) {
     const out = [];
-    out.push(objAt(ART.decor('house'), HOUSE.x, HOUSE.y, HOUSE.w, HOUSE.h));
+    out.push(objAt(ART.decor(HOUSE.sprite), HOUSE.x, HOUSE.y, HOUSE.w, HOUSE.h));
     for (const d of GFIXED) {
       const [w, h] = decorSize(d.id);
       out.push(objAt(ART.decor(d.id), d.x, d.y, w, h));
@@ -4000,12 +4073,25 @@
     return out;
   }
 
+  const TB_GAP = 10; // 工具栏离画面下沿（或上沿）的距离，和 CSS 一致
+
   function Scene(kind) {
     this.kind = kind;
     this.w = kind === 'room' ? RW : GW;
     this.h = kind === 'room' ? RH : GH;
     const sx = kind === 'room' ? (RDOOR[0] + 1) * TILE : DOOR_X * TILE + TILE / 2;
-    const sy = kind === 'room' ? (RH - 1) * TILE - 2 : (HOUSE.y + HOUSE.h + 1) * TILE;
+    let sy = (HOUSE.y + HOUSE.h + 1) * TILE;
+    if (kind === 'room') {
+      // 进门往里走两步站着（别站在下边的工具栏后面）；那儿摆了家具就站门口
+      const B = this.blocked();
+      sy = (RH - 1) * TILE - 2;
+      for (const r of [RH - 3, RH - 2]) {
+        if (this.freeAt(sx, r * TILE + 8, B)) {
+          sy = r * TILE + 8;
+          break;
+        }
+      }
+    }
     this.av = { x: sx, y: sy, tx: sx, ty: sy, path: [], dir: 'front', flip: false, moving: false, act: 0, then: null };
     // 花园里所有的宠物都出来玩；鱼在池塘里游
     this.pets = [];
@@ -4055,46 +4141,60 @@
     this.start();
   };
 
-  // 画面放大几倍：默认大约看到 30 格宽（和星露谷差不多），也可以自己拉近拉远（1–5 倍，整数倍像素才清楚）
+  // 画面占满页面的宽度，高度尽量用满窗口（最高到 4:3）；工具栏浮在画面下面
+  Scene.prototype.box = function () {
+    const w = Math.max(280, this.wrap.clientWidth || 960);
+    const top = this.wrap.getBoundingClientRect().top + window.scrollY;
+    // 横着的窗口 4:3；竖着拿的手机可以高一点
+    const tall = window.innerHeight > window.innerWidth ? 1.25 : 0.75;
+    const h = Math.round(Math.max(240, Math.min(w * tall, window.innerHeight - top - 16)));
+    return [w, h];
+  };
+
+  // 默认大约看到 30 格宽（和星露谷差不多），可以拉近拉远（1–5 倍）；拉远到地图刚好铺满画面为止
   Scene.prototype.autoScale = function () {
     return Math.max(2, Math.min(4, Math.round(this.box()[0] / 480)));
   };
 
-  // 画面是 4:3：先按页面宽度算，太高了就按窗口高度算
-  Scene.prototype.box = function () {
-    const page = this.wrap.parentElement;
-    const avail = Math.max(280, (page && page.clientWidth) || this.wrap.clientWidth || 960);
-    const maxH = Math.max(210, window.innerHeight - 200);
-    let w = avail;
-    let h = Math.round((w * 3) / 4);
-    if (h > maxH) {
-      h = maxH;
-      w = Math.round((h * 4) / 3);
-    }
-    return [w, h];
+  Scene.prototype.minScale = function () {
+    const [bw, bh] = this.box();
+    return Math.max(1, Math.ceil(Math.max(bw / (this.w * TILE), bh / (this.h * TILE)) - 1e-6));
   };
 
   Scene.prototype.fit = function () {
     if (!this.canvas) return;
-    const [bw, bh] = this.box();
-    this.wrap.style.width = bw + 'px';
-    this.wrap.style.height = bh + 'px';
-    const z = state.settings.zoom;
-    const scale = z >= 1 && z <= 5 ? z : this.autoScale();
-    const vw = Math.min(this.w * TILE, Math.floor(bw / scale));
-    const vh = Math.min(this.h * TILE, Math.floor(bh / scale));
+    let [bw, bh] = this.box();
+    // 屋里：画面高度按屋子的比例来，整间屋子横着铺满；窗口太矮放不下，就裁掉一点、跟着人物走
+    // 手机上屋子至少放大两倍，太小看不清
+    if (this.kind === 'room') bh = Math.min(bh, Math.max(Math.round((bw * this.h) / this.w), this.h * TILE * 2));
+    this.wrap.style.height = bh + (this.wrap.offsetHeight - this.wrap.clientHeight) + 'px'; // 加上边框，里面正好 bh 高
+    let scale;
+    if (this.kind === 'room') {
+      // 屋里：整间屋子放大到铺满画面，多出来的一点跟着人物走
+      scale = Math.max(bw / (this.w * TILE), bh / (this.h * TILE));
+    } else {
+      const z = state.settings.zoom;
+      scale = Math.max(z >= 1 && z <= 5 ? z : this.autoScale(), this.minScale());
+    }
+    const vw = Math.min(this.w * TILE, Math.round(bw / scale));
+    const vh = Math.min(this.h * TILE, Math.round(bh / scale));
     this.scale = scale;
     this.vw = vw;
     this.vh = vh;
     this.canvas.width = vw;
     this.canvas.height = vh;
-    this.canvas.style.width = vw * scale + 'px';
-    this.canvas.style.height = vh * scale + 'px';
+    // 画面像素数取整以后，放大出来会比框差一两个像素，在边上留一道缝：直接撑满（最多拉伸不到一个像素）
+    this.canvas.style.width = bw + 'px';
+    this.canvas.style.height = bh + 'px';
     this.ctx.imageSmoothingEnabled = false;
+    // 底下工具栏的上沿（画面里的像素）：人物站在门口时别被它挡住
+    this.tb = this.wrap.querySelector('.toolbar');
+    this.tbTop = this.tb ? (this.wrap.clientHeight - TB_GAP - this.tb.offsetHeight - this.canvas.offsetTop) / scale : vh;
   };
 
   Scene.prototype.zoomBy = function (d) {
-    const z = Math.max(1, Math.min(5, this.scale + d));
+    if (this.kind === 'room') return;
+    const z = Math.max(this.minScale(), Math.min(5, this.scale + d));
     if (z === this.scale) return;
     state.settings.zoom = z === this.autoScale() ? 0 : z;
     save();
@@ -4301,9 +4401,17 @@
         av.y += (dy / d) * v;
       }
     } else av.walking = false;
-    // 镜头跟着人物，不超出地图
+    // 镜头跟着人物，不超出地图；在房子跟前时镜头往上抬，尽量把整栋房子拍进来（人物留在工具栏上面），走远了慢慢回到正中
     const cxT = Math.max(0, Math.min(this.w * TILE - this.vw, av.x - this.vw / 2));
-    const cyT = Math.max(0, Math.min(this.h * TILE - this.vh, av.y - 16 - this.vh / 2));
+    let cyC = av.y - 16 - this.vh / 2;
+    if (this.kind === 'garden') {
+      const doorY = (HOUSE.y + HOUSE.h + 1) * TILE;
+      const top = (HOUSE.y + HOUSE.h) * TILE - ART.decor(HOUSE.sprite).height;
+      const lift = cyC - Math.max(top - 4, av.y - Math.min(this.vh, this.tbTop || this.vh) + 6);
+      const k = Math.max(0, Math.min(1, (av.y - doorY) / (6 * TILE)));
+      if (lift > 0) cyC -= lift * (1 - k);
+    }
+    const cyT = Math.max(0, Math.min(this.h * TILE - this.vh, cyC));
     if (!this.cam.init) {
       this.cam.x = cxT;
       this.cam.y = cyT;
@@ -4411,10 +4519,6 @@
   };
 
   // 花园里的小生命：蝴蝶在花间飞、樱花树下飘花瓣、池塘上一闪一闪的波光、慢慢飘过的云影
-  const POND_INNER = [...GPOND].filter((k) => {
-    const [x, y] = k.split(',').map(Number);
-    return GPOND.has(x - 1 + ',' + y) && GPOND.has(x + 1 + ',' + y) && GPOND.has(x + ',' + (y - 1)) && GPOND.has(x + ',' + (y + 1));
-  });
   function pondSpot() {
     const list = POND_INNER.length ? POND_INNER : [...GPOND];
     const [tx, ty] = list[Math.floor(Math.random() * list.length)].split(',').map(Number);
@@ -4710,6 +4814,16 @@
         this.bubble.style.top = this.canvas.offsetTop + (p.y - 34 - cy) * this.scale + 'px';
       }
     }
+    // 人物走到工具栏后面，工具栏就挪到画面上边；走开了再回到下边
+    const tb = this.tb;
+    if (tb && tb.isConnected) {
+      const s = this.scale;
+      const ax = this.canvas.offsetLeft + (this.av.x - cx) * s;
+      const feet = this.canvas.offsetTop + (this.av.y - cy) * s;
+      const top = this.wrap.clientHeight - TB_GAP - tb.offsetHeight;
+      const under = feet > top - 2 && ax + 10 * s > tb.offsetLeft && ax - 10 * s < tb.offsetLeft + tb.offsetWidth;
+      if (under !== tb.classList.contains('at-top')) tb.classList.toggle('at-top', under);
+    }
   };
 
   Scene.prototype.toTile = function (ev) {
@@ -4954,10 +5068,9 @@
       '<main class="page wide">' +
       '<div class="g-top"><div><h1 class="h1">花园</h1><p class="muted"><span id="g-stats">' + gardenStatsHtml() + '</span></p></div>' +
       '<div class="actions"><span class="zoom"><button class="btn ghost small" data-act="zoom" data-d="-1" title="拉远（−）">−</button><span id="zoom-v" class="muted small"></span><button class="btn ghost small" data-act="zoom" data-d="1" title="拉近（+）">+</button></span>' +
-      (next ? '<button class="btn ghost small" data-act="buyLand" title="' + next.w + ' × ' + next.h + ' 格">扩建 · ' + fmt(next.price) + '</button>' : '') +
+      (next ? '<button class="btn ghost small" data-act="buyLand" title="' + next.w + ' × ' + (next.h + OY) + ' 格">扩建 · ' + fmt(next.price) + '</button>' : '') +
       '<button class="btn ghost small" data-act="goRoom">回家</button></div></div>' +
-      '<div class="scene-wrap" id="scene-wrap"><canvas class="scene" id="scene"></canvas><div class="scene-bubble"></div></div>' +
-      toolbarHtml('garden') +
+      '<div class="scene-wrap" id="scene-wrap"><canvas class="scene" id="scene"></canvas><div class="scene-bubble"></div>' + toolbarHtml('garden') + '</div>' +
       '</main>'
     );
   };
@@ -4965,10 +5078,9 @@
   VIEWS.room = function () {
     return (
       '<main class="page wide">' +
-      '<div class="g-top"><div><h1 class="h1">小屋</h1><p class="muted">家具 ' + state.world.room.length + ' 件</p></div>' +
-      '<div class="actions"><button class="btn ghost small" data-act="goGarden">出门</button></div></div>' +
-      '<div class="scene-wrap room" id="scene-wrap"><canvas class="scene" id="scene"></canvas><div class="scene-bubble"></div></div>' +
-      toolbarHtml('room') +
+      '<div class="g-top"><div><h1 class="h1">' + HOUSES[houseLevel()].name + '</h1><p class="muted">家具 ' + state.world.room.length + ' 件</p></div>' +
+      '<div class="actions">' + (HOUSES[houseLevel() + 1] ? '<button class="btn ghost small" data-act="buyHouse">扩建成' + HOUSES[houseLevel() + 1].name + ' · ' + fmt(HOUSES[houseLevel() + 1].price) + '</button>' : '') + '<button class="btn ghost small" data-act="goGarden">出门</button></div></div>' +
+      '<div class="scene-wrap room" id="scene-wrap"><canvas class="scene" id="scene"></canvas><div class="scene-bubble"></div>' + toolbarHtml('room') + '</div>' +
       '</main>'
     );
   };
@@ -5006,7 +5118,7 @@
     return n;
   }
 
-  // 一件东西的效果（背包和杂货店里的小字）
+  // 一件东西的效果（背包和商店里的小字）
   function itemNote(it) {
     if (it.use === 'feed') return '饱腹 +' + it.food + (it.mood ? ' · 心情 +' + it.mood : '');
     if (it.use === 'toy') return '心情 +' + it.mood;
@@ -5122,7 +5234,7 @@
     else if (a === 'pick') ui.bagPick = t.dataset.id;
     else if (a === 'shop') {
       ui.bagOpen = false;
-      ui.shopTab = 'shelf';
+      ui.shopTab = 'seeds';
       go('shop');
       return;
     } else if (a === 'garden' || a === 'room') {
@@ -5153,13 +5265,18 @@
 
   // ---------- 商店 ----------
 
+  // 商店的分栏；卖东西的几栏下面再按类别分
   const SHOP_TABS = [
     ['status', '我的宠物'],
-    ['shelf', '杂货店'],
     ['adopt', '宠物店'],
+    ['seeds', '种子', ['treeseeds', 'seeds']],
+    ['supplies', '用品', ['petcare', 'garden']],
+    ['home', '家园', ['decor', 'furniture', 'build']],
+    ['style', '装扮', ['look', 'petlook']],
     ['goals', '挑战与成就'],
     ['rules', '金币规则'],
   ];
+  const tabOfShelf = (id) => (SHOP_TABS.find((t) => t[2] && t[2].includes(id)) || SHOP_TABS[2])[0];
 
   function shopTab() {
     return SHOP_TABS.some((t) => t[0] === ui.shopTab) ? ui.shopTab : 'status';
@@ -5321,7 +5438,7 @@
     return petCanvas('idle', Object.assign({}, p, { wear: Object.assign({}, p.wear, { [it.slot]: it.id }) }));
   }
 
-  // 杂货店里一件东西的样子
+  // 商店里一件东西的样子
   function shelfPreview(it) {
     if (it.shelf === 'look') {
       const look = Object.assign(avatarLook(), it.look);
@@ -5365,20 +5482,35 @@
   function landHtml() {
     const lv = state.world.land || 0;
     const next = LANDS[lv + 1];
-    if (!next) return '<div class="shop-item land"><div class="si-pic">' + pxImg(ART.icon('shovel'), 3) + '</div><span class="si-name">花园已经扩建到最大</span><span class="si-meta">' + LANDS[lv].w + ' × ' + LANDS[lv].h + ' 格</span></div>';
+    if (!next) return '<div class="shop-item land"><div class="si-pic">' + pxImg(ART.icon('shovel'), 3) + '</div><span class="si-name">花园已经扩建到最大</span><span class="si-meta">' + LANDS[lv].w + ' × ' + (LANDS[lv].h + OY) + ' 格</span></div>';
     return (
       '<div class="shop-item land"><div class="si-pic">' + pxImg(ART.icon('shovel'), 3) + '</div><span class="si-name">扩建花园</span>' +
-      '<span class="si-note">' + LANDS[lv].w + ' × ' + LANDS[lv].h + ' → ' + next.w + ' × ' + next.h + ' 格</span>' +
+      '<span class="si-note">' + LANDS[lv].w + ' × ' + (LANDS[lv].h + OY) + ' → ' + next.w + ' × ' + (next.h + OY) + ' 格</span>' +
       '<span class="si-meta">' + fmt(next.price) + ' 金币</span><button class="btn small" data-act="buyLand">扩建</button></div>'
     );
   }
 
-  function shelfHtml() {
-    const cur = SHELVES.some((s) => s.id === ui.shelf) ? ui.shelf : SHELVES[0].id;
-    const items = SHELVES.find((s) => s.id === cur).items.map((it) => ITEMS.get(it.id));
+  // 扩建房子的卡片
+  function houseHtml() {
+    const lv = houseLevel();
+    const next = HOUSES[lv + 1];
+    const pic = (h) => pxImg(ART.decor(h.sprite), 0.75);
+    if (!next) return '<div class="shop-item land"><div class="si-pic">' + pic(HOUSES[lv]) + '</div><span class="si-name">' + HOUSES[lv].name + '</span><span class="si-meta">已经是最大的房子</span></div>';
     return (
-      '<div class="shelf-tabs">' + SHELVES.map((s) => '<button class="chip' + (s.id === cur ? ' on' : '') + '" data-act="openShelf" data-shelf="' + s.id + '">' + s.name + '</button>').join('') + '</div>' +
-      '<section class="panel"><div class="shop-grid">' + items.map(shelfItemHtml).join('') + (cur === 'garden' ? landHtml() : '') + '</div></section>'
+      '<div class="shop-item land"><div class="si-pic">' + pic(next) + '</div><span class="si-name">扩建成' + next.name + '</span>' +
+      '<span class="si-note">屋里 ' + next.room[0] + ' × ' + next.room[1] + ' 格</span>' +
+      '<span class="si-meta">' + fmt(next.price) + ' 金币</span><button class="btn small" data-act="buyHouse">扩建</button></div>'
+    );
+  }
+
+  function shelfHtml(tab) {
+    const ids = SHOP_TABS.find((t) => t[0] === tab)[2];
+    const cur = ids.includes(ui.shelf) ? ui.shelf : ids[0];
+    const name = (id) => (id === 'build' ? '扩建' : SHELVES.find((s) => s.id === id).name);
+    const items = cur === 'build' ? [] : SHELVES.find((s) => s.id === cur).items.map((it) => ITEMS.get(it.id));
+    return (
+      '<div class="shelf-tabs">' + ids.map((id) => '<button class="chip' + (id === cur ? ' on' : '') + '" data-act="openShelf" data-shelf="' + id + '">' + name(id) + '</button>').join('') + '</div>' +
+      '<section class="panel"><div class="shop-grid">' + (cur === 'build' ? landHtml() + houseHtml() : items.map(shelfItemHtml).join('')) + '</div></section>'
     );
   }
 
@@ -5403,7 +5535,7 @@
   VIEWS.shop = function () {
     petsTick();
     const tab = shopTab();
-    const body = { status: petStatusHtml, shelf: shelfHtml, adopt: adoptHtml, goals: () => challengesHtml(false) + achievementsHtml(), rules: rulesHtml }[tab]();
+    const body = { status: petStatusHtml, adopt: adoptHtml, goals: () => challengesHtml(false) + achievementsHtml(), rules: rulesHtml }[tab] ? { status: petStatusHtml, adopt: adoptHtml, goals: () => challengesHtml(false) + achievementsHtml(), rules: rulesHtml }[tab]() : shelfHtml(tab);
     return (
       '<main class="page">' +
       '<h1 class="h1">商店</h1>' +
@@ -5443,8 +5575,8 @@
       else render();
     },
     openShelf(t) {
-      ui.shopTab = 'shelf';
       ui.shelf = t.dataset.shelf;
+      ui.shopTab = tabOfShelf(ui.shelf);
       if (ui.view !== 'shop') go('shop');
       else render();
     },
@@ -5563,12 +5695,37 @@
       save();
       render();
     },
+    async buyHouse() {
+      const lv = houseLevel();
+      const next = HOUSES[lv + 1];
+      if (!next) return;
+      if (state.points.bal < next.price) return toast('金币不够（还差 ' + fmt(next.price - state.points.bal) + '）');
+      if (!(await askConfirm('花 ' + fmt(next.price) + ' 金币把房子扩建成' + next.name + '？', '扩建'))) return;
+      if (!spend(next.price)) return;
+      // 屋子变宽，家具跟着门一起挪到中间；花园上边多出来的几行，园子里的东西跟着房子往下挪
+      const dx = (next.room[0] - HOUSES[lv].room[0]) / 2;
+      for (const d of state.world.room) d.x += dx;
+      const dy = next.oy - HOUSES[lv].oy;
+      for (const it of [...state.world.plants, ...state.world.decor]) it.y += dy;
+      state.world.house = lv + 1;
+      layoutGarden();
+      relocate();
+      roomRelocate();
+      terrainCache.key = '';
+      roomCanvas = null;
+      save();
+      toast('房子扩建成' + next.name + '了');
+      const back = ui.view === 'room' ? 'room' : 'garden';
+      if (scene) scene.stop();
+      scene = null;
+      go(ui.view === 'shop' ? 'shop' : back);
+    },
     async buyLand() {
       const lv = state.world.land || 0;
       const next = LANDS[lv + 1];
       if (!next) return;
       if (state.points.bal < next.price) return toast('金币不够（还差 ' + fmt(next.price - state.points.bal) + '）');
-      if (!(await askConfirm('花 ' + fmt(next.price) + ' 金币把花园扩建到 ' + next.w + ' × ' + next.h + ' 格？', '扩建'))) return;
+      if (!(await askConfirm('花 ' + fmt(next.price) + ' 金币把花园扩建到 ' + next.w + ' × ' + (next.h + OY) + ' 格？', '扩建'))) return;
       if (!spend(next.price)) return;
       state.world.land = lv + 1;
       layoutGarden();
@@ -5654,8 +5811,7 @@
           return;
         }
         if (!(await askConfirm('用这个备份覆盖现在的数据？', '覆盖'))) return;
-        state = normalizeState(obj.data);
-        save();
+        adoptState(normalizeState(obj.data), true);
         applyTheme();
         render();
         toast('备份已导入');
@@ -5776,7 +5932,7 @@
   // 其他标签页改了数据（比如同时开了两个 Marginal Vocabulary），这里跟着更新
   window.addEventListener('storage', (ev) => {
     if (ev.key === STORE_KEY && ui.view !== 'practice') {
-      state = loadState();
+      adoptState(loadState(), false);
       applyTheme();
       render();
     }
@@ -5784,7 +5940,7 @@
 
   // 给自动化测试用的入口（只有测试脚本会设置 __MARGIN_TEST）
   if (window.__MARGIN_TEST) window.__margin = { zhMatch, similarity, judgeZhLines, meaningHtml, layersOf };
-  if (window.__MARGIN_TEST) window.__sceneDebug = () => (scene ? { cx: scene.cam.x, cy: scene.cam.y, av: scene.av, pet: scene.mainEnt(), pets: scene.pets, fish: scene.fish, scale: scene.scale, vw: scene.vw, blocked: () => scene.blocked(), walk: (x, y) => scene.walkTo(x, y) } : null);
+  if (window.__MARGIN_TEST) window.__sceneDebug = () => (scene ? { cx: scene.cam.x, cy: scene.cam.y, h: scene.h, av: scene.av, pet: scene.mainEnt(), pets: scene.pets, fish: scene.fish, scale: scene.scale, vw: scene.vw, blocked: () => scene.blocked(), walk: (x, y) => scene.walkTo(x, y) } : null);
 
   layoutGarden();
   migrate();

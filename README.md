@@ -4,6 +4,8 @@
 
 **背单词、学词根的小工具**
 
+A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS, GRE, GMAT, Finance and Medicine word books, with a pixel-art garden and pets.
+
 [在线使用](https://adrian-z-wong.github.io/Marginal-Vocabulary/Margin.html) · [下载到电脑](https://adrian-z-wong.github.io/Marginal-Vocabulary/) · [反馈问题](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/issues/new/choose)
 
 ![License](https://img.shields.io/github/license/Adrian-Z-Wong/Marginal-Vocabulary?color=c15f3c)
@@ -27,7 +29,7 @@
 - 美式 / 英式发音
 - 打卡热力图
 - 金币和商店：背单词攒金币，买宠物、树和花草的种子、水、肥料、宠物用品、装饰、家具和装扮；每日挑战和成就
-- 花园：像星露谷那样的俯视像素农场，有自己的小人和农舍；买种子种下，浇水施肥，从种子长成大树；18 种树、10 种花草、3 种灌木；可以拉近拉远、花金币扩建
+- 花园：像星露谷那样的俯视像素农场，有自己的小人和房子，房子从小木屋一步步扩建成农舍、两层小楼、别墅；买种子种下，浇水施肥，从种子长成大树；18 种树、10 种花草、3 种灌木；可以拉近拉远、花金币扩建
 - 宠物：21 种宠物和 5 种观赏鱼，同一种可以养好几只；每只都要吃饭、陪它玩，生病了要吃药，不然会死；选一只陪你背单词，它会在页面上走动、用英文说话
 - 右下角的背包装着买来的东西
 - Mac 应用可以检查更新（菜单 Check for Updates… 或设置里），一键安装，新版本替换旧版本，进度不受影响

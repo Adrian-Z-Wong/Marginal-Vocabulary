@@ -1,4 +1,4 @@
-// Marginal Vocabulary 的宠物、树种、商店货架和台词（像素画在 art.js 里），价格单位是金币
+// Marginal Vocabulary 的宠物、树种、商店里卖的东西和台词（像素画在 art.js 里），价格单位是金币
 window.MARGIN_PETS = {
   // 宠物：price 是买一只要花的金币（同一种可以买好几只）；kind 是宠物店里的分类（dog 猫狗、small 小动物、bird 鸟、wild 野生动物、fish 观赏鱼）；
   // fish 的养在池塘里
@@ -53,18 +53,18 @@ window.MARGIN_PETS = {
     { id: 'wisteria', name: '紫藤', price: 3000 },
   ],
 
-  // 商店货架。use：plant 种下、water 浇水、fert 施肥、place 摆进花园、furnish 摆进屋里、
+  // 商店里卖的东西，按类分开。use：plant 种下、water 浇水、fert 施肥、place 摆进花园、furnish 摆进屋里、
   // feed 喂宠物（food 加饱腹、mood 加心情）、fishfood 喂池塘里所有的鱼、toy 陪宠物玩、medicine 治病；
   // look 是人物装扮，pet 是宠物装扮（买了就一直有，所有宠物都能戴）
   shop: [
     {
       id: 'treeseeds',
-      name: '树种子',
+      name: '树',
       items: 'TREES',
     },
     {
       id: 'seeds',
-      name: '花草种子',
+      name: '花草',
       items: [
         { id: 'seed.tulip', name: '郁金香', price: 150, use: 'plant', plant: ['flower', 'tulip'] },
         { id: 'seed.daisy', name: '雏菊', price: 150, use: 'plant', plant: ['flower', 'daisy'] },

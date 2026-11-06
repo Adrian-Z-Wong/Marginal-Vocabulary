@@ -1,0 +1,31 @@
+# 网页更新以后，通知 Bing 等支持 IndexNow 的搜索引擎来抓取（Google 不支持 IndexNow，要在 Search Console 里提交）。
+# 密钥文件是仓库根目录下的 a098eaaaf0820175298df99cd3b7d2c3.txt，发布后在网站上能访问到。
+name: 通知搜索引擎
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'Margin.html', 'sitemap.xml', 'README.md']
+  workflow_dispatch:
+
+jobs:
+  indexnow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 等网页发布好
+        run: sleep 240
+
+      - name: 通知搜索引擎（IndexNow）
+        run: |
+          curl -sS -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -w '\nHTTP %{http_code}\n' \
+            -d '{
+              "host": "adrian-z-wong.github.io",
+              "key": "a098eaaaf0820175298df99cd3b7d2c3",
+              "keyLocation": "https://adrian-z-wong.github.io/Marginal-Vocabulary/a098eaaaf0820175298df99cd3b7d2c3.txt",
+              "urlList": [
+                "https://adrian-z-wong.github.io/Marginal-Vocabulary/",
+                "https://adrian-z-wong.github.io/Marginal-Vocabulary/Margin.html"
+              ]
+            }'

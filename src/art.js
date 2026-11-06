@@ -1887,6 +1887,151 @@ window.MARGIN_ART = (function () {
   // ================= 装饰和家具 =================
   // 每件：w×h 像素，占 tw×th 个格子（放置时按底部对齐）
 
+  // ---------- 画房子用的几样东西 ----------
+  function bStone(p, x0, y0, w, h, c, brick) {
+    const R = ramp(c);
+    for (let y = y0; y < y0 + h; y++)
+      for (let x = x0; x < x0 + w; x++) {
+        const row = Math.floor((y - y0) / 4);
+        const off = row % 2 ? (brick ? 3 : 5) : 0;
+        const bw = brick ? 6 : 10;
+        let col = c;
+        if ((y - y0) % 4 === 3) col = R.lo;
+        else if ((x - x0 + off) % bw === 0) col = R.lo;
+        else if ((y - y0) % 4 === 0) col = R.hi;
+        p.set(x, y, col);
+      }
+  }
+  function bLogs(p, x0, y0, w, h, c) {
+    const R = ramp(c);
+    for (let y = y0; y < y0 + h; y++) {
+      const k = (y - y0) % 6;
+      p.rect(x0, y, w, 1, k === 0 ? R.hi : k === 5 ? R.lo : k === 4 ? R.mid : c);
+    }
+    // 两头的原木截面
+    for (let y = y0; y < y0 + h; y += 6) {
+      for (const x of [x0 - 2, x0 + w - 4]) {
+        p.ell(x + 3, y + 3, 3, 3, '#c9a070');
+        p.ell(x + 3, y + 3, 1.6, 1.6, '#a87e52');
+        p.set(x + 3, y + 3, '#8a6440');
+      }
+    }
+    for (let y = y0 + 2; y < y0 + h; y += 6) for (let x = x0 + 8 + ((y / 6) % 3) * 9; x < x0 + w - 6; x += 27) p.rect(x, y, 4, 1, R.mid);
+  }
+  function bPlanks(p, x0, y0, w, h, c) {
+    const R = ramp(c);
+    for (let y = y0; y < y0 + h; y++) {
+      const k = (y - y0) % 5;
+      p.rect(x0, y, w, 1, k === 0 ? R.hi : k === 4 ? R.mid : c);
+    }
+  }
+  function bPlaster(p, x0, y0, w, h, c) {
+    const R = ramp(c);
+    for (let y = y0; y < y0 + h; y++)
+      for (let x = x0; x < x0 + w; x++) {
+        const n = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+        p.set(x, y, n % 23 === 0 ? R.mid : n % 31 === 0 ? R.hi : c);
+      }
+  }
+  // 瓦片：一排排，排与排之间错开
+  function bShingles(p, inRoof, top, eave, c, rowH, off) {
+    const R = ramp(c);
+    for (let y = top; y < eave; y++)
+      for (let x = -2; x < p.w + 2; x++) {
+        if (!inRoof(x, y)) continue;
+        const row = Math.floor((y - top) / rowH);
+        const ry = (y - top) % rowH;
+        const tab = (x + (row % 2 ? Math.floor(rowH * 0.8) : 0) + off) % (rowH * 2);
+        let col = c;
+        if (ry === rowH - 1) col = R.lo;
+        else if (tab === 0) col = R.mid;
+        else if (ry === 0 && tab < rowH) col = R.hi;
+        p.set(x, y, col);
+      }
+  }
+  // 陶土瓦：一条条竖着的弧
+  function bTiles(p, inRoof, top, eave, c) {
+    const R = ramp(c);
+    for (let y = top; y < eave; y++)
+      for (let x = -2; x < p.w + 2; x++) {
+        if (!inRoof(x, y)) continue;
+        const u = x % 5;
+        let col = u === 0 ? R.lo : u === 1 ? R.hi : u === 4 ? R.mid : c;
+        if ((y - top) % 6 === 5) col = R.lo;
+        p.set(x, y, col);
+      }
+  }
+  function bRoofEdge(p, cx, top, eave, half, c) {
+    for (let y = top - 1; y < eave + 1; y++) {
+      const h = ((y - top) / (eave - top)) * half;
+      p.set(Math.round(cx - h), y, c);
+      p.set(Math.round(cx - h) + 1, y, ramp(c).hi);
+      p.set(Math.round(cx + h), y, c);
+      p.set(Math.round(cx + h) - 1, y, ramp(c).mid);
+    }
+  }
+  // 窗户：白框、十字窗棂、窗帘；可以带百叶、花箱、拱顶，也可以是落地的门
+  function bWindow(p, x, y, w, h, o) {
+    const T = o.trim || '#f4efe4';
+    if (o.shutter) {
+      p.sRect(x - 4, y, 4, h, o.shutter, { noHi: true });
+      p.sRect(x + w, y, 4, h, o.shutter, { noHi: true });
+      for (let yy = y + 1; yy < y + h; yy += 3) {
+        p.rect(x - 4, yy, 4, 1, ramp(o.shutter).lo);
+        p.rect(x + w, yy, 4, 1, ramp(o.shutter).lo);
+      }
+    }
+    p.sRect(x, y, w, h, T);
+    const gx = x + 2;
+    const gy = y + 2;
+    const gw = w - 4;
+    const gh = h - 4;
+    p.rect(gx, gy, gw, gh, '#7fb6d8');
+    p.rect(gx, gy, gw, Math.max(2, Math.floor(gh / 5)), '#a9d4ec');
+    p.line(gx + 1, gy + gh - 2, gx + Math.min(gw - 2, 7), gy + gh - 2 - Math.min(gh - 3, 7), '#cdeaf8');
+    if (o.arch) {
+      for (let k = 0; k < Math.floor(w / 2); k++) {
+        const cut = Math.round(Math.sqrt(Math.max(0, (w / 2) ** 2 - (w / 2 - k - 0.5) ** 2)));
+        for (let yy = y; yy < y + Math.floor(w / 2) - cut; yy++) {
+          p.clear(x + k, yy);
+          p.clear(x + w - 1 - k, yy);
+        }
+      }
+    }
+    p.rect(x + Math.floor(w / 2), gy, 1, gh, T);
+    if (!o.door) p.rect(gx, gy + Math.floor(gh / 2), gw, 1, T);
+    p.rect(gx, gy, 2, Math.floor(gh * 0.55), '#f4ece0');
+    p.rect(gx + gw - 2, gy, 2, Math.floor(gh * 0.55), '#f4ece0');
+    if (o.box) {
+      p.sRect(x - 1, y + h, w + 2, 3, '#8a5a3b');
+      for (let i = 0; i < w; i += 2) {
+        p.set(x + i, y + h - 1, ['#e85d75', '#f6d35b', '#ef7fa0', '#ffffff', '#9b7fd1'][(i / 2) % 5]);
+        p.set(x + i + 1, y + h - 1, '#5f9e4f');
+      }
+    }
+  }
+  function bDoor(p, cx, bottom, w, h, c, trim, arch) {
+    const x = Math.round(cx - w / 2);
+    const y = bottom - h;
+    p.sRect(x - 3, y - 3, w + 6, h + 3, trim, { noHi: true });
+    p.sRect(x, y, w, h, c);
+    const R = ramp(c);
+    p.rect(Math.round(cx), y, 1, h, R.lo);
+    for (const [px, py] of [[x + 2, y + 3], [Math.round(cx) + 2, y + 3], [x + 2, y + Math.round(h / 2) + 1], [Math.round(cx) + 2, y + Math.round(h / 2) + 1]]) p.sRect(px, py, Math.floor(w / 2) - 4, Math.floor(h / 2) - 5, R.mid, { noHi: true });
+    p.rect(Math.round(cx) + 2, y + Math.round(h * 0.55), 2, 2, '#f2c14e');
+    p.rect(Math.round(cx) - 4, y + Math.round(h * 0.55), 2, 2, '#f2c14e');
+    if (arch) {
+      for (let k = 0; k < Math.floor(w / 2) + 3; k++) {
+        const r = w / 2 + 3;
+        const cut = Math.round(Math.sqrt(Math.max(0, r * r - (r - k - 0.5) ** 2)));
+        for (let yy = y - 3; yy < y - 3 + Math.floor(r) - cut; yy++) {
+          p.clear(x - 3 + k, yy);
+          p.clear(x + w + 2 - k, yy);
+        }
+      }
+    }
+  }
+
   const DECOR = {
     fence: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
       const W = '#c49a6c';
@@ -1993,6 +2138,126 @@ window.MARGIN_ART = (function () {
       p.rect(13, 10, 6, 1, '#c8463a');
     } },
     // 农舍：瓦片屋顶、木板墙、石头地基，门上有小雨棚，窗户带百叶和花箱，砖砌烟囱
+    // 小木屋：7 格宽，原木墙、山墙屋顶、一扇门两扇窗
+    cabin: { w: 112, h: 96, tw: 7, th: 3, draw(p) {
+      const LOG = '#a8714a';
+      const ROOF = '#8a4a36';
+      p.ell(56, 93, 58, 3, 'rgba(30,25,15,.28)');
+      // 烟囱（在屋顶后面）
+      bStone(p, 78, 2, 10, 26, '#9d978c');
+      bStone(p, 6, 80, 100, 8, '#9d978c');
+      bLogs(p, 6, 46, 100, 34, LOG);
+      // 屋顶
+      const top = 6;
+      const eave = 47;
+      const inRoof = (x, y) => y >= top && y < eave && Math.abs(x - 55.5) <= ((y - top) / (eave - top)) * 60;
+      bShingles(p, inRoof, top, eave, ROOF, 5, 0);
+      bRoofEdge(p, 55.5, top, eave, 60, '#6a4630');
+      p.sRect(-1, eave - 1, 114, 3, '#6a4630', { noHi: true });
+      // 门
+      bDoor(p, 56, 80, 18, 27, '#7a4e32', '#5a3a26');
+      p.sRect(44, 52, 24, 3, '#8a5e3c', { noHi: true });
+      // 窗户
+      bWindow(p, 17, 56, 16, 14, { shutter: '#6a8a52', box: true });
+      bWindow(p, 79, 56, 16, 14, { shutter: '#6a8a52', box: true });
+      // 门边的灯、台阶
+      p.sRect(69, 60, 3, 5, '#3a3a42');
+      p.set(70, 62, '#ffe28a');
+      p.sRect(44, 88, 24, 4, '#b9b2a6');
+    } },
+    // 两层小楼：11 格宽，蓝灰色的墙板、四坡屋顶带老虎窗，门口一个门廊，楼上是阳台
+    house2: { w: 176, h: 176, tw: 11, th: 4, draw(p) {
+      const WALL = '#b7c9d6';
+      const TRIM = '#f4efe4';
+      const ROOF = '#5c6b85';
+      p.ell(88, 173, 90, 3.5, 'rgba(30,25,15,.28)');
+      bStone(p, 130, 0, 12, 34, '#a8503c', true);
+      bStone(p, 10, 156, 156, 12, '#9d978c');
+      bPlanks(p, 12, 60, 152, 96, WALL);
+      p.sRect(10, 104, 156, 4, TRIM, { noHi: true });
+      p.sRect(10, 58, 5, 98, TRIM, { noHi: true });
+      p.sRect(161, 58, 5, 98, TRIM, { noHi: true });
+      p.rect(15, 60, 146, 3, 'rgba(40,40,60,.25)');
+      // 四坡屋顶
+      const top = 8;
+      const eave = 60;
+      const inRoof = (x, y) => y >= top && y < eave && x >= 44 - ((y - top) / (eave - top)) * 46 && x <= 131 + ((y - top) / (eave - top)) * 46;
+      bShingles(p, inRoof, top, eave, ROOF, 6, 0);
+      p.rect(44, top - 2, 88, 3, ramp(ROOF).lo);
+      p.sRect(-1, eave - 1, 178, 3, '#4a5468', { noHi: true });
+      // 老虎窗
+      p.poly([[70, 48], [106, 48], [88, 24]], TRIM);
+      p.poly([[73, 48], [103, 48], [88, 27]], ramp(ROOF).mid);
+      bWindow(p, 80, 34, 16, 14, {});
+      // 楼上：两扇窗、中间是通阳台的门
+      bWindow(p, 24, 70, 22, 22, { shutter: '#3e5a7a' });
+      bWindow(p, 130, 70, 22, 22, { shutter: '#3e5a7a' });
+      bWindow(p, 78, 68, 20, 30, { door: true });
+      // 门廊屋顶兼阳台，栏杆
+      p.sRect(60, 98, 56, 6, TRIM);
+      for (let x = 62; x < 114; x += 4) p.rect(x, 90, 2, 8, TRIM);
+      p.sRect(60, 88, 56, 3, TRIM);
+      p.sRect(62, 104, 4, 52, TRIM, { noHi: true });
+      p.sRect(110, 104, 4, 52, TRIM, { noHi: true });
+      // 楼下：门和两扇窗
+      bDoor(p, 88, 156, 22, 34, '#7a3a32', TRIM);
+      bWindow(p, 24, 118, 22, 22, { shutter: '#3e5a7a', box: true });
+      bWindow(p, 130, 118, 22, 22, { shutter: '#3e5a7a', box: true });
+      p.sRect(116, 128, 3, 5, '#3a3a42');
+      p.set(117, 130, '#ffe28a');
+      p.sRect(70, 168, 36, 4, '#b9b2a6');
+      p.sRect(66, 156, 44, 4, '#c8c0b2');
+    } },
+    // 别墅：13 格宽，中间两层、两边一层；奶白色的墙、陶土瓦屋顶、门前四根柱子，二楼拱形窗和阳台
+    villa: { w: 208, h: 192, tw: 13, th: 5, draw(p) {
+      const WALL = '#efe3cc';
+      const STONE = '#c9bea8';
+      const ROOF = '#c2603f';
+      const TRIM = '#fbf7ef';
+      p.ell(104, 189, 106, 3.5, 'rgba(30,25,15,.28)');
+      bStone(p, 62, 6, 10, 32, '#a8503c', true);
+      bStone(p, 136, 6, 10, 32, '#a8503c', true);
+      bStone(p, 8, 172, 192, 12, '#a49c90');
+      // 两边的厢房
+      bPlaster(p, 10, 122, 50, 50, WALL);
+      bPlaster(p, 148, 122, 50, 50, WALL);
+      // 中间的主楼
+      bPlaster(p, 56, 64, 96, 108, WALL);
+      for (const x of [56, 146]) for (let y = 64; y < 172; y += 8) p.sRect(x + ((y / 8) % 2 ? 0 : 1), y, 6, 7, STONE, { noHi: true });
+      p.sRect(56, 116, 96, 4, TRIM, { noHi: true });
+      // 屋顶
+      const roof = (x0, x1, top, eave, ridge0, ridge1) => {
+        const inRoof = (x, y) => y >= top && y < eave && x >= ridge0 - ((y - top) / (eave - top)) * (ridge0 - x0) && x <= ridge1 + ((y - top) / (eave - top)) * (x1 - ridge1);
+        bTiles(p, inRoof, top, eave, ROOF);
+        p.rect(ridge0, top - 2, ridge1 - ridge0, 3, ramp(ROOF).lo);
+        p.sRect(x0 - 1, eave - 1, x1 - x0 + 2, 3, '#8a4630', { noHi: true });
+      };
+      roof(4, 64, 96, 124, 22, 46);
+      roof(144, 204, 96, 124, 162, 186);
+      roof(48, 160, 18, 66, 78, 130);
+      // 二楼：三扇拱形窗、阳台
+      for (const x of [66, 95, 124]) bWindow(p, x, 76, 18, 28, { arch: true, trim: TRIM });
+      p.sRect(70, 110, 68, 4, TRIM);
+      for (let x = 72; x < 136; x += 4) p.rect(x, 104, 2, 6, TRIM);
+      p.sRect(70, 102, 68, 3, TRIM);
+      // 门廊：四根柱子
+      p.sRect(68, 120, 72, 8, TRIM);
+      for (const x of [72, 86, 118, 132]) {
+        p.sRect(x, 128, 6, 44, TRIM, { noHi: true });
+        p.rect(x - 1, 128, 8, 2, ramp(TRIM).mid);
+        p.rect(x - 1, 170, 8, 2, ramp(TRIM).mid);
+      }
+      bDoor(p, 104, 172, 26, 38, '#6e4a32', TRIM, true);
+      // 厢房的窗
+      for (const x of [18, 38, 154, 174]) bWindow(p, x, 134, 16, 24, { arch: true, trim: TRIM, box: true });
+      // 台阶和花坛
+      p.sRect(80, 184, 48, 4, '#d8d0c2');
+      p.sRect(84, 188, 40, 4, '#c8c0b2');
+      for (const [x0, x1] of [[12, 56], [152, 196]]) {
+        p.sRect(x0, 166, x1 - x0, 6, '#6e8a52');
+        for (let x = x0 + 2; x < x1 - 1; x += 3) p.set(x, 166 + ((x * 3) % 3), ['#e85d75', '#f6d35b', '#ffffff', '#9b7fd1'][(x / 3) % 4 | 0]);
+      }
+    } },
     // 农舍：9 格宽，四坡屋顶，正中一个山墙对着门；木板墙、石头地基、两扇带百叶和花箱的窗户、门口两级台阶
     house: { w: 144, h: 128, tw: 9, th: 4, draw(p) {
       const WALL = '#d6a167';

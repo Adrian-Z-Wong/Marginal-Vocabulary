@@ -1242,7 +1242,7 @@ textarea.paste:focus { outline: none; border-color: var(--accent); box-shadow: 0
 
 img.px, canvas.scene { image-rendering: pixelated; image-rendering: crisp-edges; }
 img.px { display: inline-block; vertical-align: bottom; }
-.page.wide { max-width: 1320px; }
+.page.wide { max-width: none; padding-top: 22px; padding-bottom: 40px; }
 .g-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .g-top .h1 { margin: 0; }
 .g-top .muted { margin: 4px 0 0; font-size: 15px; }
@@ -1251,8 +1251,6 @@ img.px { display: inline-block; vertical-align: bottom; }
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto;
-  max-width: 100%;
   border-radius: 16px;
   overflow: hidden;
   background: #2f5a2c;
@@ -1503,4 +1501,27 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
 @media (max-width: 640px) {
   .gcard { flex-direction: column; align-items: stretch; }
   .adopt-pick { flex-wrap: wrap; }
+}
+
+/* 工具栏浮在花园 / 小屋画面的下沿 */
+.scene-wrap .toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  margin: 0;
+  max-width: calc(100% - 20px);
+  justify-content: center;
+  box-shadow: 0 6px 18px -8px rgba(40, 30, 20, .45), inset 0 2px 0 rgba(255, 255, 255, .4);
+  z-index: 2;
+}
+.scene-wrap .toolbar.at-top { bottom: auto; top: 10px; }
+/* 手机上工具栏只占一行，放不下就左右滑 */
+@media (max-width: 640px) {
+  .scene-wrap .toolbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; gap: 4px; padding: 5px; scrollbar-width: none; }
+  .scene-wrap .toolbar::-webkit-scrollbar { display: none; }
+  .scene-wrap .toolbar .tool { flex: none; min-width: 46px; padding: 3px 4px 2px; }
+  .scene-wrap .toolbar .tool img { width: 24px; height: 24px; }
+  .scene-wrap .toolbar .tool .tn { font-size: 11px; }
+  .scene-wrap .toolbar .muted, .scene-wrap .toolbar .link { flex: none; white-space: nowrap; }
 }
