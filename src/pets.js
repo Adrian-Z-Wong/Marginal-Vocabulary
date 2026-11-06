@@ -54,12 +54,12 @@ window.MARGIN_PETS = {
   ],
 
   // 商店里卖的东西，按类分开。use：plant 种下、water 浇水、fert 施肥、place 摆进花园、furnish 摆进屋里、
-  // feed 喂宠物（food 加饱腹、mood 加心情）、fishfood 喂池塘里所有的鱼、toy 陪宠物玩、medicine 治病；
+  // hoe 锄头（买一次一直有）、lawn 把开垦过的空地变回草地、feed 喂宠物（food 加饱腹、mood 加心情）、fishfood 喂池塘里所有的鱼、toy 陪宠物玩、medicine 治病；
   // look 是人物装扮，pet 是宠物装扮（买了就一直有，所有宠物都能戴）
   shop: [
     {
       id: 'treeseeds',
-      name: '树',
+      name: '树木',
       items: 'TREES',
     },
     {
@@ -79,13 +79,15 @@ window.MARGIN_PETS = {
         { id: 'seed.bush', name: '灌木', price: 300, use: 'plant', plant: ['shrub', 'bush'] },
         { id: 'seed.berry', name: '浆果丛', price: 450, use: 'plant', plant: ['shrub', 'berry'] },
         { id: 'seed.hydrangea', name: '绣球花', price: 600, use: 'plant', plant: ['shrub', 'hydrangea'] },
+        { id: 'lawn', name: '草坪种子', price: 5, use: 'lawn' },
       ],
     },
     {
       id: 'garden',
       name: '园艺',
       items: [
-        { id: 'water', name: '水 ×5', price: 10, use: 'water', gives: 5, icon: 'water' },
+        { id: 'hoe', name: '锄头', price: 600, use: 'hoe', icon: 'hoe', once: true },
+        { id: 'water', name: '清水 ×5', price: 10, use: 'water', gives: 5, icon: 'water' },
         { id: 'fert', name: '肥料', price: 20, use: 'fert', icon: 'fert' },
       ],
     },
@@ -132,7 +134,7 @@ window.MARGIN_PETS = {
         { id: 'furn.table', name: '桌子', price: 240, use: 'furnish', decor: 'table' },
         { id: 'furn.bookshelf', name: '书架', price: 360, use: 'furnish', decor: 'bookshelf' },
         { id: 'furn.desk', name: '书桌', price: 360, use: 'furnish', decor: 'desk' },
-        { id: 'furn.bed', name: '床', price: 450, use: 'furnish', decor: 'bed' },
+        { id: 'furn.bed', name: '木床', price: 450, use: 'furnish', decor: 'bed' },
         { id: 'furn.sofa', name: '沙发', price: 480, use: 'furnish', decor: 'sofa' },
         { id: 'furn.fireplace', name: '壁炉', price: 750, use: 'furnish', decor: 'fireplace' },
       ],
