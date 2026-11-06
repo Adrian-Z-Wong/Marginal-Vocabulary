@@ -25,7 +25,8 @@ CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库来自 [ECDICT](https://g
 
 ## 改代码
 
-- 不用任何框架和依赖，源码在 `src/`：`index.html`、`style.css`、`app.js`。
+- 不用任何框架和依赖，源码在 `src/`：`index.html`、`style.css`、`app.js`；宠物、树和装扮的像素画和台词在 `pets.js`。
+- 版本号写在 `src/app.js` 的 `APP_VERSION` 和 `desktop/src-tauri/tauri.conf.json` 里，两处要一致（`tools/build.py` 会检查），应用内检查更新靠它比较版本。
 - 开发时直接用浏览器打开 `src/index.html`，改完刷新。
 - 提交前运行 `python3 tools/build.py`，更新打包好的 `Margin.html`。
 
@@ -33,7 +34,7 @@ CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库来自 [ECDICT](https://g
 
 ```bash
 python3 tools/build_words.py     # 考试词库 src/words.js（自动下载 ECDICT；GMAT 词表在 data/gmat.tsv）
-python3 tools/build_terms.py     # Finance、Medicine 词库 src/finance.js、src/medicine.js
+python3 tools/build_terms.py     # Finance、MacroFin、Medicine 词库 src/finance.js、src/macrofin.js、src/medicine.js
 python3 tools/build_roots.py     # 词根和单词拆解 src/roots.js（data/roots/）
 pip install numpy scipy
 python3 tools/build_vectors.py   # 中文词向量 src/vectors.js

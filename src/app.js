@@ -141,10 +141,29 @@
     rootBook: 'all', // 词根板块选的词库
     rootGoal: 10, // 每天学几个词根
     forceAll: false, // 强制全对：某一步有错，这一步整组重来，直到全对才进入下一步
+    petRoam: true, // 宠物在页面上走动
   };
 
   function freshState() {
-    return { v: 1, settings: Object.assign({}, DEFAULT_SETTINGS), books: {}, stats: {}, wrong: {}, srs: {}, known: {}, log: {}, rootStats: {}, rootWrong: {}, rootLog: {} };
+    return {
+      v: 1,
+      settings: Object.assign({}, DEFAULT_SETTINGS),
+      books: {},
+      stats: {},
+      wrong: {},
+      srs: {},
+      known: {},
+      log: {},
+      rootStats: {},
+      rootWrong: {},
+      rootLog: {},
+      // 积分：bal 余额，earned 累计赚到，groups / perfects 累计完成 / 全对的组数，days 每天的明细，ach 已获得的成就
+      points: { bal: 0, earned: 0, groups: 0, perfects: 0, days: {}, ach: {} },
+      // 宠物：status none / alive / dead；fed 每天的饱食度；since 上次死去时的累计积分；unlocked 解锁的品种；owned / wear 装扮
+      pet: { status: 'none', species: 'crab', name: '', born: 0, died: 0, fed: {}, since: 0, unlocked: [], owned: [], wear: {}, graves: [] },
+      garden: {}, // 日期 -> 这天专注种的树 [[树种, 种活了没有 1/0, 分钟], ...]
+      forest: { unlocked: [], pick: 'oak', minutes: 25 }, // 解锁的树种、下次种哪种、专注多久
+    };
   }
 
   function normalizeState(saved) {
@@ -154,6 +173,8 @@
       if (saved[k] && typeof saved[k] === 'object') s[k] = saved[k];
     }
     Object.assign(s.settings, saved.settings || {});
+    for (const k of ['points', 'pet', 'forest']) if (saved[k] && typeof saved[k] === 'object') Object.assign(s[k], saved[k]);
+    if (saved.garden && typeof saved.garden === 'object') s.garden = saved.garden;
     return s;
   }
 
@@ -1084,6 +1105,8 @@
         allOk.set(k, allOk.get(k) !== false && r.ok);
       }
       for (const [k, ok] of allOk) if (ok) delete state.wrong[k];
+      const all = allResults(ss);
+      rewardGroup('word', ss.words.length, !ss.ended && all.length > 0 && all.every((r) => r.ok), ss.ended);
       save();
     }
     go('result');
@@ -1117,6 +1140,7 @@
       ss.repeat = true;
       ss.between = true;
       render();
+      petSay('repeat');
       return;
     }
     if (nextStageIndex(ss) < 0) {
@@ -1124,6 +1148,7 @@
       return;
     }
     ss.between = true;
+    setTimeout(() => petSay(ss.results.every((r) => r.ok) ? 'stagePerfect' : 'stage'), 50);
     render();
   }
 
@@ -1176,8 +1201,10 @@
       ok = judge(ss.mode, entry, answer);
     }
     const result = { entry, answer, lines, marks, ok };
+    const again = !ok && wrongBefore(entry);
     bump(entry, ss.mode, ok);
     applyOutcome(entry, ok);
+    rewardAnswer(ss, ok, again);
     if (ss.kind === 'review') markReviewed(entry);
     save();
     if (ok) {
@@ -1268,9 +1295,11 @@
   // ================= 渲染：框架 =================
 
   function render() {
-    const html = header() + (VIEWS[ui.view] || VIEWS.home)();
+    petCheckDeath();
+    const html = header() + updateBarHtml() + (VIEWS[ui.view] || VIEWS.home)();
     app.innerHTML = html;
     AFTER[ui.view] && AFTER[ui.view]();
+    renderPet();
   }
 
   function header() {
@@ -1280,13 +1309,15 @@
       ['roots', '词根'],
       ['books', '词库'],
       ['wrong', '错题本' + (wrongN ? '<sup>' + wrongN + '</sup>' : '')],
+      ['pet', '宠物' + (state.pet.status === 'alive' && fedToday() < PTS.full ? '<i class="dot" title="今天还没喂饱"></i>' : '')],
       ['settings', '设置'],
     ];
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots' }[ui.view] || ui.view;
     return (
-      '<header class="top"><button class="brand" data-act="nav" data-view="home"><span class="brand-mark">' + ICON_SPARK + '</span>Marginal Vocabulary</button><nav class="nav">' +
+      '<header class="top"><button class="brand" data-act="nav" data-view="home"><span class="brand-mark">' + ICON_SPARK + '</span>Marginal Vocabulary</button>' +
+      '<div class="top-r">' + focusChipHtml() + '<button class="pts" data-act="nav" data-view="pet" title="积分 · Lv ' + levelOf(state.points.earned) + '"><span class="pts-ic"></span>' + fmt(state.points.bal) + '</button><nav class="nav">' +
       nav.map(([v, label]) => '<button data-act="nav" data-view="' + v + '" class="' + (active === v ? 'on' : '') + '">' + label + '</button>').join('') +
-      '</nav></header>'
+      '</nav></div></header>'
     );
   }
 
@@ -1353,6 +1384,8 @@
       '<p class="muted">' + (st ? '已连续打卡 ' + st + ' 天' : '今天背一组，就开始打卡') + '</p>' +
       '<div class="mini"><div><b>' + fmt(day.n) + '</b><span>今天答题</span></div><div><b>' + (day.n ? Math.round((day.r / day.n) * 100) + '%' : '—') + '</b><span>今天正确率</span></div></div></div>' +
       '</div>' +
+      focusCardHtml() +
+      challengesHtml(true) +
       '<section class="panel prefs"><p class="label">背什么</p>' +
       '<div class="pref"><span class="t">词库</span><label class="select"><select data-act="setBook" aria-label="词库">' + bookOptionsHtml(book) + '</select></label></div>' +
       '<div class="pref"><span class="t">每天背多少新词</span>' + chipsHtml('goal', [10, 20, 30, 50, 100].map((n) => [n, String(n)])) + '</div>' +
@@ -1833,6 +1866,8 @@
       '<div class="d">拼写题答错后，照着正确拼写再打一遍，免得记住错的拼法。直接按 Enter 可以跳过。</div></div></div>' +
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
+      '<div class="set-row"><div><div class="t">宠物在页面上走动</div></div><div>' + chipsHtml('petRoam', [[true, '开'], [false, '关']]) +
+      '<div class="d">领养宠物后，它会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在「宠物」页出现，每天照样要喂。</div></div></div>' +
       '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
@@ -1840,6 +1875,7 @@
         ? ''
         : '<div class="set-row"><div><div class="t">下载到电脑</div></div><div><a class="btn small ghost" href="Margin.html" download="Marginal Vocabulary.html">下载 Marginal Vocabulary.html</a>' +
           '<div class="d">下载后双击就能打开，不用联网。进度不会自动带过去，需要的话先导出备份，再在下载的版本里导入。</div></div></div>') +
+      updateSettingHtml() +
       '<div class="set-row"><div><div class="t">数据备份</div><div class="d">进度只保存在这台电脑的这个浏览器里。</div></div><div>' +
       '<div class="actions"><button class="btn small" data-act="exportData">导出备份</button>' +
       '<label class="btn small ghost file-pick">导入备份<input type="file" id="backup-file" accept=".json,application/json"></label>' +
@@ -2047,8 +2083,10 @@
     rs.results.push({ r: q.r, ok });
     const today = dayNum();
     const st = state.rootStats[q.r.id] || (state.rootStats[q.r.id] = { r: 0, w: 0, f: today });
+    const again = !ok && st.w > 0;
     st[ok ? 'r' : 'w']++;
     st.d = today;
+    rewardAnswer(rs, ok, again);
     if (rs.kind === 'review') markRootReviewed(q.r.id);
     save();
     render();
@@ -2100,8 +2138,12 @@
       if (state.settings.forceAll && rs.results.some((x) => !x.ok)) {
         rs.repeat = true;
         rs.between = true;
-      } else if (nextRootStage(rs, rs.stage + 1) >= 0) rs.between = true;
-      else return finishRootSession();
+        setTimeout(() => petSay('repeat'), 50);
+      } else if (nextRootStage(rs, rs.stage + 1) >= 0) {
+        rs.between = true;
+        const allOk = rs.results.every((x) => x.ok);
+        setTimeout(() => petSay(allOk ? 'stagePerfect' : 'stage'), 50);
+      } else return finishRootSession();
     }
     render();
   }
@@ -2118,6 +2160,7 @@
       if (mine.some((y) => !y.ok)) state.rootWrong[x.r.id] = Date.now();
       else if (!rs.ended) delete state.rootWrong[x.r.id];
     }
+    if (all.length) rewardGroup('root', rs.roots.length, !rs.ended && all.every((y) => y.ok), rs.ended);
     save();
     if (!all.length) {
       ui.rs = null;
@@ -2442,6 +2485,164 @@
     if (input && !input.readOnly) input.focus();
   };
 
+  // ================= 检查更新 =================
+
+  // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
+  const APP_VERSION = '0.3.0';
+  const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
+  const UPDATE_KEY = 'margin.updateCheck';
+  const ONLINE = /^https?:$/.test(location.protocol);
+  const DOWNLOAD_PAGE = 'https://adrian-z-wong.github.io/Marginal-Vocabulary/';
+
+  // a 是否比 b 新
+  function versionNewer(a, b) {
+    const pa = String(a).split('.').map(Number);
+    const pb = String(b).split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+      if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+    }
+    return false;
+  }
+
+  // 从 CHANGELOG 里取出比当前版本新的几段更新内容
+  function changelogSince(text, from) {
+    const out = [];
+    for (const part of text.split(/^## /m).slice(1)) {
+      const m = /^(\d+\.\d+\.\d+)/.exec(part);
+      if (!m || !versionNewer(m[1], from)) continue;
+      out.push({ v: m[1], items: part.split('\n').filter((l) => /^- /.test(l)).map((l) => l.slice(2)) });
+    }
+    return out;
+  }
+
+  async function checkUpdate(manual) {
+    ui.update = Object.assign({}, ui.update, { checking: true, error: '' });
+    if (manual) render();
+    try {
+      const res = await fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rel = await res.json();
+      const latest = String(rel.tag_name || '').replace(/^v/, '');
+      try {
+        localStorage.setItem(UPDATE_KEY, String(Date.now()));
+      } catch (e) {
+        /* 存不了就下次再查 */
+      }
+      if (!latest || !versionNewer(latest, APP_VERSION)) {
+        ui.update = { checking: false, latest: latest || APP_VERSION, none: true };
+        if (manual) toast('已经是最新版本（' + APP_VERSION + '）');
+      } else {
+        const asset = (rel.assets || []).find((a) => /\.app\.tar\.gz$/.test(a.name));
+        let notes = [];
+        try {
+          const r2 = await fetch('https://raw.githubusercontent.com/' + REPO + '/main/CHANGELOG.md', { cache: 'no-store' });
+          if (r2.ok) notes = changelogSince(await r2.text(), APP_VERSION);
+        } catch (e) {
+          notes = [];
+        }
+        ui.update = { checking: false, latest, url: asset ? asset.browser_download_url : '', notes, show: true, open: manual };
+      }
+    } catch (e) {
+      ui.update = { checking: false, error: '检查更新失败，请检查网络后再试' };
+      if (manual) toast(ui.update.error);
+    }
+    // 正在答题时不打断，下次换页面时再显示
+    if (ui.view !== 'practice' && ui.view !== 'rootquiz') render();
+  }
+
+  // 每天打开时自动查一次
+  function autoCheckUpdate() {
+    if (window.__MARGIN_TEST && !window.__MARGIN_TEST_UPDATE) return;
+    let last = 0;
+    try {
+      last = +localStorage.getItem(UPDATE_KEY) || 0;
+    } catch (e) {
+      last = 0;
+    }
+    if (Date.now() - last > 12 * 3600 * 1000) setTimeout(() => checkUpdate(false), 2500);
+  }
+
+  async function installUpdate() {
+    const u = ui.update;
+    if (!u || !u.latest) return;
+    if (!DESKTOP) {
+      if (ONLINE) location.reload();
+      else window.open(DOWNLOAD_PAGE, '_blank');
+      return;
+    }
+    if (!u.url) {
+      window.open('https://github.com/' + REPO + '/releases/latest', '_blank');
+      return;
+    }
+    u.installing = true;
+    u.error = '';
+    render();
+    try {
+      await window.__TAURI__.core.invoke('install_update', { url: u.url });
+      u.installing = false;
+      u.installed = true;
+    } catch (e) {
+      u.installing = false;
+      u.error = '自动更新没成功（' + e + '）。可以到 Releases 页面手动下载新版本。';
+    }
+    render();
+  }
+
+  function updateBarHtml() {
+    const u = ui.update;
+    if (!u || !u.show || ui.view === 'practice' || ui.view === 'rootquiz') return '';
+    let main;
+    let acts;
+    if (u.installed) {
+      main = '<b>新版本 ' + esc(u.latest) + ' 装好了</b><span class="muted">重新打开就是新版本，进度不受影响。</span>';
+      acts = '<button class="btn small" data-act="relaunchApp">重新打开</button>';
+    } else if (u.installing) {
+      main = '<b>正在下载新版本 ' + esc(u.latest) + '…</b><span class="muted">大约 4 MB，装好后会提示你重新打开。</span>';
+      acts = '<span class="spin" aria-hidden="true"></span>';
+    } else {
+      main = '<b>发现新版本 ' + esc(u.latest) + '</b><span class="muted">当前 ' + APP_VERSION + '</span>';
+      const label = DESKTOP ? '立即更新' : ONLINE ? '刷新页面' : '下载新版本';
+      acts =
+        '<button class="btn small" data-act="installUpdate">' + label + '</button>' +
+        (u.notes && u.notes.length ? '<button class="link" data-act="toggleUpdateNotes">' + (u.open ? '收起' : '更新内容') + '</button>' : '') +
+        '<button class="link" data-act="hideUpdate">稍后</button>';
+    }
+    const notes =
+      u.open && u.notes && u.notes.length && !u.installed
+        ? '<div class="u-notes">' + u.notes.map((n) => '<p class="label">' + esc(n.v) + '</p><ul>' + n.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>').join('') + '</div>'
+        : '';
+    return (
+      '<div class="update-bar" role="status"><div class="u-in"><span class="u-mark">' + ICON_SPARK + '</span><div class="u-text">' + main +
+      (u.error ? '<span class="u-err">' + esc(u.error) + '</span>' : '') + '</div><div class="actions">' + acts + '</div></div>' + notes + '</div>'
+    );
+  }
+
+  function updateSettingHtml() {
+    const u = ui.update || {};
+    const status = u.checking
+      ? '正在检查…'
+      : u.error
+        ? u.error
+        : u.none
+          ? '已经是最新版本'
+          : u.latest && versionNewer(u.latest, APP_VERSION)
+            ? '有新版本 ' + u.latest
+            : '';
+    const desc = DESKTOP
+      ? '每天打开时自动检查一次。有新版本时直接在应用里下载安装，装好后重新打开就是新版本，进度不受影响。'
+      : ONLINE
+        ? '在线版每次打开都是最新版本；如果页面开着时发布了新版本，这里会提示刷新。'
+        : '下载到电脑的网页文件不能自己更新；有新版本时会提示，到下载页面再下载一次即可（先导出备份）。';
+    return (
+      '<div class="set-row"><div><div class="t">版本与更新</div></div><div>' +
+      '<div>当前版本 <b class="mono">' + APP_VERSION + '</b>' + (status ? '<span class="muted"> · ' + esc(status) + '</span>' : '') + '</div>' +
+      '<div class="actions" style="margin-top:12px"><button class="btn small ghost" data-act="checkUpdate"' + (u.checking ? ' disabled' : '') + '>检查更新</button>' +
+      (u.latest && versionNewer(u.latest, APP_VERSION) && !u.installed ? '<button class="btn small" data-act="installUpdate">' + (DESKTOP ? '立即更新' : ONLINE ? '刷新页面' : '下载新版本') + '</button>' : '') +
+      (u.installed ? '<button class="btn small" data-act="relaunchApp">重新打开</button>' : '') +
+      '</div><div class="d">' + desc + '</div></div></div>'
+    );
+  }
+
   // ================= 交互 =================
 
   const ACTIONS = {
@@ -2637,6 +2838,23 @@
     testVoice() {
       speak('Marginal Vocabulary');
     },
+    checkUpdate() {
+      checkUpdate(true);
+    },
+    installUpdate() {
+      installUpdate();
+    },
+    relaunchApp() {
+      if (DESKTOP) window.__TAURI__.core.invoke('relaunch').catch((e) => toast('重新打开失败：' + e + '，请手动退出后再打开'));
+    },
+    hideUpdate() {
+      ui.update.show = false;
+      render();
+    },
+    toggleUpdateNotes() {
+      ui.update.open = !ui.update.open;
+      render();
+    },
     exportData() {
       downloadText('marginal-vocabulary-backup-' + todayKey() + '.json', JSON.stringify({ app: 'Marginal Vocabulary', v: 1, exported: new Date().toISOString(), data: state }), 'application/json');
       toast('备份已下载');
@@ -2650,6 +2868,1096 @@
       toast('已清空');
     },
   };
+
+  // ================= 积分、宠物、花园 =================
+  // 背单词攒积分：领养宠物、每天喂它、解锁新品种和装扮。
+  // 专注种树的思路借鉴 Forest：开一段计时，时间到并且答够题数，花园里就长出一棵树；
+  // 中途放弃或离开太久，树会枯萎。树种和宠物品种都用积分解锁；每天有小挑战，长期有成就。
+
+  const PETS = window.MARGIN_PETS || { species: [], items: [], lines: {} };
+  const SPECIES = new Map(PETS.species.map((s) => [s.id, s]));
+  const ITEMS = new Map(PETS.items.map((x) => [x.id, x]));
+  const PTS = { right: 2, combo: 5, perfect: 10, rootDone: 5, rootPerfect: 5, goal: 30, rootGoal: 15, again: 1, adopt: 100, full: 100 };
+  const FOODS = [
+    { id: 'snack', name: '零食', price: 10, add: 20 },
+    { id: 'meal', name: '一顿饭', price: 45, add: 100 },
+  ];
+  // 解锁新品种要花的积分（解锁后永久可以领养）
+  const SPECIES_PRICE = { crab: 0, cat: 200, hamster: 200, shiba: 300, rabbit: 300, duck: 400, penguin: 500, frog: 500, fox: 600 };
+  const SLOT_NAMES = { hat: '帽子', face: '眼镜', neck: '脖子', color: '颜色' };
+
+  // 每日挑战：每天从里面挑 3 个
+  const CHALLENGES = [
+    { id: 'groups2', text: '完成 2 组新词', reward: 15, goal: 2, val: (d) => d.groups },
+    { id: 'perfect1', text: '一组单词全对', reward: 15, goal: 1, val: (d) => d.perfect },
+    { id: 'right50', text: '答对 50 题', reward: 15, goal: 50, val: (d) => d.right },
+    { id: 'combo10', text: '连续答对 10 题', reward: 10, goal: 10, val: (d) => d.combo },
+    { id: 'roots1', text: '学完 1 组词根', reward: 10, goal: 1, val: (d) => d.roots },
+    { id: 'goal', text: '完成今天的新词目标', reward: 10, goal: 1, val: (d) => (d.goalDone ? 1 : 0) },
+    { id: 'tree1', text: '专注种活一棵树', reward: 15, goal: 1, val: (d) => d.trees || 0 },
+  ];
+
+  // 成就：一次性奖励
+  const ACHIEVEMENTS = [
+    { id: 'first', name: '第一组', desc: '完成第一组单词', reward: 20, goal: 1, val: () => state.points.groups },
+    { id: 'words100', name: '百词', desc: '累计背过 100 个词', reward: 30, goal: 100, val: () => Object.keys(state.stats).length },
+    { id: 'words500', name: '五百词', desc: '累计背过 500 个词', reward: 80, goal: 500, val: () => Object.keys(state.stats).length },
+    { id: 'words2000', name: '两千词', desc: '累计背过 2,000 个词', reward: 200, goal: 2000, val: () => Object.keys(state.stats).length },
+    { id: 'words5000', name: '五千词', desc: '累计背过 5,000 个词', reward: 500, goal: 5000, val: () => Object.keys(state.stats).length },
+    { id: 'streak3', name: '三天', desc: '连续打卡 3 天', reward: 20, goal: 3, val: () => streak() },
+    { id: 'streak7', name: '一周', desc: '连续打卡 7 天', reward: 50, goal: 7, val: () => streak() },
+    { id: 'streak30', name: '一个月', desc: '连续打卡 30 天', reward: 150, goal: 30, val: () => streak() },
+    { id: 'streak100', name: '一百天', desc: '连续打卡 100 天', reward: 500, goal: 100, val: () => streak() },
+    { id: 'perfect10', name: '十全十美', desc: '累计 10 组全对', reward: 50, goal: 10, val: () => state.points.perfects },
+    { id: 'perfect50', name: '稳', desc: '累计 50 组全对', reward: 200, goal: 50, val: () => state.points.perfects },
+    { id: 'roots50', name: '寻根', desc: '学过 50 个词根', reward: 50, goal: 50, val: () => Object.keys(state.rootStats).length },
+    { id: 'roots300', name: '根深', desc: '学过 300 个词根', reward: 150, goal: 300, val: () => Object.keys(state.rootStats).length },
+    { id: 'pet7', name: '好伙伴', desc: '宠物陪你 7 天', reward: 50, goal: 7, val: () => petAge() },
+    { id: 'pet30', name: '老朋友', desc: '宠物陪你 30 天', reward: 200, goal: 30, val: () => petAge() },
+    { id: 'tree1', name: '第一棵树', desc: '专注种活第一棵树', reward: 20, goal: 1, val: () => gardenTotal() },
+    { id: 'tree10', name: '小树林', desc: '种活 10 棵树', reward: 100, goal: 10, val: () => gardenTotal() },
+    { id: 'tree50', name: '森林', desc: '种活 50 棵树', reward: 300, goal: 50, val: () => gardenTotal() },
+  ];
+
+  // 树刚种下时的小苗
+  const SPROUT = { pal: { g: '#6aa35a', G: '#4f8a43', b: '#9a7652' }, rows: ['.......', '.......', '.gg.gg.', '..ggg..', '...G...', '...G...', '..bbb..', '.bbbbb.'] };
+  const TREES = new Map((PETS.trees || []).map((t) => [t.id, t]));
+  // 专注时长：分钟、至少要答的题数、种活的奖励
+  const FOCUS_OPTS = [
+    [10, 20, 10],
+    [25, 50, 30],
+    [45, 90, 60],
+    [60, 120, 90],
+  ];
+  const LEAVE_LIMIT = 60000; // 离开应用超过 1 分钟，树就枯萎
+
+  // ---------- 积分 ----------
+
+  function pday() {
+    const k = todayKey();
+    return state.points.days[k] || (state.points.days[k] = { e: 0, x: 0, s: 0, groups: 0, perfect: 0, roots: 0, right: 0, combo: 0, ch: {} });
+  }
+
+  // 等级看累计赚到的积分：第 n 级需要 50 × n × (n − 1)
+  function levelOf(e) {
+    let n = 1;
+    while (50 * (n + 1) * n <= e) n++;
+    return n;
+  }
+  const levelNeed = (n) => 50 * n * (n - 1);
+
+  function gain(n) {
+    if (n <= 0) return;
+    const p = state.points;
+    const before = levelOf(p.earned);
+    p.bal += n;
+    p.earned += n;
+    pday().e += n;
+    floatPts('+' + n, false);
+    const after = levelOf(p.earned);
+    if (after > before) {
+      petSay('level', { n: after });
+      toast('升到 ' + after + ' 级了');
+    }
+  }
+
+  function lose(n) {
+    const p = state.points;
+    n = Math.min(n, p.bal);
+    if (n <= 0) return;
+    p.bal -= n;
+    pday().x += n;
+    floatPts('−' + n, true);
+  }
+
+  function spend(n) {
+    const p = state.points;
+    if (p.bal < n) {
+      toast('积分不够（还差 ' + (n - p.bal) + '）');
+      return false;
+    }
+    p.bal -= n;
+    pday().s += n;
+    return true;
+  }
+
+  // 这个词以前答错过吗（第一次答错不扣分，之后再错扣一点）
+  function wrongBefore(entry) {
+    const s = state.stats[keyOf(entry.w)];
+    if (!s) return false;
+    return STAGES.some((m) => s[m] && s[m][1] > 0);
+  }
+
+  // 每答一题：答对加分、连对奖励；同一个词再错扣一点
+  function rewardAnswer(holder, ok, repeatWrong) {
+    const d = pday();
+    if (focus) {
+      focus.n++;
+      saveFocus();
+      updateFocusUi();
+    }
+    if (ok) {
+      gain(PTS.right);
+      d.right++;
+      holder.combo = (holder.combo || 0) + 1;
+      d.combo = Math.max(d.combo, holder.combo);
+      if (holder.combo % 5 === 0) gain(PTS.combo);
+      const c = holder.combo;
+      if (c === 3) petSay('combo3');
+      else if (c === 5) petSay('combo5');
+      else if (c === 10 || c === 20 || c === 30) petSay('combo10');
+    } else {
+      holder.combo = 0;
+      if (repeatWrong) {
+        lose(PTS.again);
+        petSay('again');
+      } else if (Math.random() < 0.6) petSay('wrong');
+    }
+    checkChallenges();
+  }
+
+  // 一组结束：发完成奖励，查今日目标、挑战和成就
+  function rewardGroup(kind, size, perfect, ended) {
+    const d = pday();
+    if (ended) return;
+    if (kind === 'root') {
+      d.roots++;
+      gain(PTS.rootDone + (perfect ? PTS.rootPerfect : 0));
+      if (perfect) petSay('perfect', { n: PTS.rootPerfect });
+      else petSay('done');
+      if (learnedRootsToday() >= state.settings.rootGoal && !d.rootGoalDone) {
+        d.rootGoalDone = true;
+        gain(PTS.rootGoal);
+        petSay('goal', { n: PTS.rootGoal });
+      }
+    } else {
+      d.groups++;
+      state.points.groups++;
+      gain(size);
+      if (perfect) {
+        d.perfect++;
+        state.points.perfects++;
+        gain(PTS.perfect);
+        petSay('perfect', { n: PTS.perfect });
+      } else petSay('done');
+      if (learnedToday() >= state.settings.goal && !d.goalDone) {
+        d.goalDone = true;
+        gain(PTS.goal);
+        petSay('goal', { n: PTS.goal });
+      }
+    }
+    checkChallenges();
+    checkAchievements();
+  }
+
+  // 每天的挑战：按日期固定挑 3 个
+  function todayChallenges() {
+    let seed = dayNum() * 9301 + 49297;
+    const idx = CHALLENGES.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) {
+      seed = (seed * 9301 + 49297) % 233280;
+      const j = Math.floor((seed / 233280) * (i + 1));
+      [idx[i], idx[j]] = [idx[j], idx[i]];
+    }
+    return idx.slice(0, 3).map((i) => CHALLENGES[i]);
+  }
+
+  function checkChallenges() {
+    const d = pday();
+    for (const c of todayChallenges()) {
+      if (d.ch[c.id] || c.val(d) < c.goal) continue;
+      d.ch[c.id] = 1;
+      gain(c.reward);
+      toast('完成每日挑战「' + c.text + '」 +' + c.reward);
+      petSay('challenge');
+    }
+  }
+
+  // quiet：打开应用时补发已经达成的成就，合成一条提示
+  function checkAchievements(quiet) {
+    const p = state.points;
+    let n = 0;
+    let sum = 0;
+    let last = null;
+    for (const a of ACHIEVEMENTS) {
+      if (p.ach[a.id] || a.val() < a.goal) continue;
+      p.ach[a.id] = todayKey();
+      gain(a.reward);
+      n++;
+      sum += a.reward;
+      last = a;
+    }
+    if (!n) return;
+    save();
+    if (n === 1) toast('解锁成就「' + last.name + '」 +' + last.reward);
+    else toast('解锁 ' + n + ' 个成就 +' + sum + (quiet ? '，到「宠物」页看看' : ''));
+  }
+
+  // 种活的树一共几棵
+  function gardenTotal() {
+    let n = 0;
+    for (const k in state.garden) if (Array.isArray(state.garden[k])) n += state.garden[k].filter((t) => t[1]).length;
+    return n;
+  }
+
+  // ---------- 宠物 ----------
+
+  function petAlive() {
+    return state.pet.status === 'alive' && SPECIES.has(state.pet.species);
+  }
+
+  function petAge() {
+    return petAlive() ? dayNum() - state.pet.born + 1 : 0;
+  }
+
+  function fedToday() {
+    return state.pet.fed[todayKey()] || 0;
+  }
+
+  // 每天都要喂饱；从领养第二天起，哪天没喂饱，过了那天它就饿死了
+  function petCheckDeath() {
+    const pet = state.pet;
+    if (pet.status !== 'alive') return;
+    const today = dayNum();
+    for (let d = pet.born + 1; d < today; d++) {
+      if ((pet.fed[dayKeyOf(d)] || 0) >= PTS.full) continue;
+      pet.status = 'dead';
+      pet.died = d;
+      pet.graves.push({ name: pet.name, species: pet.species, born: pet.born, died: d });
+      pet.since = state.points.earned; // 再领养要重新攒积分
+      pet.fed = {};
+      save();
+      ui.petDied = true;
+      return;
+    }
+    // 只留领养以来的喂食记录
+    for (const k in pet.fed) if (k < dayKeyOf(pet.born)) delete pet.fed[k];
+  }
+
+  function adoptProgress() {
+    return Math.max(0, state.points.earned - state.pet.since);
+  }
+
+  function petLine(kind, vars) {
+    const list = PETS.lines[kind];
+    if (!list || !list.length) return '';
+    const sp = SPECIES.get(state.pet.species);
+    const t = list[Math.floor(Math.random() * list.length)];
+    return t.replace(/\{(\w+)\}/g, (_, k) => (k === 'name' ? state.pet.name : k === 'sound' ? (sp ? sp.sound : '') : vars && vars[k] != null ? vars[k] : ''));
+  }
+
+  // 改一种颜色：保留白色和很浅的颜色
+  function hueShift(hex, deg) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) / 255;
+    const g = ((n >> 8) & 255) / 255;
+    const b = (n & 255) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return hex;
+    const dd = max - min;
+    const s = l > 0.5 ? dd / (2 - max - min) : dd / (max + min);
+    if (s < 0.15 || l > 0.93) return hex;
+    let h = max === r ? (g - b) / dd + (g < b ? 6 : 0) : max === g ? (b - r) / dd + 2 : (r - g) / dd + 4;
+    h = (h * 60 + deg) % 360;
+    const f = (k) => {
+      const kk = (k + h / 30) % 12;
+      return l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(kk - 3, 9 - kk, 1));
+    };
+    const to = (v) => Math.round(v * 255).toString(16).padStart(2, '0');
+    return '#' + to(f(0)) + to(f(8)) + to(f(4));
+  }
+
+  // 像素画转成 SVG 方块，同一行连着的同色像素合成一个
+  function pixelRects(rows, pal, ox, oy, pick) {
+    let out = '';
+    rows.forEach((row, y) => {
+      let x = 0;
+      while (x < row.length) {
+        const c = row[x];
+        if (c === '.' || !pal[c] || !pick(c)) {
+          x++;
+          continue;
+        }
+        let w = 1;
+        while (row[x + w] === c) w++;
+        out += '<rect x="' + (ox + x) + '" y="' + (oy + y) + '" width="' + w + '" height="1" fill="' + pal[c] + '"/>';
+        x += w;
+      }
+    });
+    return out;
+  }
+
+  const WIGGLE = new Set(['C', 'E', 'Q']);
+
+  function petSvg(speciesId, wear, cls) {
+    const sp = SPECIES.get(speciesId) || PETS.species[0];
+    if (!sp) return '';
+    wear = wear || {};
+    const color = ITEMS.get(wear.color);
+    const pal = {};
+    for (const k in sp.pal) pal[k] = color && k !== 'K' && k !== 'N' ? hueShift(sp.pal[k], color.hue) : sp.pal[k];
+    let acc = '';
+    for (const slot of ['neck', 'face', 'hat']) {
+      const it = ITEMS.get(wear[slot]);
+      if (!it || !it.rows) continue;
+      acc += '<g class="p-' + slot + '">' + pixelRects(it.rows, it.pal, it.x, it.y + (slot === 'hat' ? sp.hatDy || 0 : 0), () => true) + '</g>';
+    }
+    return (
+      '<svg class="pet-svg' + (cls ? ' ' + cls : '') + '" viewBox="0 -1 18 15" shape-rendering="crispEdges" aria-hidden="true">' +
+      '<g class="p-body">' + pixelRects(sp.body, pal, 0, 0, (c) => c !== 'K' && !WIGGLE.has(c)) + '</g>' +
+      '<g class="p-wig">' + pixelRects(sp.body, pal, 0, 0, (c) => WIGGLE.has(c)) + '</g>' +
+      '<g class="p-legs-a">' + pixelRects(sp.legs[0], pal, 0, 12, () => true) + '</g>' +
+      '<g class="p-legs-b">' + pixelRects(sp.legs[1], pal, 0, 12, () => true) + '</g>' +
+      '<g class="p-eyes">' + pixelRects(sp.body, pal, 0, 0, (c) => c === 'K') + '</g>' +
+      '<g class="p-closed"><rect x="4" y="7" width="3" height="1" fill="#1f1e1d"/><rect x="11" y="7" width="3" height="1" fill="#1f1e1d"/></g>' +
+      acc +
+      '</svg>'
+    );
+  }
+
+  function treeSvg(id, cls) {
+    const t = TREES.get(id) || TREES.get('oak');
+    if (!t) return '';
+    return '<svg class="tree-svg' + (cls ? ' ' + cls : '') + '" viewBox="0 0 12 14" shape-rendering="crispEdges" aria-hidden="true">' + pixelRects(t.rows, t.pal, 0, 0, () => true) + '</svg>';
+  }
+
+  // 正在长的树：刚开始是小苗，之后按进度从小长到大
+  function growingTreeHtml(id, p) {
+    if (p < 0.12) return '<svg class="tree-svg sprout" viewBox="0 0 7 8" shape-rendering="crispEdges" aria-hidden="true">' + pixelRects(SPROUT.rows, SPROUT.pal, 0, 0, () => true) + '</svg>';
+    return '<div class="grow" style="transform:scale(' + (0.35 + 0.65 * p).toFixed(3) + ')">' + treeSvg(id) + '</div>';
+  }
+
+  // ---------- 专注种树 ----------
+
+  const FOCUS_KEY = 'margin.focus';
+  // 正在进行的专注单独存一份，每秒更新也不用重写整个进度
+  let focus = (function () {
+    try {
+      return JSON.parse(localStorage.getItem(FOCUS_KEY) || 'null');
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  function saveFocus() {
+    try {
+      if (focus) localStorage.setItem(FOCUS_KEY, JSON.stringify(focus));
+      else localStorage.removeItem(FOCUS_KEY);
+    } catch (e) {
+      /* 存不了就只在内存里 */
+    }
+  }
+
+  function treeOpen(id) {
+    const t = TREES.get(id);
+    return !!t && (!t.price || state.forest.unlocked.includes(id));
+  }
+
+  function focusOpt(min) {
+    return FOCUS_OPTS.find((o) => o[0] === min) || FOCUS_OPTS[1];
+  }
+
+  function focusLeft() {
+    return focus ? Math.max(0, focus.start + focus.min * 60000 - Date.now()) : 0;
+  }
+
+  function focusProgress() {
+    return focus ? Math.min(1, (Date.now() - focus.start) / (focus.min * 60000)) : 0;
+  }
+
+  function clock(ms) {
+    const sec = Math.ceil(ms / 1000);
+    return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  }
+
+  function startFocus() {
+    if (focus) return;
+    const o = focusOpt(state.forest.minutes);
+    const tree = treeOpen(state.forest.pick) ? state.forest.pick : 'oak';
+    focus = { start: Date.now(), min: o[0], need: o[1], reward: o[2], tree, n: 0, beat: Date.now(), hiddenAt: 0 };
+    saveFocus();
+    render();
+    petSay('treeStart');
+  }
+
+  function endFocus(ok, why) {
+    if (!focus) return;
+    const f = focus;
+    focus = null;
+    saveFocus();
+    const k = todayKey();
+    if (!Array.isArray(state.garden[k])) state.garden[k] = [];
+    state.garden[k].push([f.tree, ok ? 1 : 0, f.min]);
+    const name = (TREES.get(f.tree) || {}).name || '树';
+    if (ok) {
+      const d = pday();
+      d.trees = (d.trees || 0) + 1;
+      gain(f.reward);
+      toast('种下一棵' + name + '！+' + f.reward + ' 积分');
+      petSay('treeDone', { n: f.reward });
+      checkChallenges();
+      checkAchievements();
+    } else {
+      toast(why || name + '枯萎了');
+      petSay('treeDead');
+    }
+    save();
+    if (ui.view !== 'practice' && ui.view !== 'rootquiz') render();
+    else updateFocusUi();
+  }
+
+  function focusTick() {
+    if (!focus) return;
+    if (focus.hiddenAt) return; // 离开期间等回来再算
+    if (focusLeft() <= 0) {
+      const name = (TREES.get(focus.tree) || {}).name || '树';
+      if (focus.n >= focus.need) endFocus(true);
+      else endFocus(false, '时间到了，但只答了 ' + focus.n + ' / ' + focus.need + ' 题，' + name + '没长成');
+      return;
+    }
+    focus.beat = Date.now();
+    saveFocus();
+    updateFocusUi();
+  }
+
+  // 只更新计时相关的几个数字，不重画整页（背诵时不打断输入）
+  function updateFocusUi() {
+    const chip = document.getElementById('focus-chip');
+    if (!focus) {
+      if (chip) chip.remove();
+      return;
+    }
+    const t = clock(focusLeft());
+    if (chip) {
+      chip.querySelector('.fc-t').textContent = t;
+      chip.querySelector('.fc-n').textContent = ' · ' + focus.n + '/' + focus.need;
+    }
+    const el = document.getElementById('focus-time');
+    if (el) el.textContent = t;
+    const n = document.getElementById('focus-n');
+    if (n) n.textContent = '已答 ' + focus.n + ' / ' + focus.need + ' 题' + (focus.n >= focus.need ? '，够了，等时间到就长成' : '');
+    const bar = document.getElementById('focus-bar');
+    if (bar) bar.style.width = (focusProgress() * 100).toFixed(1) + '%';
+    const tree = document.getElementById('focus-tree');
+    if (tree) tree.innerHTML = growingTreeHtml(focus.tree, focusProgress());
+  }
+
+  setInterval(focusTick, 1000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!focus) return;
+    if (document.hidden) {
+      focus.hiddenAt = Date.now();
+      saveFocus();
+      return;
+    }
+    const away = focus.hiddenAt ? Date.now() - focus.hiddenAt : 0;
+    focus.hiddenAt = 0;
+    saveFocus();
+    if (away > LEAVE_LIMIT) endFocus(false, '离开超过 1 分钟，' + ((TREES.get(focus.tree) || {}).name || '树') + '枯萎了');
+    else focusTick();
+  });
+
+  // 打开应用时：上次关掉时还在专注，而且关了超过 1 分钟，树就枯萎了
+  function focusResume() {
+    if (!focus) return;
+    const last = Math.max(focus.beat || 0, focus.hiddenAt || 0);
+    if (Date.now() - last > LEAVE_LIMIT) endFocus(false, '应用关掉太久，' + ((TREES.get(focus.tree) || {}).name || '树') + '枯萎了');
+  }
+
+  function focusChipHtml() {
+    if (!focus) return '';
+    return '<button class="focus-chip" id="focus-chip" data-act="nav" data-view="home" title="专注种树">' + treeSvg(focus.tree) + '<span class="fc-t">' + clock(focusLeft()) + '</span><span class="fc-n"> · ' + focus.n + '/' + focus.need + '</span></button>';
+  }
+
+  function focusCardHtml() {
+    if (focus) {
+      const name = (TREES.get(focus.tree) || {}).name || '树';
+      return (
+        '<section class="panel focus running"><div class="focus-tree" id="focus-tree">' + growingTreeHtml(focus.tree, focusProgress()) + '</div>' +
+        '<div class="focus-main"><p class="label">正在种 · ' + name + ' · ' + focus.min + ' 分钟</p>' +
+        '<div class="focus-time" id="focus-time">' + clock(focusLeft()) + '</div>' +
+        '<div class="bar"><i id="focus-bar" style="width:' + (focusProgress() * 100).toFixed(1) + '%"></i></div>' +
+        '<p class="muted" id="focus-n">已答 ' + focus.n + ' / ' + focus.need + ' 题' + (focus.n >= focus.need ? '，够了，等时间到就长成' : '') + '</p>' +
+        '<p class="muted small">去背单词或词根吧。离开应用超过 1 分钟，或者中途放弃，树会枯萎。</p>' +
+        '<div class="actions"><button class="btn" data-act="startNew">背新词</button><button class="btn ghost" data-act="nav" data-view="roots">学词根</button><button class="link" data-act="giveUpFocus">放弃</button></div></div></section>'
+      );
+    }
+    const f = state.forest;
+    const o = focusOpt(f.minutes);
+    const open = [...TREES.values()].filter((t) => treeOpen(t.id));
+    const pick = treeOpen(f.pick) ? f.pick : 'oak';
+    return (
+      '<section class="panel focus"><div class="focus-tree">' + treeSvg(pick) + '</div>' +
+      '<div class="focus-main"><p class="label">专注种树</p><h2 class="h2">背单词，种一棵树</h2>' +
+      '<p class="muted">开始计时后去背单词或词根。时间到、答够题数，花园里就长出一棵树；中途放弃、离开应用超过 1 分钟或者题没答够，树会枯萎。</p>' +
+      '<div class="chips">' + FOCUS_OPTS.map((x) => '<button class="chip' + (x[0] === o[0] ? ' on' : '') + '" data-act="focusMin" data-min="' + x[0] + '">' + x[0] + ' 分钟</button>').join('') + '</div>' +
+      '<p class="muted small">' + o[0] + ' 分钟内至少答 ' + o[1] + ' 题，种活 +' + o[2] + ' 积分</p>' +
+      '<div class="tree-pick">' + open.map((t) => '<button class="tp' + (t.id === pick ? ' on' : '') + '" data-act="pickTree" data-id="' + t.id + '" title="' + t.name + '">' + treeSvg(t.id) + '</button>').join('') +
+      (open.length < TREES.size ? '<button class="link" data-act="nav" data-view="pet">解锁更多树种</button>' : '') + '</div>' +
+      '<div class="actions"><button class="btn" data-act="startFocus">开始种树</button></div></div></section>'
+    );
+  }
+
+  // ---------- 在页面上走动的宠物 ----------
+
+  const PET_W = 72;
+  const PET_H = 60;
+  const petLayer = document.createElement('div');
+  petLayer.className = 'pet-layer';
+  document.body.appendChild(petLayer);
+  const roam = { x: null, y: null, tx: 0, ty: 0, moving: false, last: 0, lastAct: Date.now(), sleeping: false, bubbleTimer: 0, hungryAt: 0 };
+
+  function petShown() {
+    return petAlive() && state.settings.petRoam !== false && ui.view !== 'pet';
+  }
+
+  function petEl() {
+    return petLayer.querySelector('.pet');
+  }
+
+  function clampPet() {
+    const top = 8;
+    roam.tx = Math.max(6, Math.min(window.innerWidth - PET_W - 6, roam.tx));
+    roam.ty = Math.max(top, Math.min(window.innerHeight - PET_H - 6, roam.ty));
+  }
+
+  function placePet() {
+    const el = petEl();
+    if (el) el.style.transform = 'translate(' + Math.round(roam.x) + 'px,' + Math.round(roam.y) + 'px)';
+  }
+
+  function renderPet() {
+    if (!petShown()) {
+      petLayer.hidden = true;
+      return;
+    }
+    petLayer.hidden = false;
+    const key = state.pet.species + '|' + JSON.stringify(state.pet.wear);
+    if (petLayer.dataset.key !== key || !petEl()) {
+      petLayer.innerHTML =
+        '<div class="pet' + (roam.sleeping ? ' sleeping' : '') + '" title="' + esc(state.pet.name) + '"><div class="pet-bubble"></div><div class="pet-hop">' +
+        petSvg(state.pet.species, state.pet.wear) + '</div></div>';
+      petLayer.dataset.key = key;
+    }
+    if (roam.x === null) {
+      roam.x = roam.tx = window.innerWidth - PET_W - 28;
+      roam.y = roam.ty = window.innerHeight - PET_H - 22;
+    }
+    placePet();
+  }
+
+  function walkTo(cx, cy) {
+    roam.tx = cx - PET_W / 2;
+    roam.ty = cy - PET_H + 6;
+    clampPet();
+    const el = petEl();
+    if (!el) return;
+    wakePet(false);
+    if (!roam.moving) {
+      roam.moving = true;
+      el.classList.add('walking');
+      roam.last = performance.now();
+      requestAnimationFrame(stepPet);
+    }
+  }
+
+  function stepPet(t) {
+    const el = petEl();
+    if (!el) {
+      roam.moving = false;
+      return;
+    }
+    const dt = Math.min(0.05, (t - roam.last) / 1000);
+    roam.last = t;
+    const dx = roam.tx - roam.x;
+    const dy = roam.ty - roam.y;
+    const dist = Math.hypot(dx, dy);
+    const v = 230 * dt;
+    if (dist <= v) {
+      roam.x = roam.tx;
+      roam.y = roam.ty;
+      roam.moving = false;
+      el.classList.remove('walking');
+      placePet();
+      return;
+    }
+    roam.x += (dx / dist) * v;
+    roam.y += (dy / dist) * v;
+    placePet();
+    requestAnimationFrame(stepPet);
+  }
+
+  function petSay(kind, vars) {
+    const text = petLine(kind, vars);
+    if (!text) return;
+    const box = ui.view === 'pet' ? document.querySelector('.pet-stage') : petShown() ? petEl() : null;
+    if (!box) return;
+    const b = box.querySelector('.pet-bubble');
+    if (!b) return;
+    b.textContent = text;
+    b.classList.remove('show');
+    b.style.setProperty('--dx', '0px');
+    void b.offsetWidth;
+    // 宠物在窗口边上时，气泡往里挪，别露到窗口外面
+    const r = b.getBoundingClientRect();
+    const dx = r.right > window.innerWidth - 8 ? window.innerWidth - 8 - r.right : r.left < 8 ? 8 - r.left : 0;
+    b.style.setProperty('--dx', Math.round(dx) + 'px');
+    b.classList.add('show');
+    box.classList.add('talking');
+    clearTimeout(roam.bubbleTimer);
+    roam.bubbleTimer = setTimeout(() => {
+      b.classList.remove('show');
+      box.classList.remove('talking');
+    }, 3600);
+  }
+
+  function hopPet(box) {
+    const h = box && box.querySelector('.pet-hop');
+    if (!h) return;
+    h.classList.remove('hop');
+    void h.offsetWidth;
+    h.classList.add('hop');
+    const heart = document.createElement('span');
+    heart.className = 'pet-heart';
+    heart.textContent = '♥';
+    box.appendChild(heart);
+    setTimeout(() => heart.remove(), 900);
+  }
+
+  function wakePet(say) {
+    roam.lastAct = Date.now();
+    if (!roam.sleeping) return;
+    roam.sleeping = false;
+    const el = petEl();
+    if (el) el.classList.remove('sleeping');
+    if (say) petSay('wake');
+  }
+
+  // 积分变化时，从宠物头上（没有宠物就从顶栏的积分）飘出一个数字
+  function floatPts(text, neg) {
+    let x;
+    let y;
+    if (petShown() && petEl()) {
+      x = roam.x + PET_W / 2;
+      y = roam.y;
+    } else {
+      const chip = document.querySelector('.pts');
+      if (!chip) return;
+      const r = chip.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.bottom + 4;
+    }
+    const s = document.createElement('span');
+    s.className = 'pts-float' + (neg ? ' neg' : '');
+    s.textContent = text;
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1100);
+  }
+
+  // 空白处：不是按钮、输入框、链接、选项、列表行这些可以操作的东西
+  function blankClick(ev) {
+    const t = ev.target;
+    if (!(t instanceof Element)) return false;
+    if (t.closest('a, button, input, textarea, select, label, kbd, [data-act], .opt, .list-row, .chip, .modal, .toast, .hm, .update-bar, .pet-stage, .pet-card, .shop-item')) return false;
+    const sel = window.getSelection && window.getSelection();
+    return !(sel && String(sel).length);
+  }
+
+  document.addEventListener('click', (ev) => {
+    if (document.querySelector('.modal')) return;
+    const onPet = ev.target instanceof Element && ev.target.closest('.pet');
+    if (onPet) {
+      const was = roam.sleeping;
+      wakePet(false);
+      hopPet(onPet);
+      petSay(was ? 'wake' : 'click');
+      return;
+    }
+    const stage = ev.target instanceof Element && ev.target.closest('.pet-stage .pet-hop');
+    if (stage) {
+      hopPet(stage.closest('.pet-stage'));
+      petSay('click');
+      return;
+    }
+    roam.lastAct = Date.now();
+    if (!petShown() || !blankClick(ev)) return;
+    walkTo(ev.clientX, ev.clientY);
+    if (Math.random() < 0.15) petSay('walk');
+    // 背诵时点空白处不要丢掉输入框的焦点
+    const input = document.querySelector('.practice .ans:not([readonly]), #answer:not([readonly]), #rq-answer:not([readonly])');
+    if (input) input.focus({ preventScroll: true });
+  });
+
+  document.addEventListener('keydown', () => wakePet(false), true);
+
+  window.addEventListener('resize', () => {
+    if (roam.x === null) return;
+    roam.tx = roam.x;
+    roam.ty = roam.y;
+    clampPet();
+    roam.x = roam.tx;
+    roam.y = roam.ty;
+    placePet();
+  });
+
+  // 闲着的时候：偶尔溜达一下，太久没动静就睡觉；还没喂饱会提醒
+  setInterval(() => {
+    if (!petShown() || roam.moving) return;
+    const el = petEl();
+    if (!el) return;
+    const idle = Date.now() - roam.lastAct;
+    if (idle > 90000) {
+      if (!roam.sleeping) {
+        roam.sleeping = true;
+        el.classList.add('sleeping');
+        petSay('sleep');
+      }
+      return;
+    }
+    if (fedToday() < PTS.full && Date.now() - roam.hungryAt > 10 * 60000 && ui.view !== 'practice' && ui.view !== 'rootquiz') {
+      roam.hungryAt = Date.now();
+      petSay('hungry');
+      return;
+    }
+    if (Math.random() < 0.07) {
+      roam.tx = roam.x + (Math.random() - 0.5) * 220;
+      roam.ty = roam.y + (Math.random() - 0.5) * 60;
+      clampPet();
+      const el2 = petEl();
+      roam.moving = true;
+      el2.classList.add('walking');
+      roam.last = performance.now();
+      requestAnimationFrame(stepPet);
+    }
+  }, 1000);
+
+  // ---------- 宠物页 ----------
+
+  function speciesPrice(id) {
+    return SPECIES_PRICE[id] || 0;
+  }
+
+  function unlocked(id) {
+    return speciesPrice(id) === 0 || state.pet.unlocked.includes(id);
+  }
+
+  function gardenHtml(key, withPet) {
+    const g = Array.isArray(state.garden[key]) ? state.garden[key] : [];
+    const plants = g.map((t) => '<span class="plot' + (t[1] ? '' : ' dead') + '" title="' + esc(((TREES.get(t[0]) || {}).name || '') + (t[1] ? '' : '（枯萎）') + ' · ' + t[2] + ' 分钟') + '">' + treeSvg(t[0], t[1] ? '' : 'dead') + '</span>').join('');
+    return (
+      '<div class="garden">' +
+      (withPet ? '<div class="pet-stage' + (state.pet.status === 'dead' ? ' dead' : '') + '"><div class="pet-bubble"></div><div class="pet-hop">' + petSvg(state.pet.species, state.pet.wear, state.pet.status === 'dead' ? 'dead' : '') + '</div></div>' : '') +
+      '<div class="plots">' + (plants || '<span class="muted g-empty">用「专注种树」计时背单词，今天种的树会长在这里</span>') + '</div><div class="ground"></div></div>'
+    );
+  }
+
+  function pointsPanelHtml() {
+    const p = state.points;
+    const lv = levelOf(p.earned);
+    const lo = levelNeed(lv);
+    const hi = levelNeed(lv + 1);
+    const d = pday();
+    return (
+      '<div class="pts-panel">' +
+      '<div class="pp-main"><p class="label">积分</p><div class="pp-num">' + fmt(p.bal) + '</div>' +
+      '<p class="muted">今天 +' + fmt(d.e) + (d.x ? ' · 扣 ' + fmt(d.x) : '') + (d.s ? ' · 花了 ' + fmt(d.s) : '') + '</p></div>' +
+      '<div class="pp-lv"><p class="label">等级</p><div class="pp-num">Lv ' + lv + '</div>' +
+      '<div class="bar"><i style="width:' + Math.min(100, ((p.earned - lo) / (hi - lo)) * 100) + '%"></i></div>' +
+      '<p class="muted">累计赚 ' + fmt(p.earned) + ' · 再赚 ' + fmt(hi - p.earned) + ' 升到 Lv ' + (lv + 1) + '</p></div>' +
+      '</div>'
+    );
+  }
+
+  function challengesHtml(compact) {
+    const d = pday();
+    const rows = todayChallenges()
+      .map((c) => {
+        const v = Math.min(c.goal, c.val(d));
+        const done = !!d.ch[c.id];
+        return (
+          '<div class="ch' + (done ? ' done' : '') + '"><span class="ch-mark">' + (done ? ICON_OK : '') + '</span>' +
+          '<span class="ch-t">' + c.text + '</span><span class="ch-p">' + (c.goal > 1 ? v + ' / ' + c.goal : '') + '</span><span class="ch-r">+' + c.reward + '</span></div>'
+        );
+      })
+      .join('');
+    return '<section class="panel challenges' + (compact ? ' compact' : '') + '"><div class="head-row"><p class="label">今日挑战</p><span class="muted">每天换三个，完成就加积分</span></div>' + rows + '</section>';
+  }
+
+  function adoptHtml() {
+    const pick = ui.petPick && SPECIES.has(ui.petPick) ? ui.petPick : 'crab';
+    const prog = adoptProgress();
+    const ready = prog >= PTS.adopt && state.points.bal >= PTS.adopt && unlocked(pick);
+    const cards = PETS.species
+      .map((sp) => {
+        const open = unlocked(sp.id);
+        return (
+          '<button class="pet-card' + (sp.id === pick ? ' on' : '') + (open ? '' : ' locked') + '" data-act="petPick" data-id="' + sp.id + '">' +
+          petSvg(sp.id, {}) + '<span class="pc-name">' + sp.name + '</span>' +
+          '<span class="pc-meta">' + (open ? '可以领养' : '解锁 ' + speciesPrice(sp.id) + ' 积分') + '</span></button>'
+        );
+      })
+      .join('');
+    const sp = SPECIES.get(pick);
+    let action;
+    if (!unlocked(pick)) {
+      action = '<button class="btn" data-act="unlockSpecies" data-id="' + pick + '">花 ' + speciesPrice(pick) + ' 积分解锁' + sp.name + '</button>';
+    } else {
+      action = '<button class="btn" data-act="adoptPet"' + (ready ? '' : ' disabled') + '>领养' + sp.name + '（' + PTS.adopt + ' 积分）</button>';
+    }
+    return (
+      '<section class="panel adopt"><div class="head-row"><h2 class="h2">' + (state.pet.status === 'dead' ? '再领养一只' : '领养一只宠物') + '</h2></div>' +
+      '<p class="muted">' + (state.pet.status === 'dead' ? '要重新背单词攒积分：从上次之后再攒 ' : '背单词攒够 ') + PTS.adopt + ' 积分就能领养。领养以后每天都要喂饱它，不然第二天它会饿死。</p>' +
+      '<div class="bar wide"><i style="width:' + Math.min(100, (prog / PTS.adopt) * 100) + '%"></i></div>' +
+      '<p class="muted small">新攒的积分 ' + fmt(Math.min(prog, PTS.adopt)) + ' / ' + PTS.adopt + ' · 现有 ' + fmt(state.points.bal) + ' 积分</p>' +
+      '<div class="pet-grid">' + cards + '</div>' +
+      '<div class="actions" style="margin-top:18px">' + action + '</div></section>'
+    );
+  }
+
+  function petPanelHtml() {
+    const pet = state.pet;
+    if (pet.status === 'alive' && petAlive()) {
+      const sp = SPECIES.get(pet.species);
+      const fed = fedToday();
+      return (
+        '<section class="panel pet-home">' +
+        '<div class="head-row"><div><h2 class="h2">' + esc(pet.name) + ' <button class="link" data-act="renamePet">改名</button></h2>' +
+        '<p class="muted">' + sp.name + ' · 陪你第 ' + petAge() + ' 天</p></div>' +
+        '<div class="feed"><p class="label">今天的饱食度</p><div class="bar wide' + (fed >= PTS.full ? ' full' : '') + '"><i style="width:' + Math.min(100, fed) + '%"></i></div>' +
+        '<p class="muted small">' + fed + ' / ' + PTS.full + (fed >= PTS.full ? ' · 今天吃饱了' : ' · 今天要喂饱，不然明天它会饿死') + '</p>' +
+        '<div class="actions">' + FOODS.map((f) => '<button class="btn small' + (f.id === 'snack' ? ' ghost' : '') + '" data-act="feedPet" data-id="' + f.id + '"' + (fed >= PTS.full ? ' disabled' : '') + '>' + f.name + ' · ' + f.price + ' 积分</button>').join('') + '</div></div></div>' +
+        gardenHtml(todayKey(), true) +
+        '<p class="muted small g-legend">今天的花园：专注种活的树长在这里，枯萎的也会留着。点宠物可以跟它说话。</p>' +
+        '</section>'
+      );
+    }
+    let html = '';
+    if (pet.status === 'dead' && pet.graves.length) {
+      const g = pet.graves[pet.graves.length - 1];
+      html +=
+        '<section class="panel memorial"><div class="pet-stage dead"><div class="pet-hop">' + petSvg(g.species, pet.wear, 'dead') + '</div></div>' +
+        '<div><h2 class="h2">' + esc(g.name) + ' 饿死了</h2><p class="muted">它陪了你 ' + (g.died - g.born + 1) + ' 天（' + dayKeyOf(g.born) + ' – ' + dayKeyOf(g.died) + '）。那天没有喂饱它。</p></div></section>';
+    }
+    return html + adoptHtml();
+  }
+
+  function shopHtml() {
+    const pet = state.pet;
+    const sp = petAlive() ? pet.species : 'crab';
+    const groups = ['hat', 'face', 'neck', 'color']
+      .map((slot) => {
+        const items = PETS.items.filter((x) => x.slot === slot);
+        return (
+          '<div class="shop-row"><p class="label">' + SLOT_NAMES[slot] + '</p><div class="shop-grid">' +
+          items
+            .map((it) => {
+              const own = pet.owned.includes(it.id);
+              const on = pet.wear[slot] === it.id;
+              const wear = Object.assign({}, pet.wear, { [slot]: it.id });
+              return (
+                '<button class="shop-item' + (on ? ' on' : '') + '" data-act="shopItem" data-id="' + it.id + '">' + petSvg(sp, wear) +
+                '<span class="si-name">' + it.name + '</span><span class="si-meta">' + (on ? '戴着 · 点击取下' : own ? '已拥有 · 点击戴上' : it.price + ' 积分') + '</span></button>'
+              );
+            })
+            .join('') +
+          '</div></div>'
+        );
+      })
+      .join('');
+    return '<section class="panel shop"><div class="head-row"><h2 class="h2">衣柜</h2><span class="muted">买过的装扮一直留着，换宠物也能戴</span></div>' + groups + '</section>';
+  }
+
+  function achievementsHtml() {
+    const p = state.points;
+    const done = ACHIEVEMENTS.filter((a) => p.ach[a.id]).length;
+    return (
+      '<section class="panel achs"><div class="head-row"><h2 class="h2">成就</h2><span class="muted">' + done + ' / ' + ACHIEVEMENTS.length + '</span></div><div class="ach-grid">' +
+      ACHIEVEMENTS.map((a) => {
+        const got = !!p.ach[a.id];
+        const v = Math.min(a.goal, a.val());
+        return (
+          '<div class="ach' + (got ? ' got' : '') + '"><span class="ach-ic">' + ICON_SPARK + '</span><div><b>' + a.name + '</b><span>' + a.desc + '</span>' +
+          '<span class="ach-p">' + (got ? '已获得 +' + a.reward : fmt(v) + ' / ' + fmt(a.goal) + ' · +' + a.reward) + '</span></div></div>'
+        );
+      }).join('') +
+      '</div></section>'
+    );
+  }
+
+  function weekGardenHtml() {
+    const today = dayNum();
+    let cells = '';
+    for (let i = 6; i >= 0; i--) {
+      const k = dayKeyOf(today - i);
+      const g = Array.isArray(state.garden[k]) ? state.garden[k] : [];
+      const n = g.filter((t) => t[1]).length;
+      const d = new Date((today - i) * 86400000);
+      cells +=
+        '<div class="wk"><div class="wk-bar"><i style="height:' + Math.min(100, n * 20) + '%"></i></div><b>' + n + '</b><span>' + (i === 0 ? '今天' : '周' + '日一二三四五六'[d.getUTCDay()]) + '</span></div>';
+    }
+    return '<div class="week">' + cells + '</div>';
+  }
+
+  function forestHtml() {
+    const pick = treeOpen(state.forest.pick) ? state.forest.pick : 'oak';
+    const cards = [...TREES.values()]
+      .map((t) => {
+        const open = treeOpen(t.id);
+        return (
+          '<button class="pet-card tree-card' + (t.id === pick ? ' on' : '') + (open ? '' : ' locked') + '" data-act="' + (open ? 'pickTree' : 'unlockTree') + '" data-id="' + t.id + '">' +
+          treeSvg(t.id) + '<span class="pc-name">' + t.name + '</span><span class="pc-meta">' + (open ? (t.id === pick ? '下次种这个' : '点选下次种') : '解锁 ' + t.price + ' 积分') + '</span></button>'
+        );
+      })
+      .join('');
+    return (
+      '<section class="panel forest"><div class="head-row"><h2 class="h2">森林</h2><span class="muted">一共种活 ' + fmt(gardenTotal()) + ' 棵 · 最近 7 天</span></div>' + weekGardenHtml() +
+      '<p class="label" style="margin-top:20px">树种</p><div class="pet-grid">' + cards + '</div></section>'
+    );
+  }
+
+  VIEWS.pet = function () {
+    petCheckDeath();
+    return (
+      '<main class="page">' +
+      '<h1 class="h1">宠物</h1><p class="sub">背单词攒积分：领养宠物、每天喂饱它、解锁新品种，给它买装扮。</p>' +
+      pointsPanelHtml() +
+      petPanelHtml() +
+      challengesHtml(false) +
+      forestHtml() +
+      shopHtml() +
+      achievementsHtml() +
+      '<section class="panel rules"><h2 class="h2">积分怎么来</h2><ul>' +
+      '<li>答对一题 +' + PTS.right + '，每连对 5 题再 +' + PTS.combo + '</li>' +
+      '<li>背完一组新词：组里有几个词就 +几；全对再 +' + PTS.perfect + '</li>' +
+      '<li>学完一组词根 +' + PTS.rootDone + '，全对再 +' + PTS.rootPerfect + '</li>' +
+      '<li>完成每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '；每日挑战和成就另有奖励</li>' +
+      '<li>专注种树：' + FOCUS_OPTS.map((o) => o[0] + ' 分钟答够 ' + o[1] + ' 题 +' + o[2]).join('，') + '</li>' +
+      '<li>第一次答错一个词不扣分；以前错过的词再答错 −' + PTS.again + '</li>' +
+      '<li>领养 ' + PTS.adopt + '；每天喂饱大约 ' + FOODS[1].price + '；解锁宠物品种、树种和装扮另算</li>' +
+      '</ul></section>' +
+      '</main>'
+    );
+  };
+
+  AFTER.pet = function () {
+    if (ui.petDied) {
+      ui.petDied = false;
+      const g = state.pet.graves[state.pet.graves.length - 1];
+      if (g) toast(g.name + ' 饿死了……背单词攒积分可以再领养一只');
+    }
+  };
+
+  Object.assign(ACTIONS, {
+    startFocus() {
+      startFocus();
+    },
+    async giveUpFocus() {
+      if (!focus) return;
+      if (!(await askConfirm('放弃这次专注？正在长的树会枯萎。', '放弃'))) return;
+      endFocus(false, '放弃了，' + ((TREES.get(focus ? focus.tree : '') || {}).name || '树') + '枯萎了');
+    },
+    focusMin(t) {
+      state.forest.minutes = +t.dataset.min;
+      save();
+      render();
+    },
+    pickTree(t) {
+      if (!treeOpen(t.dataset.id)) return;
+      state.forest.pick = t.dataset.id;
+      save();
+      render();
+    },
+    unlockTree(t) {
+      const tr = TREES.get(t.dataset.id);
+      if (!tr || treeOpen(tr.id) || !spend(tr.price)) return;
+      state.forest.unlocked.push(tr.id);
+      state.forest.pick = tr.id;
+      save();
+      toast('解锁了' + tr.name);
+      render();
+    },
+    petPick(t) {
+      ui.petPick = t.dataset.id;
+      render();
+    },
+    unlockSpecies(t) {
+      const id = t.dataset.id;
+      if (unlocked(id) || !spend(speciesPrice(id))) return;
+      state.pet.unlocked.push(id);
+      save();
+      toast('解锁了' + SPECIES.get(id).name);
+      render();
+    },
+    async adoptPet() {
+      const pick = ui.petPick && SPECIES.has(ui.petPick) ? ui.petPick : 'crab';
+      if (!unlocked(pick)) return;
+      if (adoptProgress() < PTS.adopt) {
+        toast('还要再攒 ' + (PTS.adopt - adoptProgress()) + ' 积分');
+        return;
+      }
+      const sp = SPECIES.get(pick);
+      const name = await askText('给你的' + sp.name + '起个名字', sp.name);
+      if (name === null) return;
+      if (!spend(PTS.adopt)) return;
+      const pet = state.pet;
+      pet.status = 'alive';
+      pet.species = pick;
+      pet.name = name.trim().slice(0, 12) || sp.name;
+      pet.born = dayNum();
+      pet.fed = { [todayKey()]: PTS.full }; // 领养当天算喂饱了
+      save();
+      roam.x = null;
+      render();
+      setTimeout(() => petSay('hello'), 300);
+    },
+    async renamePet() {
+      const name = await askText('改个名字', state.pet.name);
+      if (name === null || !name.trim()) return;
+      state.pet.name = name.trim().slice(0, 12);
+      save();
+      render();
+    },
+    feedPet(t) {
+      const f = FOODS.find((x) => x.id === t.dataset.id);
+      if (!f || !petAlive()) return;
+      if (fedToday() >= PTS.full) {
+        toast('今天已经喂饱了');
+        return;
+      }
+      if (!spend(f.price)) return;
+      const k = todayKey();
+      state.pet.fed[k] = Math.min(PTS.full, fedToday() + f.add);
+      save();
+      render();
+      const full = fedToday() >= PTS.full;
+      petSay(full ? 'full' : 'fed');
+      hopPet(document.querySelector('.pet-stage'));
+      checkAchievements();
+    },
+    shopItem(t) {
+      const it = ITEMS.get(t.dataset.id);
+      if (!it) return;
+      const pet = state.pet;
+      if (pet.wear[it.slot] === it.id) {
+        delete pet.wear[it.slot];
+      } else if (pet.owned.includes(it.id)) {
+        pet.wear[it.slot] = it.id;
+      } else {
+        if (!spend(it.price)) return;
+        pet.owned.push(it.id);
+        pet.wear[it.slot] = it.id;
+        toast('买了' + it.name);
+        setTimeout(() => petSay('bought'), 200);
+      }
+      save();
+      render();
+    },
+  });
 
   app.addEventListener('click', (ev) => {
     const t = ev.target.closest('[data-act]');
@@ -2833,4 +4141,13 @@
 
   applyTheme();
   render();
+  focusResume();
+  checkAchievements(true);
+  if (petAlive()) setTimeout(() => petSay(fedToday() < PTS.full ? 'hungry' : 'hello'), 1500);
+  else if (state.pet.status === 'dead' && ui.petDied) {
+    ui.petDied = false;
+    const g = state.pet.graves[state.pet.graves.length - 1];
+    if (g) setTimeout(() => toast(g.name + ' 饿死了……到「宠物」页可以再领养一只'), 800);
+  }
+  autoCheckUpdate();
 })();

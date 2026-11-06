@@ -4,6 +4,7 @@
     python3 tools/build.py
 """
 
+import json
 import os
 import re
 
@@ -17,7 +18,17 @@ def read(name):
         return f.read()
 
 
+def check_version():
+    """网页里的版本号要和桌面版的一致，检查更新靠它比较版本"""
+    with open(os.path.join(ROOT, "desktop", "src-tauri", "tauri.conf.json"), encoding="utf-8") as f:
+        desktop = json.load(f)["version"]
+    m = re.search(r"const APP_VERSION = '([^']+)'", read("app.js"))
+    if not m or m.group(1) != desktop:
+        raise SystemExit(f"版本号不一致：src/app.js 是 {m.group(1) if m else '（没找到）'}，tauri.conf.json 是 {desktop}")
+
+
 def main():
+    check_version()
     html = read("index.html")
 
     def inline_css(m):
