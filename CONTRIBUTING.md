@@ -25,7 +25,7 @@ CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库来自 [ECDICT](https://g
 
 ## 改代码
 
-- 不用任何框架和依赖，源码在 `src/`：`index.html`、`style.css`、`app.js`；宠物、树和装扮的像素画和台词在 `pets.js`。
+- 不用任何框架和依赖，源码在 `src/`：`index.html`、`style.css`、`app.js`；像素画全部用代码画在 `art.js`（宠物、小人、房子、植物、装饰、家具、物品、花园地面）；宠物、树种、商店货架和台词这些数据在 `pets.js`。
 - 版本号写在 `src/app.js` 的 `APP_VERSION` 和 `desktop/src-tauri/tauri.conf.json` 里，两处要一致（`tools/build.py` 会检查），应用内检查更新靠它比较版本。
 - 开发时直接用浏览器打开 `src/index.html`，改完刷新。
 - 提交前运行 `python3 tools/build.py`，更新打包好的 `Margin.html`。
