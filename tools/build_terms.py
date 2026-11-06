@@ -1,6 +1,7 @@
 """把专业词库的表格转换成 Marginal Vocabulary 的词库文件：
     data/finance/*.tsv   -> src/finance.js   （Finance）
     data/medicine/*.tsv  -> src/medicine.js  （Medicine）
+    data/macrofin/*.tsv  -> src/macrofin.js  （MacroFin）
 
 用法：
     python3 tools/build_terms.py
@@ -32,6 +33,13 @@ BOOKS = [
         "out": "medicine.js",
         "var": "MARGIN_MEDICINE",
         "priority": ["clinical.tsv", "internal_medicine.tsv", "surgery_specialties.tsv", "anatomy.tsv", "basic_sciences.tsv", "pharmacology.tsv"],
+    },
+    {
+        "name": "MacroFin",
+        "dir": "macrofin",
+        "out": "macrofin.js",
+        "var": "MARGIN_MACROFIN",
+        "priority": ["macro.tsv", "policy.tsv", "finance.tsv", "micro.tsv", "methods.tsv"],
     },
 ]
 

@@ -1,0 +1,734 @@
+New Keynesian Phillips curve	新凯恩斯菲利普斯曲线（NKPC）	DSGE模型
+steady state	稳态	DSGE模型
+representative agent	代表性个体；代表性行为人；代表性主体	DSGE模型
+heterogeneous agent model	异质性个体模型；异质性主体模型	DSGE模型
+Calvo pricing	卡尔沃定价	DSGE模型
+natural level of output	自然产出水平	DSGE模型
+sticky information	粘性信息；黏性信息	DSGE模型
+habit formation	习惯形成	DSGE模型
+nominal rigidity	名义刚性	DSGE模型
+technology shock	技术冲击	DSGE模型
+oil price shock	石油价格冲击	DSGE模型
+monetary policy shock	货币政策冲击	DSGE模型
+sunspot equilibrium	太阳黑子均衡	DSGE模型
+three-equation New Keynesian model	三方程新凯恩斯模型	DSGE模型
+dynamic IS curve	动态IS曲线	DSGE模型
+divine coincidence	神圣巧合	DSGE模型
+Rotemberg pricing	罗滕伯格定价；二次价格调整成本	DSGE模型
+state-dependent pricing	状态依存定价	DSGE模型
+time-dependent pricing	时间依存定价	DSGE模型
+real rigidity	实际刚性	DSGE模型
+markup shock	加成冲击	DSGE模型
+cost-push shock	成本推动冲击	DSGE模型
+news shock	新闻冲击；预期冲击	DSGE模型
+investment-specific technology shock	投资专有技术冲击	DSGE模型
+preference shock	偏好冲击	DSGE模型
+fiscal shock	财政冲击	DSGE模型
+borrowing constraint	借贷约束	DSGE模型
+Aiyagari model	Aiyagari模型	DSGE模型
+heterogeneous agent New Keynesian model	异质性主体新凯恩斯模型（HANK）	DSGE模型
+two-agent New Keynesian model	双主体新凯恩斯模型（TANK）	DSGE模型
+recursive competitive equilibrium	递归竞争均衡	DSGE模型
+Smets-Wouters model	Smets-Wouters模型；斯梅茨-沃特斯模型	DSGE模型
+occasionally binding constraint	偶尔紧约束	DSGE模型
+Dixit-Stiglitz aggregator	迪克西特-斯蒂格利茨加总函数	DSGE模型
+wage indexation	工资指数化	DSGE模型
+DSGE model	动态随机一般均衡模型；DSGE模型	DSGE模型
+financial shock	金融冲击	DSGE模型
+medium-scale DSGE model	中等规模DSGE模型	DSGE模型
+Christiano-Eichenbaum-Evans model	克里斯蒂亚诺-艾肯鲍姆-埃文斯模型（CEE）	DSGE模型
+HANK model	异质性主体新凯恩斯模型（HANK）	DSGE模型
+dynamic stochastic general equilibrium model	动态随机一般均衡模型（DSGE）	DSGE模型
+real business cycle model	真实经济周期模型（RBC）	DSGE模型
+New Keynesian DSGE model	新凯恩斯DSGE模型	DSGE模型
+representative household	代表性家庭	DSGE模型
+representative firm	代表性厂商	DSGE模型
+representative agent New Keynesian model	代表性主体新凯恩斯模型（RANK）	DSGE模型
+Bewley model	Bewley模型	DSGE模型
+Huggett model	Huggett模型	DSGE模型
+approximate aggregation	近似加总	DSGE模型
+wealth distribution	财富分布	DSGE模型
+intertemporal marginal propensity to consume	跨期边际消费倾向（iMPC）	DSGE模型
+hand-to-mouth household	月光族家庭；手停口停家庭	DSGE模型
+wealthy hand-to-mouth	富裕型月光族	DSGE模型
+rule-of-thumb consumer	经验法则型消费者	DSGE模型
+Ricardian household	李嘉图式家庭	DSGE模型
+non-Ricardian household	非李嘉图式家庭	DSGE模型
+idiosyncratic income risk	特质性收入风险	DSGE模型
+uninsurable idiosyncratic risk	不可保的特质风险	DSGE模型
+Calvo parameter	卡尔沃参数	DSGE模型
+Calvo wage setting	卡尔沃工资设定	DSGE模型
+Taylor contracts	泰勒交错合同	DSGE模型
+staggered price setting	交错定价	DSGE模型
+staggered wage setting	交错工资设定	DSGE模型
+price indexation	价格指数化	DSGE模型
+menu cost model	菜单成本模型	DSGE模型
+CES aggregator	常替代弹性加总函数	DSGE模型
+Kimball aggregator	金博尔加总函数	DSGE模型
+final goods producer	最终品生产商	DSGE模型
+intermediate goods producer	中间品生产商	DSGE模型
+retailer	零售商	DSGE模型
+capital goods producer	资本品生产商	DSGE模型
+price markup	价格加成	DSGE模型
+wage markup	工资加成	DSGE模型
+real marginal cost	实际边际成本	DSGE模型
+total factor productivity shock	全要素生产率冲击	DSGE模型
+marginal efficiency of investment shock	投资边际效率冲击	DSGE模型
+discount factor shock	贴现因子冲击	DSGE模型
+risk premium shock	风险溢价冲击	DSGE模型
+government spending shock	政府支出冲击	DSGE模型
+uncertainty shock	不确定性冲击	DSGE模型
+persistence parameter	持续性参数	DSGE模型
+investment adjustment cost	投资调整成本	DSGE模型
+capital adjustment cost	资本调整成本	DSGE模型
+variable capital utilization	可变资本利用率	DSGE模型
+internal habit	内部习惯	DSGE模型
+Frisch labor supply elasticity	弗里希劳动供给弹性	DSGE模型
+GHH preferences	GHH偏好	DSGE模型
+King-Plosser-Rebelo preferences	KPR偏好	DSGE模型
+law of motion of capital	资本运动方程	DSGE模型
+resource constraint	资源约束	DSGE模型
+market clearing condition	市场出清条件	DSGE模型
+aggregate resource constraint	总资源约束	DSGE模型
+hybrid New Keynesian Phillips curve	混合新凯恩斯菲利普斯曲线	DSGE模型
+wage Phillips curve	工资菲利普斯曲线	DSGE模型
+flexible-price output	弹性价格产出	DSGE模型
+efficient level of output	有效产出水平	DSGE模型
+welfare-relevant output gap	福利相关产出缺口	DSGE模型
+determinacy	决定性；均衡唯一性	DSGE模型
+indeterminacy	非决定性；均衡不唯一	DSGE模型
+sunspot shock	太阳黑子冲击	DSGE模型
+deterministic steady state	确定性稳态	DSGE模型
+stochastic steady state	随机稳态	DSGE模型
+risky steady state	风险稳态	DSGE模型
+consumption-equivalent welfare	消费等价福利	DSGE模型
+strategic complementarity	策略互补性	DSGE模型
+behavioral New Keynesian model	行为新凯恩斯模型	DSGE模型
+log-linearization	对数线性化	求解与估计方法
+Kalman filter	卡尔曼滤波	求解与估计方法
+simulated method of moments	模拟矩估计（SMM）	求解与估计方法
+indirect inference	间接推断	求解与估计方法
+value function iteration	值函数迭代	求解与估计方法
+policy function iteration	策略函数迭代	求解与估计方法
+endogenous grid method	内生网格法	求解与估计方法
+projection method	投影法	求解与估计方法
+perturbation method	扰动法；摄动法	求解与估计方法
+predetermined variable	前定变量	求解与估计方法
+Bayesian estimation	贝叶斯估计	求解与估计方法
+Blanchard-Kahn conditions	布兰查德-卡恩条件	求解与估计方法
+Krusell-Smith algorithm	Krusell-Smith算法	求解与估计方法
+global solution method	全局解法	求解与估计方法
+calibration	校准	求解与估计方法
+sequence-space Jacobian	序列空间雅可比矩阵	求解与估计方法
+detrending	去趋势	求解与估计方法
+stationarization	平稳化处理	求解与估计方法
+linearization	线性化	求解与估计方法
+first-order approximation	一阶近似	求解与估计方法
+second-order approximation	二阶近似	求解与估计方法
+third-order approximation	三阶近似	求解与估计方法
+pruning	剪枝（高阶扰动解）	求解与估计方法
+local solution method	局部求解方法	求解与估计方法
+time iteration	时间迭代法	求解与估计方法
+Chebyshev polynomial	切比雪夫多项式	求解与估计方法
+collocation method	配置法	求解与估计方法
+Galerkin method	伽辽金法	求解与估计方法
+Smolyak grid	斯莫利亚克网格；稀疏网格	求解与估计方法
+Tauchen method	Tauchen方法	求解与估计方法
+Rouwenhorst method	Rouwenhorst方法	求解与估计方法
+discretization	离散化	求解与估计方法
+method of undetermined coefficients	待定系数法	求解与估计方法
+QZ decomposition	QZ分解；广义舒尔分解	求解与估计方法
+generalized Schur decomposition	广义舒尔分解	求解与估计方法
+Dynare	Dynare（DSGE求解与估计软件）	求解与估计方法
+jump variable	跳跃变量；前瞻变量	求解与估计方法
+forward-looking variable	前瞻性变量	求解与估计方法
+backward-looking variable	后顾性变量	求解与估计方法
+shock decomposition	冲击分解	求解与估计方法
+posterior mode	后验众数	求解与估计方法
+posterior mean	后验均值	求解与估计方法
+prior predictive analysis	先验预测分析	求解与估计方法
+random walk Metropolis-Hastings algorithm	随机游走Metropolis-Hastings算法	求解与估计方法
+marginal data density	边际数据密度	求解与估计方法
+Laplace approximation	拉普拉斯近似	求解与估计方法
+modified harmonic mean estimator	修正调和平均估计量	求解与估计方法
+Kalman smoother	卡尔曼平滑	求解与估计方法
+state-space model	状态空间模型	求解与估计方法
+state-space representation	状态空间表示	求解与估计方法
+measurement equation	量测方程；观测方程	求解与估计方法
+transition equation	状态转移方程	求解与估计方法
+observable variables	可观测变量	求解与估计方法
+stochastic singularity	随机奇异性	求解与估计方法
+parameter identification	参数识别	求解与估计方法
+DSGE-VAR	DSGE-VAR模型	求解与估计方法
+impulse response matching	脉冲响应匹配	求解与估计方法
+model validation	模型检验	求解与估计方法
+counterfactual experiment	反事实实验	求解与估计方法
+second-order welfare approximation	二阶福利近似	求解与估计方法
+Cobb-Douglas production function	柯布-道格拉斯生产函数	宏观经济理论
+discount factor	贴现因子	宏观经济理论
+macroeconomics	宏观经济学	宏观经济理论
+gross domestic product	国内生产总值（GDP）	宏观经济理论
+nominal GDP	名义GDP；名义国内生产总值	宏观经济理论
+real GDP	实际GDP；实际国内生产总值	宏观经济理论
+GDP deflator	GDP平减指数	宏观经济理论
+value added	增加值；附加值	宏观经济理论
+potential output	潜在产出	宏观经济理论
+output gap	产出缺口	宏观经济理论
+consumer price index	消费者价格指数（CPI）；居民消费价格指数	宏观经济理论
+inflation	通货膨胀	宏观经济理论
+stagflation	滞胀	宏观经济理论
+menu costs	菜单成本	宏观经济理论
+natural rate of unemployment	自然失业率	宏观经济理论
+frictional unemployment	摩擦性失业	宏观经济理论
+structural unemployment	结构性失业	宏观经济理论
+cyclical unemployment	周期性失业	宏观经济理论
+non-accelerating inflation rate of unemployment	非加速通货膨胀失业率（NAIRU）	宏观经济理论
+Okun's law	奥肯定律	宏观经济理论
+Phillips curve	菲利普斯曲线	宏观经济理论
+aggregate demand	总需求	宏观经济理论
+aggregate supply	总供给	宏观经济理论
+IS-LM model	IS-LM模型	宏观经济理论
+business cycle	经济周期；商业周期	宏观经济理论
+recession	经济衰退；衰退	宏观经济理论
+Great Depression	大萧条	宏观经济理论
+Great Recession	大衰退	宏观经济理论
+real business cycle theory	真实经济周期理论（RBC）	宏观经济理论
+dynamic stochastic general equilibrium	动态随机一般均衡（DSGE）	宏观经济理论
+rational expectations	理性预期	宏观经济理论
+adaptive expectations	适应性预期	宏观经济理论
+Lucas critique	卢卡斯批判	宏观经济理论
+time inconsistency	时间不一致性；动态不一致性	宏观经济理论
+crowding-out effect	挤出效应	宏观经济理论
+marginal propensity to consume	边际消费倾向（MPC）	宏观经济理论
+permanent income hypothesis	持久收入假说	宏观经济理论
+life-cycle hypothesis	生命周期假说	宏观经济理论
+precautionary saving	预防性储蓄	宏观经济理论
+consumption smoothing	消费平滑	宏观经济理论
+Euler equation	欧拉方程	宏观经济理论
+elasticity of intertemporal substitution	跨期替代弹性（EIS）	宏观经济理论
+intertemporal budget constraint	跨期预算约束	宏观经济理论
+Solow growth model	索洛增长模型	宏观经济理论
+golden rule level of capital	资本的黄金律水平	宏观经济理论
+overlapping generations model	世代交叠模型（OLG）	宏观经济理论
+microfoundations	微观基础	宏观经济理论
+sticky price	粘性价格；价格粘性	宏观经济理论
+supply shock	供给冲击	宏观经济理论
+demand shock	需求冲击	宏观经济理论
+secular stagnation	长期停滞	宏观经济理论
+gross national product	国民生产总值（GNP）	宏观经济理论
+gross national income	国民总收入（GNI）	宏观经济理论
+GDP per capita	人均GDP；人均国内生产总值	宏观经济理论
+per capita income	人均收入	宏观经济理论
+national income accounting	国民收入核算	宏观经济理论
+national income	国民收入	宏观经济理论
+disposable income	可支配收入	宏观经济理论
+intermediate goods	中间产品；中间物品	宏观经济理论
+final goods	最终产品；最终物品	宏观经济理论
+circular flow diagram	循环流量图	宏观经济理论
+consumption	消费	宏观经济理论
+gross investment	总投资	宏观经济理论
+net investment	净投资	宏观经济理论
+depreciation rate	折旧率	宏观经济理论
+government purchases	政府购买	宏观经济理论
+net exports	净出口	宏观经济理论
+aggregate expenditure	总支出	宏观经济理论
+planned expenditure	计划支出	宏观经济理论
+underground economy	地下经济	宏观经济理论
+full-employment output	充分就业产出	宏观经济理论
+productivity	生产率	宏观经济理论
+capacity utilization	产能利用率	宏观经济理论
+producer price index	生产者价格指数（PPI）；工业生产者出厂价格指数	宏观经济理论
+price level	物价水平；价格水平	宏观经济理论
+inflation rate	通货膨胀率	宏观经济理论
+cost-push inflation	成本推动型通货膨胀	宏观经济理论
+demand-pull inflation	需求拉动型通货膨胀	宏观经济理论
+inflation persistence	通胀持续性	宏观经济理论
+inflation inertia	通胀惯性	宏观经济理论
+Great Inflation	大通胀	宏观经济理论
+deflationary spiral	通缩螺旋；通货紧缩螺旋	宏观经济理论
+wage-price spiral	工资-价格螺旋	宏观经济理论
+shoe-leather costs	皮鞋成本	宏观经济理论
+real wage	实际工资	宏观经济理论
+nominal wage	名义工资	宏观经济理论
+unemployment	失业	宏观经济理论
+unemployment rate	失业率	宏观经济理论
+full employment	充分就业	宏观经济理论
+expectations-augmented Phillips curve	附加预期的菲利普斯曲线	宏观经济理论
+sacrifice ratio	牺牲率	宏观经济理论
+aggregate demand-aggregate supply model	总需求-总供给模型（AD-AS模型）	宏观经济理论
+short-run aggregate supply curve	短期总供给曲线	宏观经济理论
+long-run aggregate supply curve	长期总供给曲线	宏观经济理论
+Keynesian cross	凯恩斯交叉图	宏观经济理论
+IS curve	IS曲线	宏观经济理论
+LM curve	LM曲线	宏观经济理论
+economic fluctuations	经济波动	宏观经济理论
+depression	萧条	宏观经济理论
+expansion	扩张	宏观经济理论
+Great Moderation	大缓和；大稳健	宏观经济理论
+leading indicators	先行指标；领先指标	宏观经济理论
+coincident indicators	同步指标；一致指标	宏观经济理论
+lagging indicators	滞后指标	宏观经济理论
+purchasing managers' index	采购经理指数（PMI）	宏观经济理论
+consumer confidence index	消费者信心指数	宏观经济理论
+New Keynesian model	新凯恩斯模型	宏观经济理论
+new classical macroeconomics	新古典宏观经济学	宏观经济理论
+Lucas islands model	卢卡斯岛屿模型	宏观经济理论
+policy ineffectiveness proposition	政策无效性命题	宏观经济理论
+stabilization policy	稳定政策；稳定化政策	宏观经济理论
+demand management	需求管理	宏观经济理论
+countercyclical policy	逆周期政策	宏观经济理论
+multiplier	乘数	宏观经济理论
+investment multiplier	投资乘数	宏观经济理论
+government purchases multiplier	政府购买乘数	宏观经济理论
+policy mix	政策组合；政策搭配	宏观经济理论
+consumption function	消费函数	宏观经济理论
+marginal propensity to save	边际储蓄倾向（MPS）	宏观经济理论
+average propensity to consume	平均消费倾向（APC）	宏观经济理论
+intertemporal substitution	跨期替代	宏观经济理论
+paradox of thrift	节俭悖论	宏观经济理论
+wealth effect	财富效应	宏观经济理论
+Pigou effect	庇古效应	宏观经济理论
+real balance effect	实际余额效应	宏观经济理论
+national saving	国民储蓄	宏观经济理论
+private saving	私人储蓄	宏观经济理论
+public saving	公共储蓄	宏观经济理论
+saving rate	储蓄率	宏观经济理论
+accelerator principle	加速原理；加速数原理	宏观经济理论
+Tobin's q	托宾q	宏观经济理论
+adjustment costs	调整成本	宏观经济理论
+inventory investment	存货投资	宏观经济理论
+animal spirits	动物精神	宏观经济理论
+economic growth	经济增长	宏观经济理论
+balanced growth path	平衡增长路径	宏观经济理论
+capital accumulation	资本积累	宏观经济理论
+capital deepening	资本深化	宏观经济理论
+capital widening	资本广化	宏观经济理论
+capital-output ratio	资本-产出比	宏观经济理论
+physical capital	物质资本	宏观经济理论
+labor productivity	劳动生产率	宏观经济理论
+aggregate production function	总量生产函数；总生产函数	宏观经济理论
+neoclassical growth model	新古典增长模型	宏观经济理论
+Harrod-Domar model	哈罗德-多马模型	宏观经济理论
+Mankiw-Romer-Weil model	曼昆-罗默-韦尔模型（MRW）	宏观经济理论
+Schumpeterian growth model	熊彼特增长模型	宏观经济理论
+quality ladder model	质量阶梯模型	宏观经济理论
+Malthusian model	马尔萨斯模型	宏观经济理论
+unified growth theory	统一增长理论	宏观经济理论
+technological progress	技术进步	宏观经济理论
+technological frontier	技术前沿	宏观经济理论
+labor-augmenting technological progress	劳动增进型技术进步	宏观经济理论
+absolute convergence	绝对趋同；绝对收敛	宏观经济理论
+club convergence	俱乐部趋同；俱乐部收敛	宏观经济理论
+catch-up effect	追赶效应	宏观经济理论
+price rigidity	价格刚性	宏观经济理论
+sticky wage	粘性工资；工资粘性	宏观经济理论
+labor wedge	劳动楔子	宏观经济理论
+natural rate hypothesis	自然率假说	宏观经济理论
+productivity shock	生产率冲击	宏观经济理论
+uncertainty shocks	不确定性冲击	宏观经济理论
+balance sheet recession	资产负债表衰退	宏观经济理论
+optimal control	最优控制	宏观经济理论
+Hamiltonian	汉密尔顿函数；哈密顿函数	宏观经济理论
+money illusion	货币幻觉	宏观经济理论
+robust control	稳健控制；鲁棒控制	宏观经济理论
+dynamic efficiency	动态效率	宏观经济理论
+national accounts	国民账户	宏观经济理论
+System of National Accounts	国民账户体系（SNA）	宏观经济理论
+expenditure approach	支出法	宏观经济理论
+production approach	生产法	宏观经济理论
+gross domestic income	国内总收入	宏观经济理论
+net domestic product	国内生产净值	宏观经济理论
+net national product	国民生产净值	宏观经济理论
+personal income	个人收入	宏观经济理论
+green GDP	绿色GDP	宏观经济理论
+base year	基年	宏观经济理论
+imputed rent	虚拟租金；估算租金	宏观经济理论
+final consumption expenditure	最终消费支出	宏观经济理论
+gross fixed capital formation	固定资本形成总额	宏观经济理论
+gross capital formation	资本形成总额	宏观经济理论
+investment rate	投资率	宏观经济理论
+consumption rate	消费率	宏观经济理论
+employment rate	就业率	宏观经济理论
+employment-to-population ratio	就业人口比	宏观经济理论
+surveyed urban unemployment rate	城镇调查失业率	宏观经济理论
+registered unemployment rate	登记失业率	宏观经济理论
+hysteresis	滞后效应；磁滞效应	宏观经济理论
+jobless recovery	无就业复苏	宏观经济理论
+soft landing	软着陆	宏观经济理论
+hard landing	硬着陆	宏观经济理论
+overheating	经济过热	宏观经济理论
+boom-bust cycle	繁荣-萧条周期	宏观经济理论
+peak	波峰；顶峰	宏观经济理论
+trough	波谷；谷底	宏观经济理论
+recovery	复苏	宏观经济理论
+double-dip recession	双底衰退	宏观经济理论
+technical recession	技术性衰退	宏观经济理论
+Juglar cycle	朱格拉周期	宏观经济理论
+Kitchin cycle	基钦周期	宏观经济理论
+Kuznets swing	库兹涅茨周期	宏观经济理论
+inventory cycle	库存周期；存货周期	宏观经济理论
+multiple equilibria	多重均衡	宏观经济理论
+coordination failure	协调失灵	宏观经济理论
+dynamic inefficiency	动态无效率	宏观经济理论
+Uzawa-Lucas model	宇泽-卢卡斯模型	宏观经济理论
+expanding variety model	产品种类扩张模型	宏观经济理论
+semi-endogenous growth	半内生增长	宏观经济理论
+scale effect	规模效应	宏观经济理论
+directed technical change	定向技术进步	宏观经济理论
+appropriate technology	适宜技术	宏观经济理论
+Hicks-neutral technological progress	希克斯中性技术进步	宏观经济理论
+Harrod-neutral technological progress	哈罗德中性技术进步	宏观经济理论
+Solow-neutral technological progress	索洛中性技术进步	宏观经济理论
+capital-augmenting technological progress	资本增进型技术进步	宏观经济理论
+embodied technological change	体现型技术进步	宏观经济理论
+disembodied technological change	非体现型技术进步	宏观经济理论
+vintage capital model	资本年份模型	宏观经济理论
+development accounting	发展核算	宏观经济理论
+convergence rate	收敛速度	宏观经济理论
+Inada conditions	稻田条件	宏观经济理论
+Baumol's cost disease	鲍莫尔成本病	宏观经济理论
+transitional dynamics	转移动态	宏观经济理论
+effective labor	有效劳动	宏观经济理论
+capital share	资本份额	宏观经济理论
+rental rate of capital	资本租金率	宏观经济理论
+capital-labor ratio	资本-劳动比	宏观经济理论
+aggregate demand curve	总需求曲线	宏观经济理论
+aggregate supply curve	总供给曲线	宏观经济理论
+IS-MP model	IS-MP模型	宏观经济理论
+staggered pricing	交错定价	宏观经济理论
+staggered contracts	交错合同	宏观经济理论
+buffer-stock saving	缓冲存货储蓄；缓冲储备储蓄	宏观经济理论
+excess sensitivity	过度敏感性	宏观经济理论
+excess smoothness	过度平滑性	宏观经济理论
+random walk hypothesis of consumption	消费随机游走假说	宏观经济理论
+relative income hypothesis	相对收入假说	宏观经济理论
+absolute income hypothesis	绝对收入假说	宏观经济理论
+liquidity constraint	流动性约束	宏观经济理论
+rule-of-thumb consumers	经验法则消费者；拇指法则消费者	宏观经济理论
+user cost of capital	资本使用成本	宏观经济理论
+q theory of investment	投资q理论	宏观经济理论
+marginal q	边际q	宏观经济理论
+average q	平均q	宏观经济理论
+irreversible investment	不可逆投资	宏观经济理论
+desired capital stock	合意资本存量；意愿资本存量	宏观经济理论
+residential investment	住宅投资	宏观经济理论
+business fixed investment	企业固定投资	宏观经济理论
+investment adjustment costs	投资调整成本	宏观经济理论
+lumpy investment	块状投资	宏观经济理论
+marginal propensity to import	边际进口倾向	宏观经济理论
+autonomous consumption	自发消费	宏观经济理论
+induced consumption	引致消费	宏观经济理论
+autonomous spending	自发支出	宏观经济理论
+inflationary gap	通胀缺口	宏观经济理论
+recessionary gap	衰退缺口	宏观经济理论
+deflationary gap	通缩缺口	宏观经济理论
+fiscal drag	财政拖累	宏观经济理论
+inside lag	内部时滞	宏观经济理论
+outside lag	外部时滞	宏观经济理论
+policy lag	政策时滞	宏观经济理论
+recognition lag	认识时滞	宏观经济理论
+fine-tuning	微调	宏观经济理论
+macroeconomic regulation and control	宏观调控	宏观经济理论
+policy credibility	政策可信度	宏观经济理论
+scarring effect	疤痕效应	宏观经济理论
+Sahm rule	萨姆规则	宏观经济理论
+economic indicators	经济指标	宏观经济理论
+industrial production index	工业生产指数	宏观经济理论
+industrial value added	工业增加值	宏观经济理论
+total retail sales of consumer goods	社会消费品零售总额	宏观经济理论
+fixed-asset investment	固定资产投资	宏观经济理论
+certainty equivalence principle	确定性等价原理	宏观经济理论
+rational expectations equilibrium	理性预期均衡	宏观经济理论
+stochastic growth model	随机增长模型	宏观经济理论
+Brock-Mirman model	布罗克-米尔曼模型	宏观经济理论
+indivisible labor	不可分劳动	宏观经济理论
+adaptive learning	适应性学习	宏观经济理论
+MIT shock	MIT冲击	宏观经济理论
+trend inflation	趋势通胀	宏观经济理论
+inflation indexation	通胀指数化	宏观经济理论
+cost-of-living adjustment	生活成本调整（COLA）	宏观经济理论
+personal consumption expenditures price index	个人消费支出价格指数（PCE）	宏观经济理论
+imported inflation	输入性通胀	宏观经济理论
+structural inflation	结构性通胀	宏观经济理论
+creeping inflation	爬行通胀；温和通胀	宏观经济理论
+galloping inflation	奔腾式通胀	宏观经济理论
+anticipated inflation	预期到的通胀	宏观经济理论
+unanticipated inflation	未预期到的通胀	宏观经济理论
+inflation uncertainty	通胀不确定性	宏观经济理论
+Lucas supply curve	卢卡斯供给曲线	宏观经济理论
+signal extraction problem	信号提取问题	宏观经济理论
+classical unemployment	古典失业	宏观经济理论
+involuntary unemployment	非自愿失业	宏观经济理论
+voluntary unemployment	自愿失业	宏观经济理论
+hidden unemployment	隐性失业	宏观经济理论
+disequilibrium	非均衡	宏观经济理论
+disequilibrium economics	非均衡经济学	宏观经济理论
+effective demand	有效需求	宏观经济理论
+Japanification	日本化	宏观经济理论
+four trillion yuan stimulus package	四万亿刺激计划	宏观经济理论
+input-output linkages	投入产出关联	宏观经济理论
+production network	生产网络	宏观经济理论
+Hulten's theorem	Hulten定理	宏观经济理论
+granular hypothesis	颗粒假说	宏观经济理论
+Domar weight	多马权重	宏观经济理论
+information frictions	信息摩擦	宏观经济理论
+Survey of Professional Forecasters	专业预测者调查（SPF）	宏观经济理论
+classical economics	古典经济学	宏观经济理论
+neoclassical economics	新古典经济学	宏观经济理论
+Say's law	萨伊定律	宏观经济理论
+Austrian school	奥地利学派	宏观经济理论
+Keynesian economics	凯恩斯主义经济学	宏观经济理论
+New Keynesian economics	新凯恩斯主义经济学	宏观经济理论
+monetarism	货币主义	宏观经济理论
+supply-side economics	供给学派经济学	宏观经济理论
+Austrian business cycle theory	奥地利学派经济周期理论	宏观经济理论
+Keynesian revolution	凯恩斯革命	宏观经济理论
+neoclassical synthesis	新古典综合	宏观经济理论
+post-Keynesian economics	后凯恩斯主义经济学	宏观经济理论
+Chicago school	芝加哥学派	宏观经济理论
+Kondratiev wave	康德拉季耶夫周期；康波	宏观经济理论
+New Deal	罗斯福新政	宏观经济理论
+Lost Decade	失去的十年	宏观经济理论
+marginal efficiency of capital	资本边际效率	宏观经济理论
+The General Theory of Employment, Interest and Money	就业、利息和货币通论	宏观经济理论
+Wicksell's cumulative process	维克塞尔累积过程	宏观经济理论
+loanable funds theory	可贷资金理论	宏观经济理论
+forced saving	强迫储蓄	宏观经济理论
+rational expectations revolution	理性预期革命	宏观经济理论
+freshwater economics	淡水学派	宏观经济理论
+saltwater economics	咸水学派	宏观经济理论
+Modern Monetary Theory	现代货币理论（MMT）	宏观经济理论
+credible commitment	可信承诺	宏观经济理论
+Chinese-style decentralization	中国式分权	宏观经济理论
+shortage economy	短缺经济	宏观经济理论
+economic policy	经济政策	宏观经济理论
+national economy	国民经济	宏观经济理论
+world economy	世界经济	宏观经济理论
+economic structure	经济结构	宏观经济理论
+real national income	实际国民收入	宏观经济理论
+principle of effective demand	有效需求原则	宏观经济理论
+economic decline	经济衰退	宏观经济理论
+economic cycle	经济周期	宏观经济理论
+relative price	相对价格；比较价格	宏观经济理论
+permanent income	永久性收入	宏观经济理论
+capital formation	资本形成	宏观经济理论
+general inflation rate	一般通货膨胀率	宏观经济理论
+rate of inflation	通货膨胀率	宏观经济理论
+economic recession	经济衰退	宏观经济理论
+economic indicator	经济指标	宏观经济理论
+dynamic economic model	动态经济模型	宏观经济理论
+import of inflation	输入通货膨胀	宏观经济理论
+quantity equation	货币数量方程	宏观经济理论
+quantity of money	货币数量	宏观经济理论
+monetary school	货币学派	宏观经济理论
+economic prosperity	经济繁荣	宏观经济理论
+linear consumption function	线性消费函数	宏观经济理论
+vicious inflation	恶性通货膨胀	宏观经济理论
+vicious spiral	恶性通货膨胀螺旋	宏观经济理论
+elastic money	弹性货币	宏观经济理论
+cyclical inflation	周期性通货膨胀	宏观经济理论
+demand elasticity	需求弹性	宏观经济理论
+income elasticity	收入弹性	宏观经济理论
+price elasticity	价格弹性	宏观经济理论
+transitory income	暂时收入	宏观经济理论
+currency deflation	通货紧缩	宏观经济理论
+exporting the inflation	输出通货膨胀	宏观经济理论
+dynamic econometric model	动态经济计量模型	宏观经济理论
+anti-inflation measures	反通货膨胀措施	宏观经济理论
+anti-inflation policy	反通货膨胀政策	宏观经济理论
+economic regulators	经济调节手段	宏观经济理论
+indexation of prices	按指数调整价格；价格指数化	宏观经济理论
+large-scale econometric model	大规模经济计量模型	宏观经济理论
+prices and incomes policy	价格与收入政策	宏观经济理论
+short-run consumption function	短期消费函数	宏观经济理论
+central rate	中心汇率	宏观经济理论
+growth rate	增长率	宏观经济理论
+international financial crisis	国际金融危机	宏观经济理论
+trend growth	增长趋势	宏观经济理论
+actual rate of growth	实际增长率	宏观经济理论
+federal debt limit	联邦债务限制	宏观经济理论
+intervention rate	干预汇率	宏观经济理论
+social welfare	社会福利	宏观经济理论
+constant dollar	不变价值美元	宏观经济理论
+national wealth	国家财富	宏观经济理论
+domestic credit expansion	国内信用膨胀	宏观经济理论
+credit inflation	信用膨胀	宏观经济理论
+mass unemployment	大量失业	宏观经济理论
+rate of unemployment	失业率	宏观经济理论
+free reserve	自由准备金	宏观经济理论
+gold reserve	黄金储备	宏观经济理论
+legal reserve requirement	法定准备金要求	宏观经济理论
+reserve policy	准备金政策；储备金政策	宏观经济理论
+reserve ratio	储备比率	宏观经济理论
+balanced growth	平衡增长；均衡增长	宏观经济理论
+maturity structure of debt	债务到期结构	宏观经济理论
+limited floating rate	有限浮动汇率	宏观经济理论
+propensity to save	储蓄倾向	宏观经济理论
+jobless rate	失业率	宏观经济理论
+exponential growth	指数增长	宏观经济理论
+fluctuating rate	波动汇率	宏观经济理论
+exporting unemployment	输出失业	宏观经济理论
+sdr parity	特别提款权平价	宏观经济理论
+sdr standard	特别提款权本位	宏观经济理论
+indexation system	指数化制度	宏观经济理论
+flow of funds analysis	资金流量分析	宏观经济理论
+government expenditures	政府支出	宏观经济理论
+international reserve assets	国际储备资产	宏观经济理论
+long-term rate	长期利率	宏观经济理论
+non-resident convertibility	非居民外汇可兑换性	宏观经济理论
+reserve requirements	储备要求；最低准备金要求	宏观经济理论
+savings function	储蓄函数	宏观经济理论
+state subsidies	国家补贴；国家补助金	宏观经济理论
+intertemporal elasticity of substitution	跨期替代弹性（IES）	宏观经济理论
+flattening of the Phillips curve	菲利普斯曲线扁平化	宏观经济理论
+no-Ponzi-game condition	非庞氏博弈条件	宏观经济理论
+potential growth rate	潜在增长率	宏观经济理论
+NAIRU	非加速通胀失业率（NAIRU）	宏观经济理论
+E-stability	E-稳定性；预期稳定性	宏观经济理论
+least-squares learning	最小二乘学习	宏观经济理论
+full-information rational expectations	完全信息理性预期（FIRE）	宏观经济理论
+dispersed information	分散信息	宏观经济理论
+noisy information	噪声信息	宏观经济理论
+cognitive discounting	认知贴现	宏观经济理论
+diagnostic expectations	诊断性预期	宏观经济理论
+sticky expectations	黏性预期	宏观经济理论
+survey expectations	调查预期	宏观经济理论
+accelerator model	加速数模型	宏观经济理论
+real options	实物期权	宏观经济理论
+wait-and-see effect	观望效应	宏观经济理论
+business cycle accounting	经济周期核算	宏观经济理论
+wedge	楔子	宏观经济理论
+efficiency wedge	效率楔子	宏观经济理论
+self-fulfilling expectations	自我实现的预期	宏观经济理论
+Solow residual	索洛剩余；索洛残差	经济增长与发展
+total factor productivity	全要素生产率（TFP）	经济增长与发展
+growth accounting	增长核算	经济增长与发展
+endogenous growth theory	内生增长理论	经济增长与发展
+Ramsey-Cass-Koopmans model	拉姆齐-卡斯-库普曼斯模型	经济增长与发展
+conditional convergence	条件趋同；条件收敛	经济增长与发展
+misallocation	资源错配	经济增长与发展
+Romer model	罗默模型	经济增长与发展
+beta convergence	β趋同；β收敛	经济增长与发展
+sigma convergence	σ趋同；σ收敛	经济增长与发展
+Kaldor facts	卡尔多事实；卡尔多典型事实	经济增长与发展
+modified golden rule	修正的黄金律	经济增长与发展
+AK model	AK模型	经济增长与发展
+dual economy	二元经济	经济增长与发展
+Lewis model	刘易斯模型	经济增长与发展
+Lewis turning point	刘易斯拐点	经济增长与发展
+structural transformation	结构转型	经济增长与发展
+urbanization	城镇化；城市化	经济增长与发展
+poverty trap	贫困陷阱	经济增长与发展
+middle-income trap	中等收入陷阱	经济增长与发展
+soft budget constraint	软预算约束	经济增长与发展
+state-owned enterprise	国有企业（SOE）	经济增长与发展
+financial repression	金融抑制	经济增长与发展
+credit constraints	信贷约束	经济增长与发展
+Kuznets curve	库兹涅茨曲线	经济增长与发展
+demographic dividend	人口红利	经济增长与发展
+economic development	经济发展	经济增长与发展
+surplus labor	剩余劳动力	经济增长与发展
+industrialization	工业化	经济增长与发展
+export-led growth	出口导向型增长	经济增长与发展
+latecomer advantage	后发优势	经济增长与发展
+East Asian miracle	东亚奇迹	经济增长与发展
+developmental state	发展型国家	经济增长与发展
+planned economy	计划经济	经济增长与发展
+market economy	市场经济	经济增长与发展
+gradualism	渐进式改革；渐进主义	经济增长与发展
+shock therapy	休克疗法	经济增长与发展
+reform and opening-up	改革开放	经济增长与发展
+dual-track price system	价格双轨制	经济增长与发展
+promotion tournament	晋升锦标赛	经济增长与发展
+new structural economics	新结构经济学	经济增长与发展
+financial deepening	金融深化	经济增长与发展
+demographic transition	人口转变	经济增长与发展
+population aging	人口老龄化	经济增长与发展
+Malthusian trap	马尔萨斯陷阱	经济增长与发展
+deindustrialization	去工业化	经济增长与发展
+premature deindustrialization	过早去工业化	经济增长与发展
+disguised unemployment	隐蔽性失业	经济增长与发展
+inclusive growth	包容性增长	经济增长与发展
+fiscal contracting system	财政包干制	经济增长与发展
+state-owned enterprise reform	国有企业改革；国企改革	经济增长与发展
+mixed-ownership reform	混合所有制改革	经济增长与发展
+new normal	新常态	经济增长与发展
+high-quality development	高质量发展	经济增长与发展
+dual circulation	双循环；国内国际双循环	经济增长与发展
+new quality productive forces	新质生产力	经济增长与发展
+socialist market economy	社会主义市场经济	经济增长与发展
+unified national market	全国统一大市场	经济增长与发展
+local protectionism	地方保护主义	经济增长与发展
+investment-driven growth	投资驱动型增长	经济增长与发展
+innovation-driven development	创新驱动发展	经济增长与发展
+extensive growth	粗放型增长	经济增长与发展
+intensive growth	集约型增长	经济增长与发展
+emerging market economy	新兴市场经济体	经济增长与发展
+BRICS	金砖国家	经济增长与发展
+Solow model	索洛模型	经济增长与发展
+golden rule of capital accumulation	资本积累的黄金律	经济增长与发展
+Schumpeterian growth	熊彼特式增长	经济增长与发展
+creative destruction	创造性破坏	经济增长与发展
+convergence hypothesis	收敛假说	经济增长与发展
+Hsieh-Klenow model	谢长泰-克列诺模型	经济增长与发展
+labor supply	劳动供给	劳动与收入分配
+labor force participation rate	劳动力参与率；劳动参与率	劳动与收入分配
+discouraged workers	丧失信心的工人；沮丧工人	劳动与收入分配
+reservation wage	保留工资	劳动与收入分配
+Frisch elasticity	弗里希弹性	劳动与收入分配
+extensive margin	广延边际；扩展边际	劳动与收入分配
+intensive margin	集约边际	劳动与收入分配
+human capital	人力资本	劳动与收入分配
+efficiency wage	效率工资	劳动与收入分配
+minimum wage	最低工资	劳动与收入分配
+insider-outsider model	局内人-局外人模型	劳动与收入分配
+search and matching model	搜寻与匹配模型	劳动与收入分配
+Beveridge curve	贝弗里奇曲线	劳动与收入分配
+unemployment insurance	失业保险	劳动与收入分配
+skill-biased technological change	技能偏向型技术进步	劳动与收入分配
+job polarization	就业极化	劳动与收入分配
+labor share	劳动收入份额	劳动与收入分配
+labor market	劳动力市场；劳动市场	劳动与收入分配
+labor demand	劳动需求	劳动与收入分配
+labor force	劳动力	劳动与收入分配
+underemployment	就业不足	劳动与收入分配
+unemployment duration	失业持续时间	劳动与收入分配
+long-term unemployment	长期失业	劳动与收入分配
+replacement rate	替代率；收入替代率	劳动与收入分配
+labor-leisure choice	劳动-闲暇选择	劳动与收入分配
+backward-bending labor supply curve	向后弯曲的劳动供给曲线	劳动与收入分配
+labor supply elasticity	劳动供给弹性	劳动与收入分配
+wage rigidity	工资刚性	劳动与收入分配
+wage bargaining	工资谈判	劳动与收入分配
+monopsony power	买方垄断势力	劳动与收入分配
+matching function	匹配函数	劳动与收入分配
+job vacancy	职位空缺	劳动与收入分配
+job creation	岗位创造；就业创造	劳动与收入分配
+job destruction	岗位破坏；就业破坏	劳动与收入分配
+labor turnover	劳动力流动率；人员流动率	劳动与收入分配
+routine-biased technological change	常规偏向型技术进步	劳动与收入分配
+automation	自动化	劳动与收入分配
+displacement effect	取代效应；替代效应	劳动与收入分配
+Diamond-Mortensen-Pissarides model	DMP模型；戴蒙德-莫滕森-皮萨里德斯模型	劳动与收入分配
+labor market tightness	劳动力市场紧张度	劳动与收入分配
+Shimer puzzle	希默之谜	劳动与收入分配
+on-the-job search	在职搜寻	劳动与收入分配
+job ladder	工作阶梯；职业阶梯	劳动与收入分配
+Burdett-Mortensen model	伯德特-莫滕森模型	劳动与收入分配
+McCall search model	麦考尔搜寻模型	劳动与收入分配
+search frictions	搜寻摩擦	劳动与收入分配
+labor hoarding	劳动力囤积；劳动力窖藏	劳动与收入分配
+short-time work	短时工作制	劳动与收入分配
+firing costs	解雇成本	劳动与收入分配
+unit labor cost	单位劳动力成本	劳动与收入分配
+implicit contract theory	隐性合同理论	劳动与收入分配
+search and matching	搜寻与匹配	劳动与收入分配
+job finding rate	求职成功率；就业发现率	劳动与收入分配
+job separation rate	离职率；就业分离率	劳动与收入分配
+Nash bargaining	纳什议价	劳动与收入分配
+Hosios condition	霍西奥斯条件	劳动与收入分配
+gift exchange	礼物交换	劳动与收入分配
+free entry condition	自由进入条件	劳动与收入分配
+real wage rigidity	实际工资刚性	劳动与收入分配
+nominal wage rigidity	名义工资刚性	劳动与收入分配
+downward nominal wage rigidity	名义工资向下刚性	劳动与收入分配

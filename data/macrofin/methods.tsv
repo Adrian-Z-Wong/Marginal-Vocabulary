@@ -1,0 +1,676 @@
+econometrics	计量经济学	计量经济学
+regression analysis	回归分析	计量经济学
+ordinary least squares	普通最小二乘法（OLS）	计量经济学
+dependent variable	因变量；被解释变量	计量经济学
+explanatory variable	解释变量	计量经济学
+independent variable	自变量	计量经济学
+covariate	协变量	计量经济学
+proxy variable	代理变量	计量经济学
+error term	误差项；扰动项	计量经济学
+residual	残差	计量经济学
+coefficient of determination	判定系数；决定系数（R²）	计量经济学
+Gauss-Markov theorem	高斯-马尔可夫定理	计量经济学
+heteroskedasticity	异方差性	计量经济学
+robust standard errors	稳健标准误	计量经济学
+clustered standard errors	聚类标准误	计量经济学
+heteroskedasticity and autocorrelation consistent standard errors	异方差自相关一致标准误（HAC）	计量经济学
+multicollinearity	多重共线性	计量经济学
+dummy variable	虚拟变量；哑变量	计量经济学
+interaction term	交互项	计量经济学
+endogeneity	内生性	计量经济学
+exogeneity	外生性	计量经济学
+omitted variable bias	遗漏变量偏误	计量经济学
+reverse causality	反向因果	计量经济学
+simultaneity bias	联立性偏误	计量经济学
+measurement error	测量误差；观测误差	计量经济学
+attenuation bias	衰减偏误	计量经济学
+selection bias	选择偏误；选择偏差	计量经济学
+Heckman selection model	赫克曼选择模型	计量经济学
+instrumental variable	工具变量（IV）	计量经济学
+two-stage least squares	两阶段最小二乘法（2SLS）	计量经济学
+reduced form	简约式；简化式	计量经济学
+exclusion restriction	排他性约束	计量经济学
+weak instruments	弱工具变量	计量经济学
+identification	识别	计量经济学
+overidentification test	过度识别检验	计量经济学
+Hausman test	豪斯曼检验	计量经济学
+generalized method of moments	广义矩估计（GMM）	计量经济学
+limited dependent variable	受限因变量	计量经济学
+linear probability model	线性概率模型（LPM）	计量经济学
+logit model	Logit模型	计量经济学
+probit model	Probit模型	计量经济学
+Tobit model	Tobit模型	计量经济学
+censored regression model	归并回归模型；删失回归模型	计量经济学
+marginal effect	边际效应	计量经济学
+quantile regression	分位数回归	计量经济学
+panel data	面板数据	计量经济学
+cross-sectional data	截面数据；横截面数据	计量经济学
+time series data	时间序列数据	计量经济学
+fixed effects	固定效应	计量经济学
+random effects	随机效应	计量经济学
+two-way fixed effects	双向固定效应	计量经济学
+first-difference estimator	一阶差分估计量	计量经济学
+unobserved heterogeneity	未观测异质性；不可观测异质性	计量经济学
+system GMM	系统GMM	计量经济学
+stationarity	平稳性	计量经济学
+unit root	单位根	计量经济学
+augmented Dickey-Fuller test	增广迪基-富勒检验（ADF检验）	计量经济学
+spurious regression	伪回归；虚假回归	计量经济学
+cointegration	协整	计量经济学
+autoregressive integrated moving average model	差分自回归移动平均模型（ARIMA）	计量经济学
+autocorrelation	自相关	计量经济学
+serial correlation	序列相关	计量经济学
+vector autoregression	向量自回归（VAR）	计量经济学
+structural vector autoregression	结构向量自回归（SVAR）	计量经济学
+vector error correction model	向量误差修正模型（VECM）	计量经济学
+Granger causality	格兰杰因果关系	计量经济学
+impulse response function	脉冲响应函数（IRF）	计量经济学
+local projections	局部投影	计量经济学
+generalized autoregressive conditional heteroskedasticity	广义自回归条件异方差（GARCH）	计量经济学
+Hodrick-Prescott filter	霍德里克-普雷斯科特滤波（HP滤波）	计量经济学
+out-of-sample forecast	样本外预测	计量经济学
+Akaike information criterion	赤池信息准则（AIC）	计量经济学
+Bayesian information criterion	贝叶斯信息准则（BIC）	计量经济学
+spatial econometrics	空间计量经济学	计量经济学
+machine learning	机器学习	计量经济学
+least absolute shrinkage and selection operator	最小绝对收缩与选择算子（LASSO）	计量经济学
+double machine learning	双重机器学习	计量经济学
+regression	回归	计量经济学
+linear regression	线性回归	计量经济学
+simple regression	简单回归	计量经济学
+multiple regression	多元回归	计量经济学
+regression coefficient	回归系数	计量经济学
+intercept	截距	计量经济学
+slope	斜率	计量经济学
+regressor	回归元；解释变量	计量经济学
+regressand	回归子；被解释变量	计量经济学
+fitted value	拟合值	计量经济学
+sum of squared residuals	残差平方和（SSR）	计量经济学
+total sum of squares	总平方和（SST）	计量经济学
+explained sum of squares	解释平方和（SSE）	计量经济学
+adjusted R-squared	调整R²；调整后的R²	计量经济学
+pseudo R-squared	伪R²	计量经济学
+goodness of fit	拟合优度	计量经济学
+best linear unbiased estimator	最佳线性无偏估计量（BLUE）	计量经济学
+variance-covariance matrix	方差-协方差矩阵	计量经济学
+projection matrix	投影矩阵	计量经济学
+homoskedasticity	同方差性	计量经济学
+heteroskedasticity-robust standard errors	异方差稳健标准误	计量经济学
+two-way clustering	双向聚类	计量经济学
+bootstrap standard errors	自助法标准误	计量经济学
+sandwich estimator	三明治估计量	计量经济学
+White test	怀特检验	计量经济学
+Breusch-Pagan test	布罗施-帕甘检验（BP检验）	计量经济学
+weighted least squares	加权最小二乘法（WLS）	计量经济学
+generalized least squares	广义最小二乘法（GLS）	计量经济学
+feasible generalized least squares	可行广义最小二乘法（FGLS）	计量经济学
+nonlinear least squares	非线性最小二乘法（NLS）	计量经济学
+least absolute deviations	最小绝对离差（LAD）	计量经济学
+robust regression	稳健回归	计量经济学
+median regression	中位数回归	计量经济学
+M-estimator	M估计量	计量经济学
+extremum estimator	极值估计量	计量经济学
+minimum distance estimator	最小距离估计量	计量经济学
+two-step estimator	两步估计量	计量经济学
+perfect collinearity	完全共线性	计量经济学
+variance inflation factor	方差膨胀因子（VIF）	计量经济学
+influential observation	强影响点	计量经济学
+Cook's distance	库克距离	计量经济学
+dummy variable trap	虚拟变量陷阱	计量经济学
+quadratic term	二次项	计量经济学
+log transformation	对数变换	计量经济学
+log-log model	双对数模型	计量经济学
+semi-log model	半对数模型	计量经济学
+semi-elasticity	半弹性	计量经济学
+standardized coefficient	标准化系数	计量经济学
+functional form misspecification	函数形式误设	计量经济学
+model misspecification	模型误设；模型设定偏误	计量经济学
+Chow test	邹检验	计量经济学
+structural break	结构突变；结构断点	计量经济学
+heterogeneity	异质性	计量经济学
+endogenous variable	内生变量	计量经济学
+exogenous variable	外生变量	计量经济学
+strict exogeneity	严格外生性	计量经济学
+simultaneous equations model	联立方程模型	计量经济学
+errors-in-variables model	变量误差模型	计量经济学
+reflection problem	反射问题	计量经济学
+sample selection bias	样本选择偏误	计量经济学
+inverse Mills ratio	逆米尔斯比率	计量经济学
+Heckman two-step procedure	赫克曼两步法	计量经济学
+first-stage regression	第一阶段回归	计量经济学
+first-stage F-statistic	第一阶段F统计量	计量经济学
+structural equation	结构方程	计量经济学
+instrument relevance	工具变量相关性	计量经济学
+instrument validity	工具变量有效性	计量经济学
+Anderson-Rubin test	安德森-鲁宾检验（AR检验）	计量经济学
+exact identification	恰好识别	计量经济学
+overidentification	过度识别	计量经济学
+underidentification	识别不足	计量经济学
+Sargan test	萨甘检验	计量经济学
+Hansen J statistic	汉森J统计量	计量经济学
+order condition	阶条件	计量经济学
+rank condition	秩条件	计量经济学
+partial identification	部分识别	计量经济学
+endogeneity test	内生性检验	计量经济学
+Durbin-Wu-Hausman test	杜宾-吴-豪斯曼检验（DWH检验）	计量经济学
+Wald estimator	沃尔德估计量	计量经济学
+moment conditions	矩条件	计量经济学
+control function approach	控制函数法	计量经济学
+limited information maximum likelihood	有限信息最大似然估计（LIML）	计量经济学
+seemingly unrelated regressions	似不相关回归（SUR）	计量经济学
+three-stage least squares	三阶段最小二乘法（3SLS）	计量经济学
+bias correction	偏误校正	计量经济学
+finite-sample bias	有限样本偏误	计量经济学
+binary choice model	二元选择模型	计量经济学
+discrete choice model	离散选择模型	计量经济学
+random utility model	随机效用模型	计量经济学
+multinomial logit model	多项Logit模型	计量经济学
+ordered probit model	有序Probit模型	计量经济学
+nested logit model	嵌套Logit模型	计量经济学
+mixed logit model	混合Logit模型	计量经济学
+truncated regression model	断尾回归模型；截断回归模型	计量经济学
+Poisson regression	泊松回归	计量经济学
+negative binomial regression	负二项回归	计量经济学
+average marginal effect	平均边际效应	计量经济学
+odds ratio	优势比；比值比	计量经济学
+latent variable	潜变量	计量经济学
+survival analysis	生存分析	计量经济学
+hazard function	风险函数；危险函数	计量经济学
+pooled cross-sectional data	混合截面数据	计量经济学
+longitudinal data	纵向数据；追踪数据	计量经济学
+balanced panel	平衡面板	计量经济学
+unbalanced panel	非平衡面板	计量经济学
+individual fixed effects	个体固定效应	计量经济学
+time fixed effects	时间固定效应	计量经济学
+within estimator	组内估计量	计量经济学
+between estimator	组间估计量	计量经济学
+dynamic panel data model	动态面板数据模型	计量经济学
+difference GMM	差分GMM	计量经济学
+lagged dependent variable	滞后因变量	计量经济学
+high-dimensional data	高维数据	计量经济学
+time series analysis	时间序列分析	计量经济学
+weak stationarity	弱平稳	计量经济学
+nonstationarity	非平稳性	计量经济学
+unit root test	单位根检验	计量经济学
+Dickey-Fuller test	迪基-富勒检验	计量经济学
+trend-stationary process	趋势平稳过程	计量经济学
+difference-stationary process	差分平稳过程	计量经济学
+deterministic trend	确定性趋势	计量经济学
+stochastic trend	随机趋势	计量经济学
+error correction model	误差修正模型（ECM）	计量经济学
+autoregressive model	自回归模型（AR）	计量经济学
+moving average model	移动平均模型（MA）	计量经济学
+autoregressive moving average model	自回归移动平均模型（ARMA）	计量经济学
+autocorrelation function	自相关函数（ACF）	计量经济学
+partial autocorrelation function	偏自相关函数（PACF）	计量经济学
+Durbin-Watson statistic	杜宾-沃森统计量（DW统计量）	计量经济学
+lag operator	滞后算子	计量经济学
+distributed lag model	分布滞后模型	计量经济学
+Bayesian vector autoregression	贝叶斯向量自回归（BVAR）	计量经济学
+variance decomposition	方差分解	计量经济学
+autoregressive conditional heteroskedasticity	自回归条件异方差（ARCH）	计量经济学
+seasonal adjustment	季节调整	计量经济学
+state space model	状态空间模型	计量经济学
+forecasting	预测	计量经济学
+model selection	模型选择	计量经济学
+nonparametric regression	非参数回归	计量经济学
+semiparametric estimation	半参数估计	计量经济学
+kernel regression	核回归	计量经济学
+local linear regression	局部线性回归	计量经济学
+local polynomial regression	局部多项式回归	计量经济学
+bandwidth	带宽	计量经济学
+bandwidth selection	带宽选择	计量经济学
+optimal bandwidth	最优带宽	计量经济学
+asymptotic properties	渐近性质	计量经济学
+finite sample properties	有限样本性质	计量经济学
+asymptotic efficiency	渐近有效性	计量经济学
+spatial autocorrelation	空间自相关	计量经济学
+spatial weight matrix	空间权重矩阵	计量经济学
+ridge regression	岭回归	计量经济学
+regularization	正则化	计量经济学
+cross-validation	交叉验证	计量经济学
+overfitting	过拟合	计量经济学
+random forest	随机森林	计量经济学
+causal forest	因果森林	计量经济学
+Frisch-Waugh-Lovell theorem	FWL定理；弗里希-沃-洛弗尔定理	计量经济学
+partitioned regression	分块回归	计量经济学
+leverage point	高杠杆点	计量经济学
+studentized residual	学生化残差	计量经济学
+Ramsey RESET test	拉姆齐RESET检验	计量经济学
+Jarque-Bera test	JB检验；雅克-贝拉检验	计量经济学
+Shapiro-Wilk test	夏皮罗-威尔克检验	计量经济学
+Breusch-Godfrey test	布罗施-戈弗雷检验	计量经济学
+Ljung-Box test	Ljung-Box检验；Q检验	计量经济学
+Goldfeld-Quandt test	戈德菲尔德-匡特检验	计量经济学
+Driscoll-Kraay standard errors	Driscoll-Kraay标准误	计量经济学
+Conley standard errors	Conley标准误	计量经济学
+panel-corrected standard errors	面板校正标准误（PCSE）	计量经济学
+wild bootstrap	野自助法	计量经济学
+wild cluster bootstrap	野聚类自助法	计量经济学
+block bootstrap	块自助法	计量经济学
+parametric bootstrap	参数自助法	计量经济学
+subsampling	子抽样	计量经济学
+Moulton problem	莫尔顿问题	计量经济学
+Cochrane-Orcutt procedure	科克伦-奥克特迭代法	计量经济学
+Prais-Winsten estimation	Prais-Winsten估计	计量经济学
+AR(1) process	一阶自回归过程	计量经济学
+random walk with drift	带漂移的随机游走	计量经济学
+integrated process	单整过程	计量经济学
+order of integration	单整阶数	计量经济学
+Phillips-Perron test	PP检验；菲利普斯-佩龙检验	计量经济学
+KPSS test	KPSS检验	计量经济学
+Zivot-Andrews test	Zivot-Andrews检验	计量经济学
+Engle-Granger two-step method	恩格尔-格兰杰两步法	计量经济学
+Johansen test	约翰森检验	计量经济学
+cointegrating vector	协整向量	计量经济学
+cointegration rank	协整秩	计量经济学
+trace test	迹检验	计量经济学
+maximum eigenvalue test	最大特征值检验	计量经济学
+weak exogeneity	弱外生性	计量经济学
+super exogeneity	超外生性	计量经济学
+sequential exogeneity	序贯外生性	计量经济学
+autoregressive distributed lag model	自回归分布滞后模型（ARDL）	计量经济学
+bounds test	边限检验	计量经济学
+panel unit root test	面板单位根检验	计量经济学
+Levin-Lin-Chu test	LLC检验	计量经济学
+Im-Pesaran-Shin test	IPS检验	计量经济学
+panel cointegration	面板协整	计量经济学
+Pedroni test	Pedroni检验	计量经济学
+panel vector autoregression	面板向量自回归（PVAR）	计量经济学
+Pesaran CD test	Pesaran CD检验	计量经济学
+common correlated effects estimator	共同相关效应估计量（CCE）	计量经济学
+mean group estimator	均值组估计量（MG）	计量经济学
+pooled mean group estimator	混合均值组估计量（PMG）	计量经济学
+interactive fixed effects	交互固定效应	计量经济学
+Mundlak approach	Mundlak方法	计量经济学
+correlated random effects	相关随机效应	计量经济学
+random coefficients model	随机系数模型	计量经济学
+Hausman-Taylor estimator	豪斯曼-泰勒估计量	计量经济学
+Arellano-Bond estimator	阿雷拉诺-邦德估计量	计量经济学
+Nickell bias	尼克尔偏误	计量经济学
+incidental parameters problem	伴随参数问题；附带参数问题	计量经济学
+conditional logit model	条件logit模型	计量经济学
+pooled OLS	混合OLS；混合最小二乘	计量经济学
+least squares dummy variable estimator	最小二乘虚拟变量估计（LSDV）	计量经济学
+demeaning	去均值	计量经济学
+within transformation	组内变换	计量经济学
+high-dimensional fixed effects	高维固定效应	计量经济学
+exponential GARCH	指数GARCH模型（EGARCH）	计量经济学
+stochastic volatility model	随机波动率模型	计量经济学
+threshold autoregressive model	门限自回归模型（TAR）	计量经济学
+threshold regression	门槛回归；门限回归	计量经济学
+panel threshold model	面板门槛模型	计量经济学
+Markov switching model	马尔可夫区制转换模型	计量经济学
+regime switching	区制转换	计量经济学
+smooth transition autoregressive model	平滑转换自回归模型（STAR）	计量经济学
+time-varying parameter VAR	时变参数向量自回归（TVP-VAR）	计量经济学
+factor-augmented VAR	因子增广向量自回归（FAVAR）	计量经济学
+global VAR	全球向量自回归（GVAR）	计量经济学
+mixed data sampling	混频数据抽样（MIDAS）	计量经济学
+dynamic factor model	动态因子模型	计量经济学
+Cholesky decomposition	楚列斯基分解；乔列斯基分解	计量经济学
+recursive identification	递归识别	计量经济学
+sign restrictions	符号约束	计量经济学
+long-run restrictions	长期约束	计量经济学
+Blanchard-Quah decomposition	BQ分解；布兰查德-柯分解	计量经济学
+proxy SVAR	代理变量SVAR	计量经济学
+external instruments	外部工具变量	计量经济学
+historical decomposition	历史分解	计量经济学
+forecast error variance decomposition	预测误差方差分解	计量经济学
+generalized impulse response	广义脉冲响应	计量经济学
+Baxter-King filter	BK滤波	计量经济学
+Christiano-Fitzgerald filter	CF滤波	计量经济学
+band-pass filter	带通滤波	计量经济学
+trend-cycle decomposition	趋势-周期分解	计量经济学
+Beveridge-Nelson decomposition	贝弗里奇-纳尔逊分解（BN分解）	计量经济学
+spectral analysis	谱分析	计量经济学
+periodogram	周期图	计量经济学
+fractional integration	分数单整	计量经济学
+long memory	长记忆	计量经济学
+autoregressive fractionally integrated moving average model	自回归分数单整移动平均模型（ARFIMA）	计量经济学
+Box-Jenkins method	博克斯-詹金斯方法	计量经济学
+Diebold-Mariano test	DM检验	计量经济学
+root mean squared error	均方根误差（RMSE）	计量经济学
+mean absolute error	平均绝对误差（MAE）	计量经济学
+mean absolute percentage error	平均绝对百分比误差（MAPE）	计量经济学
+rolling window	滚动窗口	计量经济学
+recursive estimation	递归估计	计量经济学
+Bai-Perron test	Bai-Perron检验	计量经济学
+CUSUM test	累积和检验（CUSUM检验）	计量经济学
+Granger representation theorem	格兰杰表示定理	计量经济学
+Wold decomposition	沃尔德分解	计量经济学
+invertibility	可逆性	计量经济学
+ergodicity	遍历性	计量经济学
+strict stationarity	严平稳	计量经济学
+spurious correlation	伪相关	计量经济学
+spatial lag model	空间滞后模型（SAR）	计量经济学
+spatial error model	空间误差模型（SEM）	计量经济学
+spatial Durbin model	空间杜宾模型（SDM）	计量经济学
+Moran's I	莫兰指数	计量经济学
+local indicators of spatial association	局部空间关联指标（LISA）	计量经济学
+geographically weighted regression	地理加权回归（GWR）	计量经济学
+spatial spillover	空间溢出	计量经济学
+direct effect	直接效应	计量经济学
+indirect effect	间接效应	计量经济学
+count data	计数数据	计量经济学
+zero-inflated model	零膨胀模型	计量经济学
+two-part model	两部分模型	计量经济学
+fractional response model	分数响应模型	计量经济学
+multinomial probit model	多项probit模型	计量经济学
+ordered logit model	有序logit模型	计量经济学
+generalized linear model	广义线性模型（GLM）	计量经济学
+link function	连接函数	计量经济学
+Cox proportional hazards model	考克斯比例风险模型	计量经济学
+Kaplan-Meier estimator	卡普兰-迈耶估计量	计量经济学
+duration model	持续期模型；生存模型	计量经济学
+censoring	删失；归并	计量经济学
+truncation	截断	计量经济学
+competing risks model	竞争风险模型	计量经济学
+endogenous switching regression	内生转换回归	计量经济学
+marginal effect at the mean	均值处的边际效应	计量经济学
+population regression function	总体回归函数	计量经济学
+sample regression function	样本回归函数	计量经济学
+zero conditional mean assumption	零条件均值假设	计量经济学
+classical linear regression model	经典线性回归模型	计量经济学
+normality assumption	正态性假设	计量经济学
+disturbance term	扰动项	计量经济学
+residual plot	残差图	计量经济学
+normal equations	正规方程	计量经济学
+joint hypothesis test	联合假设检验	计量经济学
+restricted model	受约束模型	计量经济学
+unrestricted model	无约束模型	计量经济学
+linear restrictions	线性约束	计量经济学
+nested models	嵌套模型	计量经济学
+non-nested models	非嵌套模型	计量经济学
+Vuong test	Vuong检验	计量经济学
+encompassing test	包容性检验	计量经济学
+general-to-specific modeling	从一般到特殊建模	计量经济学
+specification test	设定检验	计量经济学
+information criterion	信息准则	计量经济学
+Hannan-Quinn information criterion	汉南-奎因信息准则（HQIC）	计量经济学
+lag length selection	滞后阶数选择	计量经济学
+quasi-maximum likelihood estimation	拟极大似然估计（QMLE）	计量经济学
+outer product of gradients	梯度外积（OPG）	计量经济学
+information matrix equality	信息矩阵等式	计量经济学
+continuously updated GMM	连续更新GMM	计量经济学
+optimal weighting matrix	最优权重矩阵	计量经济学
+efficient GMM	有效GMM；最优GMM	计量经济学
+many instruments problem	多工具变量问题	计量经济学
+jackknife instrumental variables estimator	刀切工具变量估计量（JIVE）	计量经济学
+k-class estimator	k类估计量	计量经济学
+Stock-Yogo critical values	斯托克-约戈临界值	计量经济学
+Cragg-Donald statistic	克拉格-唐纳德统计量	计量经济学
+Kleibergen-Paap statistic	Kleibergen-Paap统计量	计量经济学
+simulated maximum likelihood	模拟极大似然	计量经济学
+GHK simulator	GHK模拟器	计量经济学
+Halton sequence	霍尔顿序列	计量经济学
+maximum score estimator	最大得分估计量	计量经济学
+partially linear model	部分线性模型	计量经济学
+Robinson estimator	罗宾逊估计量	计量经济学
+additive model	可加模型	计量经济学
+generalized additive model	广义可加模型（GAM）	计量经济学
+series estimator	级数估计量	计量经济学
+sieve estimation	筛分估计；筛估计	计量经济学
+spline	样条	计量经济学
+Nadaraya-Watson estimator	纳达拉亚-沃森估计量	计量经济学
+Silverman's rule of thumb	西尔弗曼经验法则	计量经济学
+Epanechnikov kernel	Epanechnikov核	计量经济学
+Gaussian kernel	高斯核	计量经济学
+triangular kernel	三角核	计量经济学
+unconditional quantile regression	无条件分位数回归	计量经济学
+recentered influence function	再中心化影响函数（RIF）	计量经济学
+Oaxaca-Blinder decomposition	奥萨卡-布林德分解	计量经济学
+DiNardo-Fortin-Lemieux decomposition	DFL分解	计量经济学
+Shapley decomposition	沙普利分解	计量经济学
+index decomposition analysis	指数分解分析	计量经济学
+logarithmic mean Divisia index	对数平均迪氏指数（LMDI）	计量经济学
+structural decomposition analysis	结构分解分析（SDA）	计量经济学
+Bayesian econometrics	贝叶斯计量经济学	计量经济学
+Minnesota prior	明尼苏达先验	计量经济学
+Bayesian model averaging	贝叶斯模型平均（BMA）	计量经济学
+post-double-selection LASSO	后双重选择LASSO	计量经济学
+elastic net	弹性网	计量经济学
+gradient boosting	梯度提升	计量经济学
+support vector machine	支持向量机	计量经济学
+neural network	神经网络	计量经济学
+deep learning	深度学习	计量经济学
+classification and regression tree	分类与回归树（CART）	计量经济学
+bagging	装袋法；自助聚合	计量经济学
+natural language processing	自然语言处理	计量经济学
+topic model	主题模型	计量经济学
+latent Dirichlet allocation	潜在狄利克雷分配（LDA）	计量经济学
+word embedding	词嵌入	计量经济学
+bag of words	词袋模型	计量经济学
+large language model	大语言模型（LLM）	计量经济学
+training set	训练集	计量经济学
+test set	测试集	计量经济学
+validation set	验证集	计量经济学
+bias-variance trade-off	偏差-方差权衡	计量经济学
+k-fold cross-validation	k折交叉验证	计量经济学
+hyperparameter	超参数	计量经济学
+feature selection	特征选择	计量经济学
+sample splitting	样本分割	计量经济学
+cross-fitting	交叉拟合	计量经济学
+Neyman orthogonality	奈曼正交性	计量经济学
+generalized random forest	广义随机森林	计量经济学
+matrix completion	矩阵补全	计量经济学
+nowcasting	即时预测	计量经济学
+almost ideal demand system	近乎理想需求系统（AIDS）	计量经济学
+linear expenditure system	线性支出系统（LES）	计量经济学
+random coefficients logit model	随机系数logit模型	计量经济学
+nested fixed point algorithm	嵌套不动点算法（NFXP）	计量经济学
+conditional choice probability	条件选择概率（CCP）	计量经济学
+identification problem	识别问题	计量经济学
+GARCH model	广义自回归条件异方差模型	计量经济学
+ARIMA model	差分整合移动平均自回归模型	计量经济学
+narrative approach	叙事法	计量经济学
+Romer-Romer shocks	罗默-罗默冲击	计量经济学
+random variable	随机变量	计量经济学
+probability density function	概率密度函数（PDF）	计量经济学
+cumulative distribution function	累积分布函数（CDF）	计量经济学
+conditional expectation	条件期望	计量经济学
+variance	方差	计量经济学
+covariance	协方差	计量经济学
+normal distribution	正态分布	计量经济学
+independent and identically distributed	独立同分布（i.i.d.）	计量经济学
+law of large numbers	大数定律	计量经济学
+central limit theorem	中心极限定理	计量经济学
+Jensen's inequality	詹森不等式；琴生不等式	计量经济学
+Bayes' theorem	贝叶斯定理	计量经济学
+likelihood function	似然函数	计量经济学
+maximum likelihood estimation	最大似然估计；极大似然估计（MLE）	计量经济学
+Bayesian inference	贝叶斯推断	计量经济学
+prior distribution	先验分布	计量经济学
+posterior distribution	后验分布	计量经济学
+Monte Carlo simulation	蒙特卡洛模拟	计量经济学
+bootstrap	自助法	计量经济学
+random walk	随机游走	计量经济学
+white noise	白噪声	计量经济学
+law of iterated expectations	迭代期望定律	计量经济学
+multivariate normal distribution	多元正态分布	计量经济学
+method of moments	矩估计法；矩方法	计量经济学
+Markov chain Monte Carlo	马尔可夫链蒙特卡洛方法（MCMC）	计量经济学
+Gibbs sampling	吉布斯抽样	计量经济学
+Metropolis-Hastings algorithm	梅特罗波利斯-黑斯廷斯算法（M-H算法）	计量经济学
+expectation-maximization algorithm	期望最大化算法（EM算法）	计量经济学
+asymptotic distribution	渐近分布	计量经济学
+asymptotic normality	渐近正态性	计量经济学
+probability limit	概率极限	计量经济学
+stochastic process	随机过程	计量经济学
+Markov chain	马尔可夫链	计量经济学
+martingale	鞅	计量经济学
+principal component analysis	主成分分析（PCA）	计量经济学
+factor analysis	因子分析	计量经济学
+transition matrix	转移矩阵	计量经济学
+stationary distribution	平稳分布	计量经济学
+ergodic theorem	遍历定理	计量经济学
+hidden Markov model	隐马尔可夫模型	计量经济学
+martingale difference sequence	鞅差序列	计量经济学
+functional central limit theorem	泛函中心极限定理	计量经济学
+cyclical component	周期成分	计量经济学
+year-on-year	同比	计量经济学
+month-on-month	环比	计量经济学
+log difference	对数差分	计量经济学
+particle filter	粒子滤波	计量经济学
+sequential Monte Carlo	序贯蒙特卡洛	计量经济学
+variational inference	变分推断	计量经济学
+Hamiltonian Monte Carlo	哈密顿蒙特卡洛	计量经济学
+conjugate prior	共轭先验	计量经济学
+noninformative prior	无信息先验	计量经济学
+marginal likelihood	边际似然	计量经济学
+Bayes factor	贝叶斯因子	计量经济学
+posterior predictive distribution	后验预测分布	计量经济学
+maximum a posteriori estimation	最大后验估计（MAP）	计量经济学
+Kullback-Leibler divergence	KL散度；相对熵	计量经济学
+structural estimation	结构估计	计量经济学
+reduced-form approach	简约式方法	计量经济学
+data generating process	数据生成过程（DGP）	计量经济学
+stylized facts	典型事实；特征事实	计量经济学
+counterfactual simulation	反事实模拟	计量经济学
+exogenous shock	外生冲击	计量经济学
+high-frequency identification	高频识别	计量经济学
+monetary policy surprise	货币政策意外	计量经济学
+anticipation effects	预期效应	计量经济学
+general equilibrium effects	一般均衡效应	计量经济学
+structural model	结构模型	计量经济学
+structural parameter	结构参数	计量经济学
+deep parameters	深层参数	计量经济学
+sufficient statistics approach	充分统计量方法	计量经济学
+moment matching	矩匹配	计量经济学
+targeted moments	目标矩	计量经济学
+out-of-sample validation	样本外验证	计量经济学
+computable general equilibrium model	可计算一般均衡模型（CGE）	计量经济学
+input-output analysis	投入产出分析	计量经济学
+microsimulation	微观模拟	计量经济学
+agent-based model	基于主体的模型（ABM）	计量经济学
+social accounting matrix	社会核算矩阵（SAM）	计量经济学
+Penn World Table	佩恩表（PWT）	计量经济学
+predictive regression	预测回归	计量经济学
+Newey-West standard errors	Newey-West标准误	计量经济学
+time-series regression	时间序列回归	计量经济学
+out-of-sample test	样本外检验	计量经济学
+long-horizon regression	长期预测回归	计量经济学
+structural shock	结构性冲击	计量经济学
+impulse response	脉冲响应	计量经济学
+generalized impulse response function	广义脉冲响应函数	计量经济学
+weak identification	弱识别	计量经济学
+observational equivalence	观测等价	计量经济学
+sufficient statistic	充分统计量	计量经济学
+dynamic programming	动态规划	数理方法
+Bellman equation	贝尔曼方程	数理方法
+value function	值函数；价值函数	数理方法
+policy function	策略函数；政策函数	数理方法
+transversality condition	横截性条件	数理方法
+control variable	控制变量	数理方法
+mathematical economics	数理经济学	数理方法
+convex set	凸集	数理方法
+convex function	凸函数	数理方法
+concave function	凹函数	数理方法
+quasiconcave function	拟凹函数	数理方法
+quasiconvex function	拟凸函数	数理方法
+homogeneous function	齐次函数	数理方法
+homothetic function	位似函数	数理方法
+Euler's theorem on homogeneous functions	齐次函数的欧拉定理	数理方法
+monotone transformation	单调变换	数理方法
+compact set	紧集	数理方法
+metric space	度量空间	数理方法
+convex hull	凸包	数理方法
+separating hyperplane theorem	分离超平面定理	数理方法
+supporting hyperplane theorem	支撑超平面定理	数理方法
+Farkas lemma	法卡斯引理	数理方法
+Weierstrass theorem	魏尔斯特拉斯定理	数理方法
+theorem of the maximum	最大值定理	数理方法
+implicit function theorem	隐函数定理	数理方法
+inverse function theorem	反函数定理	数理方法
+mean value theorem	中值定理	数理方法
+intermediate value theorem	介值定理	数理方法
+Taylor expansion	泰勒展开	数理方法
+Jacobian matrix	雅可比矩阵	数理方法
+Hessian matrix	海塞矩阵；黑塞矩阵	数理方法
+bordered Hessian	加边海塞矩阵	数理方法
+gradient	梯度	数理方法
+eigenvalue	特征值	数理方法
+eigenvector	特征向量	数理方法
+singular value decomposition	奇异值分解	数理方法
+positive definite matrix	正定矩阵	数理方法
+idempotent matrix	幂等矩阵	数理方法
+Kronecker product	克罗内克积	数理方法
+determinant	行列式	数理方法
+inverse matrix	逆矩阵	数理方法
+generalized inverse	广义逆	数理方法
+trace of a matrix	矩阵的迹	数理方法
+rank of a matrix	矩阵的秩	数理方法
+linear algebra	线性代数	数理方法
+fixed point	不动点	数理方法
+fixed point theorem	不动点定理	数理方法
+Banach fixed point theorem	巴拿赫不动点定理	数理方法
+contraction mapping	压缩映射	数理方法
+Blackwell's sufficient conditions	布莱克韦尔充分条件	数理方法
+Tarski fixed point theorem	塔尔斯基不动点定理	数理方法
+correspondence	对应	数理方法
+upper hemicontinuity	上半连续性	数理方法
+lower hemicontinuity	下半连续性	数理方法
+supermodularity	超模性	数理方法
+submodularity	子模性；次模性	数理方法
+monotone comparative statics	单调比较静态	数理方法
+single crossing property	单交叉性质	数理方法
+Spence-Mirrlees condition	斯彭斯-米尔利斯条件	数理方法
+Lipschitz continuity	利普希茨连续性	数理方法
+quadratic programming	二次规划	数理方法
+convex optimization	凸优化	数理方法
+duality theorem	对偶定理	数理方法
+complementary slackness	互补松弛性	数理方法
+constraint qualification	约束规格；约束品性	数理方法
+Slater's condition	斯莱特条件	数理方法
+saddle point	鞍点	数理方法
+objective function	目标函数	数理方法
+Lagrangian	拉格朗日函数	数理方法
+choice variable	选择变量	数理方法
+state variable	状态变量	数理方法
+costate variable	共态变量	数理方法
+Pontryagin's maximum principle	庞特里亚金最大值原理	数理方法
+calculus of variations	变分法	数理方法
+Euler-Lagrange equation	欧拉-拉格朗日方程	数理方法
+Hamilton-Jacobi-Bellman equation	汉密尔顿-雅可比-贝尔曼方程（HJB）	数理方法
+current-value Hamiltonian	现值汉密尔顿函数	数理方法
+principle of optimality	最优性原理	数理方法
+stochastic dynamic programming	随机动态规划	数理方法
+infinite horizon	无限期界；无限时域	数理方法
+finite horizon	有限期界；有限时域	数理方法
+discrete time	离散时间	数理方法
+continuous time	连续时间	数理方法
+optimal stopping	最优停止	数理方法
+stopping time	停时	数理方法
+shooting method	打靶法	数理方法
+Newton's method	牛顿法	数理方法
+gradient descent	梯度下降法	数理方法
+bisection method	二分法	数理方法
+grid search	网格搜索	数理方法
+Nelder-Mead method	内尔德-米德单纯形法	数理方法
+simulated annealing	模拟退火	数理方法
+curse of dimensionality	维数灾难	数理方法
+numerical methods	数值方法	数理方法
+interpolation	插值	数理方法
+Chebyshev polynomials	切比雪夫多项式	数理方法
+Gaussian quadrature	高斯求积	数理方法
+difference equation	差分方程	数理方法
+differential equation	微分方程	数理方法
+ordinary differential equation	常微分方程	数理方法
+stability analysis	稳定性分析	数理方法
+phase diagram	相图	数理方法
+saddle path	鞍点路径	数理方法
+bifurcation	分岔	数理方法
+chaos theory	混沌理论	数理方法
+comparative dynamics	比较动态分析	数理方法
+Kolmogorov forward equation	科尔莫戈罗夫前向方程	数理方法
+Fokker-Planck equation	福克-普朗克方程	数理方法
+graph theory	图论	数理方法
+network economics	网络经济学	数理方法
+centrality	中心性	数理方法
+eigenvector centrality	特征向量中心性	数理方法
+small-world network	小世界网络	数理方法
+scale-free network	无标度网络	数理方法
+Lebesgue integral	勒贝格积分	数理方法
+saddle-path stability	鞍点路径稳定性	数理方法
+first-order conditions	一阶条件	数理方法
+recursive formulation	递归形式	数理方法

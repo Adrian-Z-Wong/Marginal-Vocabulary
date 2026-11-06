@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.2.0 · 2026-11-06
+
+- 新增 MacroFin 词库（4,139 条），面向宏观经济与金融研究：DSGE 模型与求解估计、宏观金融、货币政策、财政政策、宏观调控、开放经济、高级宏微观、博弈论与信息经济学、计量方法。收入了 Finance 里相关的术语，另补了 300 多个专门术语（如 sequence-space Jacobian、Blanchard-Kahn conditions、effective lower bound、跨周期调节、超长期特别国债），每条都核对过。
+- 设置里新增「强制全对」：一组词在某一步（如「英 → 中」）只要错一个，这一步整组再来一遍，全对才进入下一步，不用整组三步从头来。词根练习也一样。结果页会标出每一步重来了几遍。
+- 全部页面重新设计：米白纸面、墨色文字、陶土色点缀，深色外观是暖调的炭灰。首页加了今日进度环和打卡卡片，答对、答错分别用绿色和红色标出，某一步或一整轮全对时有一圈小光芒。外观选项改为「浅色 / 深色」。
+- Finance 修正 7 处译名：income policy、real income、nominal income、average income、income differential、prices and incomes policy 里的 income 改译「收入」（原来误作「收益」），growth target 改为「增长目标」。
+
 ## 0.1.5 · 2026-10-30
 
 - 词根表从 1084 条扩充到 1208 条，补上之前漏收的词根，例如 vari（变化）、und（波浪）、nucle（核）、seism（地震）、trem（颤抖）、fest（节日）、herb（草）、organ（器官）、person（人）、juxta-（旁边）。

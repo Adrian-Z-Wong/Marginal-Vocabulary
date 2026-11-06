@@ -19,8 +19,10 @@
 
   // 专业词库，由 tools/build_terms.py 根据 data/<目录>/*.tsv 生成
   // Finance：经济、金融、会计、管理、公司治理、资本市场等；Medicine：西医、中医、中药、经络穴位等
+  // MacroFin：高级宏微观、宏观金融、DSGE、货币政策、财政政策、宏观调控、计量方法
   const TERM_BOOKS = [
     { id: 'fin', name: 'Finance', key: 'MARGIN_FINANCE' },
+    { id: 'mf', name: 'MacroFin', key: 'MARGIN_MACROFIN' },
     { id: 'med', name: 'Medicine', key: 'MARGIN_MEDICINE' },
   ];
 
@@ -138,6 +140,7 @@
     theme: 'auto',
     rootBook: 'all', // 词根板块选的词库
     rootGoal: 10, // 每天学几个词根
+    forceAll: false, // 强制全对：某一步有错，这一步整组重来，直到全对才进入下一步
   };
 
   function freshState() {
@@ -403,6 +406,26 @@
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
   const ICON_BAD =
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
+  // 放射状的小太阳：打卡、全对时用
+  const ICON_SPARK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5M5.3 5.3l3.5 3.5M15.2 15.2l3.5 3.5M5.3 18.7l3.5-3.5M15.2 8.8l3.5-3.5"/></svg>';
+
+  // 今日目标的进度环
+  function ringHtml(a, b, cap) {
+    const r = 52;
+    const c = 2 * Math.PI * r;
+    const p = b ? Math.min(1, a / b) : 1;
+    return (
+      '<div class="ring' + (p >= 1 ? ' full' : '') + '" style="--c:' + c.toFixed(1) + '">' +
+      '<svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-bg" cx="60" cy="60" r="' + r + '"/>' +
+      '<circle class="ring-fg" cx="60" cy="60" r="' + r + '" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - p)).toFixed(1) + '"/></svg>' +
+      '<div class="ring-num"><b>' + fmt(a) + '</b><small>/ ' + fmt(b) + '</small><span>' + cap + '</span></div></div>'
+    );
+  }
+
+  // 全对时的一圈小光芒
+  const BURST = '<span class="burst" aria-hidden="true">' + Array.from({ length: 12 }, (_, i) => '<i style="--a:' + i * 30 + 'deg"></i>').join('') + '</span>';
 
   const ICON_SPEAK =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a7.8 7.8 0 0 1 0 11"/></svg>';
@@ -1046,7 +1069,7 @@
 
   // 一轮：同一组词依次过三步。kind：new 背新词 / review 今日复习 / wrong 错题本 / retry 再练错的
   function startSession(words, bookId, kind) {
-    ui.session = { kind, bookId, words, stage: -1, mode: null, items: [], idx: 0, results: [], stageResults: [], pending: null, between: false, ended: false };
+    ui.session = { kind, bookId, words, stage: -1, mode: null, items: [], idx: 0, results: [], stageResults: [], retries: [], repeat: false, attempt: 1, pending: null, between: false, ended: false };
     beginStage(0);
   }
 
@@ -1068,6 +1091,8 @@
 
   function beginStage(n) {
     const ss = ui.session;
+    ss.attempt = n === ss.stage ? ss.attempt + 1 : 1;
+    ss.repeat = false;
     // 跳过没有可用词的步骤（比如导入的词没有中文意思，就只练听写）
     while (n < STAGES.length && !usable(ss.words, STAGES[n]).length) n++;
     if (n >= STAGES.length) {
@@ -1087,6 +1112,13 @@
   function endStage() {
     const ss = ui.session;
     ss.stageResults[ss.stage] = ss.results;
+    // 强制全对：这一步有答错的，整组重来这一步
+    if (state.settings.forceAll && ss.results.some((r) => !r.ok)) {
+      ss.repeat = true;
+      ss.between = true;
+      render();
+      return;
+    }
     if (nextStageIndex(ss) < 0) {
       finishSession();
       return;
@@ -1097,7 +1129,15 @@
 
   function continueStage() {
     const ss = ui.session;
-    if (ss && ss.between) beginStage(nextStageIndex(ss));
+    if (!ss || !ss.between) return;
+    if (ss.repeat) {
+      // 没通过的这一遍记下来（结果页和错题本要用），再把这一步重来一遍
+      ss.retries.push({ stage: ss.stage, results: ss.results });
+      ss.stageResults[ss.stage] = null;
+      beginStage(ss.stage);
+      return;
+    }
+    beginStage(nextStageIndex(ss));
   }
 
   function current() {
@@ -1217,7 +1257,12 @@
   }
 
   function allResults(ss) {
-    return [].concat(...ss.stageResults.filter(Boolean));
+    return [].concat(...ss.stageResults.filter(Boolean), ...ss.retries.map((x) => x.results));
+  }
+
+  // 某一步所有遍数的答题（强制全对时一步可能做了好几遍）
+  function stageAll(ss, i) {
+    return [].concat(...ss.retries.filter((x) => x.stage === i).map((x) => x.results), ss.stageResults[i] || []);
   }
 
   // ================= 渲染：框架 =================
@@ -1239,7 +1284,7 @@
     ];
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots' }[ui.view] || ui.view;
     return (
-      '<header class="top"><button class="brand" data-act="nav" data-view="home">Marginal Vocabulary</button><nav class="nav">' +
+      '<header class="top"><button class="brand" data-act="nav" data-view="home"><span class="brand-mark">' + ICON_SPARK + '</span>Marginal Vocabulary</button><nav class="nav">' +
       nav.map(([v, label]) => '<button data-act="nav" data-view="' + v + '" class="' + (active === v ? 'on' : '') + '">' + label + '</button>').join('') +
       '</nav></header>'
     );
@@ -1278,6 +1323,7 @@
     const rv = reviewPool();
     const rvTotal = rv.done + rv.remaining.length;
     const left = s.goal - learned;
+    const st = streak();
     const d = new Date();
     const week = '日一二三四五六'[d.getDay()];
     const pct = (a, b) => (b ? Math.min(100, (a / b) * 100) : 100);
@@ -1285,32 +1331,33 @@
       ['new', '按词表顺序'],
       ['random', '随机'],
     ]);
+    const title = left <= 0 ? '今天的目标完成了' : learned ? '还差 ' + left + ' 个新词' : '今天背 ' + s.goal + ' 个新词';
+    const sub = left <= 0 ? '想多背一点，可以再来一组。' : learned ? '已经背了 ' + learned + ' 个，接着来。' : '一组一组来，每组过三步：英 → 中、中 → 英、听 → 写。';
     return (
-      '<main class="page">' +
+      '<main class="page home">' +
       '<p class="label">' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 星期' + week + '</p>' +
-
-      '<div class="section" style="margin-top:24px"><p class="label">词库</p><label class="select"><select data-act="setBook" aria-label="词库">' + bookOptionsHtml(book) + '</select></label></div>' +
-      '<div class="section grid2">' +
-      '<div><p class="label">每天背多少新词</p>' + chipsHtml('goal', [10, 20, 30, 50, 100].map((n) => [n, String(n)])) + '</div>' +
-      '<div><p class="label">新词顺序</p>' + orders + '</div>' +
-      '</div>' +      '<h2 class="h1 section">今日任务</h2>' +
+      '<section class="hero' + (left <= 0 ? ' done' : '') + '">' +
+      '<div class="hero-main"><p class="label">今日新词 · ' + esc(bookName(book)) + '</p>' +
+      '<h1 class="h1">' + title + '</h1><p class="sub">' + sub + '</p>' +
+      '<div class="actions"><button class="btn big" data-act="startNew">' + (left > 0 ? '背新词' : '再背一组') + ' <kbd>Enter</kbd></button></div></div>' +
+      ringHtml(learned, s.goal, '新词') +
+      '</section>' +
       '<div class="tasks">' +
-      '<div class="task"><p class="label">新词</p>' +
-      '<div class="num">' + fmt(learned) + '<small> / ' + fmt(s.goal) + '</small></div>' +
-      '<div class="bar"><i style="width:' + pct(learned, s.goal) + '%"></i></div>' +
-      '<p class="muted">' + (left > 0 ? '还差 ' + left + ' 个 · ' + esc(bookName(book)) : '今天的目标完成了') + '</p>' +
-      '<button class="btn" data-act="startNew">' + (left > 0 ? '背新词' : '再背一组') + ' <kbd>Enter</kbd></button></div>' +
       '<div class="task"><p class="label">复习</p>' +
       '<div class="num">' + fmt(rv.done) + '<small> / ' + fmt(rvTotal) + '</small></div>' +
       '<div class="bar"><i style="width:' + pct(rv.done, rvTotal) + '%"></i></div>' +
-      '<p class="muted">昨天的新词和错题本</p>' +
+      '<p class="muted">昨天的新词、错题本和到期的词</p>' +
       '<button class="btn ghost" data-act="startReview"' + (rv.remaining.length ? '' : ' disabled') + '>' + (rv.remaining.length ? '开始复习 <kbd>R</kbd>' : rvTotal ? '复习完了' : '今天没有要复习的词') + '</button></div>' +
+      '<div class="task streak' + (st ? ' on' : '') + '"><p class="label">打卡</p>' +
+      '<div class="num"><span class="spark">' + ICON_SPARK + '</span>' + fmt(st) + '<small> 天</small></div>' +
+      '<p class="muted">' + (st ? '已连续打卡 ' + st + ' 天' : '今天背一组，就开始打卡') + '</p>' +
+      '<div class="mini"><div><b>' + fmt(day.n) + '</b><span>今天答题</span></div><div><b>' + (day.n ? Math.round((day.r / day.n) * 100) + '%' : '—') + '</b><span>今天正确率</span></div></div></div>' +
       '</div>' +
-      '<div class="today three">' +
-      '<div><div class="num">' + fmt(day.n) + '</div><div class="cap">今天答题</div></div>' +
-      '<div><div class="num">' + (day.n ? Math.round((day.r / day.n) * 100) + '%' : '—') + '</div><div class="cap">今天正确率</div></div>' +
-      '<div><div class="num">' + fmt(streak()) + '</div><div class="cap">连续打卡天数</div></div>' +
-      '</div>' +
+      '<section class="panel prefs"><p class="label">背什么</p>' +
+      '<div class="pref"><span class="t">词库</span><label class="select"><select data-act="setBook" aria-label="词库">' + bookOptionsHtml(book) + '</select></label></div>' +
+      '<div class="pref"><span class="t">每天背多少新词</span>' + chipsHtml('goal', [10, 20, 30, 50, 100].map((n) => [n, String(n)])) + '</div>' +
+      '<div class="pref"><span class="t">新词顺序</span>' + orders + '</div>' +
+      '</section>' +
       heatmapHtml() +
       '</main>'
     );
@@ -1339,8 +1386,9 @@
     }
     const total = Object.keys(state.stats).length;
     return (
-      '<div class="section heat"><div class="head-row"><p class="label">最近一年</p><span class="muted">累计背过 ' + fmt(total) + ' 词 · 已掌握 ' + fmt(Object.keys(state.known).length) + ' 词</span></div>' +
-      '<div class="hm" aria-label="最近一年每天的答题量">' + cells + '</div></div>'
+      '<section class="panel heat"><div class="head-row"><p class="label">最近一年</p><span class="muted">累计背过 ' + fmt(total) + ' 词 · 已掌握 ' + fmt(Object.keys(state.known).length) + ' 词</span></div>' +
+      '<div class="hm" aria-label="最近一年每天的答题量">' + cells + '</div>' +
+      '<div class="hm-legend" aria-hidden="true"><span>少</span><i class="hm-0"></i><i class="hm-1"></i><i class="hm-2"></i><i class="hm-3"></i><i class="hm-4"></i><span>多</span></div></section>'
     );
   }
 
@@ -1434,9 +1482,21 @@
   // 两步之间的小结
   function betweenHtml(ss) {
     const right = ss.results.filter((r) => r.ok).length;
+    if (ss.repeat) {
+      const bad = ss.results.length - right;
+      return (
+        '<div class="stage-done again">' +
+        '<p class="label">第 ' + (ss.stage + 1) + ' 步 · ' + MODES[ss.mode].name + (ss.attempt > 1 ? ' · 第 ' + ss.attempt + ' 遍' : '') + '</p>' +
+        '<div class="stage-score">' + right + '<small> / ' + ss.results.length + '</small></div>' +
+        '<p class="muted">错了 ' + bad + ' 个。已开启强制全对，这一步整组再来一遍，全对才进入下一步。</p>' +
+        '<div class="actions"><button class="btn" data-act="continueStage">再来一遍 <kbd>Enter</kbd></button></div>' +
+        '</div>'
+      );
+    }
     const next = MODES[STAGES[nextStageIndex(ss)]];
+    const perfect = right === ss.results.length;
     return (
-      '<div class="stage-done">' +
+      '<div class="stage-done' + (perfect ? ' perfect' : '') + '">' + (perfect ? BURST : '') +
       '<p class="label">第 ' + (ss.stage + 1) + ' 步完成 · ' + MODES[ss.mode].name + '</p>' +
       '<div class="stage-score">' + right + '<small> / ' + ss.results.length + '</small></div>' +
       '<p class="muted">下一步：' + next.name + ' · ' + next.desc + '</p>' +
@@ -1446,7 +1506,7 @@
   }
 
   function stepsHtml(ss) {
-    return STAGES.map((k, i) => '<span class="step' + (i === ss.stage ? ' on' : i < ss.stage ? ' done' : '') + '">' + (i + 1) + ' ' + MODES[k].name + '</span>').join('');
+    return STAGES.map((k, i) => '<span class="step' + (i === ss.stage ? ' on' : i < ss.stage ? ' done' : '') + '">' + (i + 1) + ' ' + MODES[k].name + (i === ss.stage && ss.attempt > 1 ? ' · 第 ' + ss.attempt + ' 遍' : '') + '</span>').join('');
   }
 
   VIEWS.practice = function () {
@@ -1518,12 +1578,12 @@
   // 这一轮里任何一步答错过的词，以及它在三步里各自的对错
   function wrongWords(ss) {
     const map = new Map();
-    ss.stageResults.forEach((res, i) => {
-      (res || []).forEach((r) => {
+    STAGES.forEach((_, i) => {
+      stageAll(ss, i).forEach((r) => {
         const k = keyOf(r.entry.w);
         if (!map.has(k)) map.set(k, { entry: r.entry, marks: [], bad: false });
         const x = map.get(k);
-        x.marks[i] = r.ok;
+        x.marks[i] = x.marks[i] === false ? false : r.ok;
         if (!r.ok) x.bad = true;
       });
     });
@@ -1553,10 +1613,11 @@
     const right = all.filter((r) => r.ok).length;
     const wrong = wrongWords(ss);
     const stageLine = STAGES.map((k, i) => {
-      const res = ss.stageResults[i];
-      return '<div><div class="num">' + (res && res.length ? res.filter((r) => r.ok).length + '<small> / ' + res.length + '</small>' : '—') + '</div><div class="cap">' + (i + 1) + ' · ' + MODES[k].name + '</div></div>';
+      const res = stageAll(ss, i);
+      const reps = ss.retries.filter((x) => x.stage === i).length;
+      return '<div><div class="num">' + (res.length ? res.filter((r) => r.ok).length + '<small> / ' + res.length + '</small>' : '—') + '</div><div class="cap">' + (i + 1) + ' · ' + MODES[k].name + (reps ? ' · 重来 ' + reps + ' 遍' : '') + '</div></div>';
     }).join('');
-    const mark = (v, i) => '<span class="mk" title="' + MODES[STAGES[i]].name + '">' + (v === true ? ICON_OK : v === false ? ICON_BAD : '·') + '</span>';
+    const mark = (v, i) => '<span class="mk' + (v === true ? ' ok' : v === false ? ' bad' : '') + '" title="' + MODES[STAGES[i]].name + '">' + (v === true ? ICON_OK : v === false ? ICON_BAD : '·') + '</span>';
     const list = wrong.length
       ? '<div class="section"><div class="head-row"><p class="label">答错过的词 · ' + wrong.length + '</p><span class="muted">右边三个标记依次是 英→中、中→英、听→写</span></div>' +
         wrong
@@ -1567,12 +1628,17 @@
           )
           .join('') +
         '</div>'
-      : '<div class="section"><p class="muted">全对，漂亮。</p></div>';
+      : '';
+    const rate = total ? Math.round((right / total) * 100) : 0;
+    const perfect = total > 0 && right === total;
+    const word = perfect ? '全对，漂亮。' : rate >= 80 ? '很稳，错的几个再练一下就好。' : '错的词已经记进错题本，复习时还会出现。';
     return (
       '<main class="page">' +
+      '<section class="result-hero' + (perfect ? ' perfect' : '') + '">' + (perfect ? BURST : '') +
       '<p class="label">' + (ss.ended ? '提前结束' : '本轮结束') + ' · ' + esc(bookName(ss.bookId)) + '</p>' +
       '<div class="score">' + right + '<small> / ' + total + '</small></div>' +
-      '<p class="muted">正确率 ' + (total ? Math.round((right / total) * 100) : 0) + '%</p>' +
+      '<p class="rate">正确率 ' + rate + '% · ' + word + '</p>' +
+      '</section>' +
       '<div class="today stage-line">' + stageLine + '</div>' +
       '<div class="actions" style="margin-top:32px">' +
       (wrong.length ? '<button class="btn" data-act="retryWrong">再练错的 ' + wrong.length + ' 个 <kbd>R</kbd></button>' : '') +
@@ -1587,8 +1653,9 @@
     const list = bookEntries(id);
     const seen = seenCount(list);
     const pct = list.length ? (seen / list.length) * 100 : 0;
+    const kind = findTerm(id) ? '专业词库' : findExam(id) ? '考试词库' : '我的词表';
     return (
-      '<div class="book-row"><div><div class="name">' + esc(bookName(id)) + '</div>' +
+      '<div class="book-row"><div><div class="kind">' + kind + '</div><div class="name">' + esc(bookName(id)) + '</div>' +
       '<div class="meta"><span>' + fmt(list.length) + ' 词</span><span>已背 ' + fmt(seen) + '</span><span class="prog"><i style="width:' + pct + '%"></i></span></div></div>' +
       '<div class="side">' + (extra || '') + '<button class="link" data-act="viewBook" data-id="' + esc(id) + '">查看</button><button class="btn small ghost" data-act="useBook" data-id="' + esc(id) + '">背这个</button></div></div>'
     );
@@ -1599,14 +1666,14 @@
     return (
       '<main class="page">' +
       '<h1 class="h1">词库</h1>' +
-      '<div class="section">' + allBooks().map((id) => bookRowHtml(id)).join('') + '</div>' +
+      '<div class="section book-grid">' + allBooks().map((id) => bookRowHtml(id)).join('') + '</div>' +
       '<div class="section mine">' +
       '<div class="head-row"><h2 class="h2">我的词表</h2>' +
       '<div class="actions"><button class="btn small" data-act="newImport">＋ 粘贴单词</button>' +
       '<label class="btn small ghost file-pick">上传文件<input type="file" id="upload-book" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json"></label></div></div>' +
       '<p class="sub">把自己要背的单词做成词表：直接粘贴，或者上传 .txt、.csv 文件（Excel 可以另存为 .csv）。只写英文也行，常见词会自动补上中文意思。</p>' +
       (mine.length
-        ? mine.map((b) => bookRowHtml(b.id, '<button class="link" data-act="deleteBook" data-id="' + esc(b.id) + '">删除</button>')).join('')
+        ? '<div class="book-grid">' + mine.map((b) => bookRowHtml(b.id, '<button class="link" data-act="deleteBook" data-id="' + esc(b.id) + '">删除</button>')).join('') + '</div>'
         : '<div class="empty">还没有自己的词表。</div>') +
       '</div>' +
       '</main>'
@@ -1752,7 +1819,7 @@
     return (
       '<main class="page">' +
       '<h1 class="h1">设置</h1><p class="sub">改动会自动保存。</p>' +
-      '<div class="section">' +
+      '<div class="section panel set-list">' +
       '<div class="set-row"><div><div class="t">发音口音</div></div><div>' + chipsHtml('accent', [['us', '美式'], ['uk', '英式']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">发音来源</div></div><div>' +
       chipsHtml('voice', [['auto', '真人发音'], ['browser', '电脑语音']]) +
@@ -1760,11 +1827,13 @@
       '<div class="actions" style="margin-top:12px"><button class="btn small ghost" data-act="testVoice">试听</button></div></div></div>' +
       '<div class="set-row"><div><div class="t">读音</div></div><div class="d" style="margin-top:0">「英 → 中」和「听 → 写」出词时自动朗读，按 Tab 再听一遍；「中 → 英」不出声。</div></div>' +
       '<div class="set-row"><div><div class="t">每组几个词</div></div><div>' + chipsHtml('size', [[5, '5'], [10, '10'], [15, '15'], [20, '20']]) + '</div></div>' +
+      '<div class="set-row"><div><div class="t">强制全对</div></div><div>' + chipsHtml('forceAll', [[true, '开'], [false, '关']]) +
+      '<div class="d">背单词和词根时，一组词在某一步（如「英 → 中」）只要错一个，这一步做完后整组再来一遍，直到全对才进入下一步。</div></div></div>' +
       '<div class="set-row"><div><div class="t">拼错后照打一遍</div></div><div>' + chipsHtml('copyWrong', [[true, '开'], [false, '关']]) +
       '<div class="d">拼写题答错后，照着正确拼写再打一遍，免得记住错的拼法。直接按 Enter 可以跳过。</div></div></div>' +
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
-      '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '白底'], ['dark', '黑底']]) + '</div></div>' +
+      '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
       (!/^https?:$/.test(location.protocol)
@@ -1776,7 +1845,7 @@
       '<label class="btn small ghost file-pick">导入备份<input type="file" id="backup-file" accept=".json,application/json"></label>' +
       '<button class="link" data-act="resetAll">清空所有数据</button></div>' +
       '<div class="d">换电脑、换浏览器或清理浏览器数据之前，先导出备份；到新地方打开 Marginal Vocabulary 后再导入。</div></div></div>' +
-      '<div class="set-row"><div><div class="t">关于</div></div><div class="d" style="margin-top:0">Marginal Vocabulary · 黑白极简的背单词工具。<br>Finance、Medicine 词库和词根由 Marginal Vocabulary 整理，译名参考国内通行教材和标准术语；发现不准欢迎到 GitHub 反馈。<br>CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库与音标来自开源词典 ECDICT（MIT 许可证）。</div></div>' +
+      '<div class="set-row"><div><div class="t">关于</div></div><div class="d" style="margin-top:0">Marginal Vocabulary · 背单词工具。<br>Finance、MacroFin、Medicine 词库和词根由 Marginal Vocabulary 整理，译名参考国内通行教材和标准术语；发现不准欢迎到 GitHub 反馈。<br>CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库与音标来自开源词典 ECDICT（MIT 许可证）。</div></div>' +
       '</div>' +
       '</main>'
     );
@@ -1935,7 +2004,7 @@
       const words = idx.get(r.id) || [];
       return { r, words, target: pickFill(words) || (book === 'all' ? null : pickFill(rootIndex('all').get(r.id))) };
     });
-    ui.rs = { kind, book, roots: items, stage: -1, mode: null, items: [], idx: 0, pick: null, ok: null, results: [], stageResults: [], between: false, done: false, ended: false };
+    ui.rs = { kind, book, roots: items, stage: -1, mode: null, items: [], idx: 0, pick: null, ok: null, results: [], stageResults: [], retries: [], repeat: false, attempt: 1, between: false, done: false, ended: false };
     beginRootStage(0);
     go('rootquiz');
   }
@@ -1952,6 +2021,8 @@
     const stage = nextRootStage(rs, i);
     if (stage < 0) return finishRootSession();
     const mode = ROOT_STAGES[stage];
+    rs.attempt = stage === rs.stage ? rs.attempt + 1 : 1;
+    rs.repeat = false;
     rs.stage = stage;
     rs.mode = mode;
     rs.items = shuffle(rs.roots.filter((x) => mode !== 'fill' || x.target).map((x) => rootQuestion(x, mode)));
@@ -2004,7 +2075,12 @@
       return;
     }
     if (rs.between) {
-      beginRootStage(rs.stage + 1);
+      if (rs.repeat) {
+        // 强制全对：没通过的这一遍记下来，这一步再来一遍
+        rs.retries.push({ stage: rs.stage, results: rs.results });
+        rs.stageResults[rs.stage] = null;
+        beginRootStage(rs.stage);
+      } else beginRootStage(rs.stage + 1);
       render();
       return;
     }
@@ -2021,7 +2097,10 @@
     rs.pick = null;
     if (rs.idx >= rs.items.length) {
       rs.stageResults[rs.stage] = rs.results;
-      if (nextRootStage(rs, rs.stage + 1) >= 0) rs.between = true;
+      if (state.settings.forceAll && rs.results.some((x) => !x.ok)) {
+        rs.repeat = true;
+        rs.between = true;
+      } else if (nextRootStage(rs, rs.stage + 1) >= 0) rs.between = true;
       else return finishRootSession();
     }
     render();
@@ -2032,7 +2111,7 @@
     const rs = ui.rs;
     rs.done = true;
     rs.between = false;
-    const all = [].concat(...rs.stageResults.filter(Boolean));
+    const all = rootAll(rs);
     for (const x of rs.roots) {
       const mine = all.filter((y) => y.r === x.r);
       if (!mine.length) continue;
@@ -2046,6 +2125,14 @@
       return;
     }
     render();
+  }
+
+  function rootAll(rs) {
+    return [].concat(...rs.stageResults.filter(Boolean), ...rs.retries.map((x) => x.results));
+  }
+
+  function rootStageAll(rs, i) {
+    return [].concat(...rs.retries.filter((x) => x.stage === i).map((x) => x.results), rs.stageResults[i] || []);
   }
 
   function quitRootSession() {
@@ -2108,26 +2195,27 @@
     const left = s.rootGoal - learned;
     const pct = (a, b) => (b ? Math.min(100, (a / b) * 100) : 100);
     const types = [['all', '全部'], ['prefix', '前缀'], ['root', '词根'], ['suffix', '后缀']];
+    const title = left <= 0 ? '今天的词根学完了' : learned ? '还差 ' + left + ' 个词根' : '今天学 ' + s.rootGoal + ' 个词根';
     return (
       '<main class="page">' +
-      '<h1 class="h1">词根</h1>' +
-      '<p class="sub">' + esc(rootBookName(book)) + ' 用到 ' + fmt(inBook.length) + ' 个词根词缀 · 已学 ' + fmt(studied) + '</p>' +
-      '<div class="section grid2" style="margin-top:0">' +
-      '<div><p class="label">词库</p><label class="select"><select data-act="setRootBook" aria-label="词库">' + rootBookOptionsHtml(book) + '</select></label></div>' +
-      '<div><p class="label">每天学几个词根</p>' + chipsHtml('rootGoal', [5, 10, 20, 30].map((n) => [n, String(n)])) + '</div>' +
-      '</div>' +
-      '<h2 class="h1 section">今日任务</h2>' +
+      '<p class="label">词根 · ' + esc(rootBookName(book)) + ' 用到 ' + fmt(inBook.length) + ' 个词根词缀</p>' +
+      '<section class="hero' + (left <= 0 ? ' done' : '') + '">' +
+      '<div class="hero-main"><p class="label">今日词根</p>' +
+      '<h1 class="h1">' + title + '</h1><p class="sub">每组 ' + ROOT_GROUP + ' 个，过三步：根 → 义、义 → 根、填词根。</p>' +
+      '<div class="actions"><button class="btn big" data-act="startRootNew">' + (left > 0 ? '学新词根' : '再学一组') + ' <kbd>Enter</kbd></button></div></div>' +
+      ringHtml(learned, s.rootGoal, '词根') +
+      '</section>' +
       '<div class="tasks">' +
-      '<div class="task"><p class="label">新词根</p>' +
-      '<div class="num">' + fmt(learned) + '<small> / ' + fmt(s.rootGoal) + '</small></div>' +
-      '<div class="bar"><i style="width:' + pct(learned, s.rootGoal) + '%"></i></div>' +
-      '<p class="muted">' + (left > 0 ? '还差 ' + left + ' 个 · ' + esc(rootBookName(book)) : '今天的目标完成了') + '</p>' +
-      '<button class="btn" data-act="startRootNew">' + (left > 0 ? '学新词根' : '再学一组') + ' <kbd>Enter</kbd></button></div>' +
       '<div class="task"><p class="label">复习</p>' +
       '<div class="num">' + fmt(rv.done) + '<small> / ' + fmt(rvTotal) + '</small></div>' +
       '<div class="bar"><i style="width:' + pct(rv.done, rvTotal) + '%"></i></div>' +
       '<p class="muted">昨天的新词根和答错过的词根</p>' +
       '<button class="btn ghost" data-act="startRootReview"' + (rv.remaining.length ? '' : ' disabled') + '>' + (rv.remaining.length ? '开始复习 <kbd>R</kbd>' : rvTotal ? '复习完了' : '今天没有要复习的词根') + '</button></div>' +
+      '<div class="task"><p class="label">学什么</p>' +
+      '<div class="pref"><span class="t">词库</span><label class="select"><select data-act="setRootBook" aria-label="词库">' + rootBookOptionsHtml(book) + '</select></label></div>' +
+      '<div class="pref"><span class="t">每天学几个词根</span>' + chipsHtml('rootGoal', [5, 10, 20, 30].map((n) => [n, String(n)])) + '</div>' +
+      '<div class="bar wide"><i style="width:' + pct(studied, inBook.length) + '%"></i></div>' +
+      '<p class="muted">这个词库用到的词根已学 ' + fmt(studied) + ' / ' + fmt(inBook.length) + '</p></div>' +
       '</div>' +
       '<div class="section"><h2 class="h2">查词根</h2>' +
       '<div class="chips" style="margin-top:20px">' +
@@ -2207,7 +2295,7 @@
   // ---------- 词根练习 ----------
 
   function rootStepsHtml(rs) {
-    return ROOT_STAGES.map((k, i) => '<span class="step' + (i === rs.stage ? ' on' : i < rs.stage ? ' done' : '') + '">' + (i + 1) + ' ' + ROOT_MODES[k].name + '</span>').join('');
+    return ROOT_STAGES.map((k, i) => '<span class="step' + (i === rs.stage ? ' on' : i < rs.stage ? ' done' : '') + '">' + (i + 1) + ' ' + ROOT_MODES[k].name + (i === rs.stage && rs.attempt > 1 ? ' · 第 ' + rs.attempt + ' 遍' : '') + '</span>').join('');
   }
 
   // 答完以后显示：词根、来源，再列几个这个词库里的词
@@ -2248,21 +2336,26 @@
   }
 
   function rootQuizResultHtml(rs) {
-    const all = [].concat(...rs.stageResults.filter(Boolean));
+    const all = rootAll(rs);
     const right = all.filter((x) => x.ok).length;
     const stageLine = ROOT_STAGES.map((k, i) => {
-      const res = rs.stageResults[i];
-      return '<div><div class="num">' + (res && res.length ? res.filter((x) => x.ok).length + '<small> / ' + res.length + '</small>' : '—') + '</div><div class="cap">' + (i + 1) + ' · ' + ROOT_MODES[k].name + '</div></div>';
+      const res = rootStageAll(rs, i);
+      const reps = rs.retries.filter((x) => x.stage === i).length;
+      return '<div><div class="num">' + (res.length ? res.filter((x) => x.ok).length + '<small> / ' + res.length + '</small>' : '—') + '</div><div class="cap">' + (i + 1) + ' · ' + ROOT_MODES[k].name + (reps ? ' · 重来 ' + reps + ' 遍' : '') + '</div></div>';
     }).join('');
     const mark = (r, i) => {
-      const x = (rs.stageResults[i] || []).find((y) => y.r === r);
-      return '<span class="mk" title="' + ROOT_MODES[ROOT_STAGES[i]].name + '">' + (!x ? '·' : x.ok ? ICON_OK : ICON_BAD) + '</span>';
+      const xs = rootStageAll(rs, i).filter((y) => y.r === r);
+      const v = !xs.length ? null : xs.every((y) => y.ok);
+      return '<span class="mk' + (v === true ? ' ok' : v === false ? ' bad' : '') + '" title="' + ROOT_MODES[ROOT_STAGES[i]].name + '">' + (v === null ? '·' : v ? ICON_OK : ICON_BAD) + '</span>';
     };
     const next = rootNextLabel(rs);
     return (
       '<main class="page rq">' +
+      '<section class="result-hero' + (all.length && right === all.length ? ' perfect' : '') + '">' + (all.length && right === all.length ? BURST : '') +
       '<p class="label">' + (rs.ended ? '提前结束' : '本组结束') + ' · ' + esc(rootBookName(rs.book)) + '</p>' +
       '<div class="score">' + right + '<small> / ' + all.length + '</small></div>' +
+      '<p class="rate">正确率 ' + (all.length ? Math.round((right / all.length) * 100) : 0) + '%</p>' +
+      '</section>' +
       '<div class="today stage-line">' + stageLine + '</div>' +
       '<div class="section"><div class="head-row"><p class="label">这一组的词根</p><span class="muted">右边三个标记依次是 根→义、义→根、填词根</span></div>' +
       rs.roots
@@ -2291,12 +2384,25 @@
       '<div class="p-top"><span class="steps">' + rootStepsHtml(rs) + '<span class="book">' + esc(rootBookName(rs.book)) + '</span></span>' +
       '<span class="right"><span>' + (rs.between ? rs.items.length : rs.idx + 1) + ' / ' + rs.items.length + '</span><button class="link" data-act="rootQuit">结束 Esc</button></span></div>' +
       '<div class="bar"><i style="width:' + Math.min(100, (done / (total || 1)) * 100) + '%"></i></div>';
+    if (rs.between && rs.repeat) {
+      const right = rs.results.filter((x) => x.ok).length;
+      return (
+        '<main class="page rq">' + top +
+        '<section class="card"><div class="inner anim"><div class="stage-done again">' +
+        '<p class="label">第 ' + (rs.stage + 1) + ' 步 · ' + ROOT_MODES[rs.mode].name + (rs.attempt > 1 ? ' · 第 ' + rs.attempt + ' 遍' : '') + '</p>' +
+        '<div class="stage-score">' + right + '<small> / ' + rs.results.length + '</small></div>' +
+        '<p class="muted">错了 ' + (rs.results.length - right) + ' 个。已开启强制全对，这一步整组再来一遍，全对才进入下一步。</p>' +
+        '<div class="actions"><button class="btn" data-act="rootNext">再来一遍 <kbd>Enter</kbd></button></div>' +
+        '</div></div></section></main>'
+      );
+    }
     if (rs.between) {
       const right = rs.results.filter((x) => x.ok).length;
       const next = ROOT_MODES[ROOT_STAGES[nextRootStage(rs, rs.stage + 1)]];
+      const perfect = right === rs.results.length;
       return (
         '<main class="page rq">' + top +
-        '<section class="card"><div class="inner anim"><div class="stage-done">' +
+        '<section class="card"><div class="inner anim"><div class="stage-done' + (perfect ? ' perfect' : '') + '">' + (perfect ? BURST : '') +
         '<p class="label">第 ' + (rs.stage + 1) + ' 步完成 · ' + ROOT_MODES[rs.mode].name + '</p>' +
         '<div class="stage-score">' + right + '<small> / ' + rs.results.length + '</small></div>' +
         '<p class="muted">下一步：' + next.name + ' · ' + next.desc + '</p>' +
