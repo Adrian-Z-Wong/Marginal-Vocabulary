@@ -1246,6 +1246,9 @@ textarea.paste:focus { outline: none; border-color: var(--accent); box-shadow: 0
   .focus-chip .fc-t { font-size: 13px; }
 }
 
+.shop-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 16px; }
+.shop-tabs .chip { padding: 7px 18px; }
+
 /* ---------- 专注种树 ---------- */
 
 .tree-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(1px 0 0 var(--pet-line)) drop-shadow(-1px 0 0 var(--pet-line)) drop-shadow(0 1px 0 var(--pet-line)) drop-shadow(0 -1px 0 var(--pet-line)); }
@@ -3034,13 +3037,13 @@ window.MARGIN_PETS = {
       ['roots', '词根'],
       ['books', '词库'],
       ['wrong', '错题本' + (wrongN ? '<sup>' + wrongN + '</sup>' : '')],
-      ['pet', '宠物' + (state.pet.status === 'alive' && fedToday() < PTS.full ? '<i class="dot" title="今天还没喂饱"></i>' : '')],
+      ['shop', '商店' + (state.pet.status === 'alive' && fedToday() < PTS.full ? '<i class="dot" title="宠物今天还没喂饱"></i>' : '')],
       ['settings', '设置'],
     ];
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots' }[ui.view] || ui.view;
     return (
       '<header class="top"><button class="brand" data-act="nav" data-view="home"><span class="brand-mark">' + ICON_SPARK + '</span>Marginal Vocabulary</button>' +
-      '<div class="top-r">' + focusChipHtml() + '<button class="pts" data-act="nav" data-view="pet" title="积分 · Lv ' + levelOf(state.points.earned) + '"><span class="pts-ic"></span>' + fmt(state.points.bal) + '</button><nav class="nav">' +
+      '<div class="top-r">' + focusChipHtml() + '<button class="pts" data-act="nav" data-view="shop" title="积分 · Lv ' + levelOf(state.points.earned) + '"><span class="pts-ic"></span>' + fmt(state.points.bal) + '</button><nav class="nav">' +
       nav.map(([v, label]) => '<button data-act="nav" data-view="' + v + '" class="' + (active === v ? 'on' : '') + '">' + label + '</button>').join('') +
       '</nav></div></header>'
     );
@@ -3592,7 +3595,7 @@ window.MARGIN_PETS = {
       '<div class="set-row"><div><div class="t">字母个数提示</div></div><div>' + chipsHtml('letterHint', [[true, '显示'], [false, '不显示']]) +
       '<div class="d">拼写题下面显示 _ _ _ _，提示单词有几个字母。</div></div></div>' +
       '<div class="set-row"><div><div class="t">宠物在页面上走动</div></div><div>' + chipsHtml('petRoam', [[true, '开'], [false, '关']]) +
-      '<div class="d">领养宠物后，它会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在「宠物」页出现，每天照样要喂。</div></div></div>' +
+      '<div class="d">领养宠物后，它会在页面上走来走去、在关键时刻说话（英文）。点空白处它会走过去，点它会说话。关掉后它只在「商店 → 宠物」里出现，每天照样要喂。</div></div></div>' +
       '<div class="set-row"><div><div class="t">外观</div></div><div>' + chipsHtml('theme', [['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']]) + '</div></div>' +
       '<div class="set-row"><div><div class="t">字体粗细</div></div><div>' + chipsHtml('weight', [['light', '细'], ['normal', '标准'], ['bold', '粗']]) +
       '<div class="d">仿宋本身笔画比较细，觉得还是细就选「粗」。</div></div></div>' +
@@ -4213,7 +4216,7 @@ window.MARGIN_PETS = {
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.3.0';
+  const APP_VERSION = '0.3.1';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -4275,6 +4278,14 @@ window.MARGIN_PETS = {
     if (ui.view !== 'practice' && ui.view !== 'rootquiz') render();
   }
 
+  // Mac 应用菜单里的「Check for Updates…」会调用这个
+  window.__marginCheckUpdate = function () {
+    checkUpdate(true).then(() => {
+      const u = ui.update;
+      if (u && u.show && (ui.view === 'practice' || ui.view === 'rootquiz')) toast('发现新版本 ' + u.latest + '，这一组背完后会提示更新');
+    });
+  };
+
   // 每天打开时自动查一次
   function autoCheckUpdate() {
     if (window.__MARGIN_TEST && !window.__MARGIN_TEST_UPDATE) return;
@@ -4303,6 +4314,11 @@ window.MARGIN_PETS = {
     u.error = '';
     render();
     try {
+      // 进度存在应用的数据文件夹里，换掉应用本身不会动到它；保险起见，更新前再单独存一份备份
+      save();
+      await window.__TAURI__.core.invoke('save_update_backup', {
+        contents: JSON.stringify({ app: 'Marginal Vocabulary', v: 1, exported: new Date().toISOString(), version: APP_VERSION, data: state }),
+      });
       await window.__TAURI__.core.invoke('install_update', { url: u.url });
       u.installing = false;
       u.installed = true;
@@ -4354,7 +4370,7 @@ window.MARGIN_PETS = {
             ? '有新版本 ' + u.latest
             : '';
     const desc = DESKTOP
-      ? '每天打开时自动检查一次。有新版本时直接在应用里下载安装，装好后重新打开就是新版本，进度不受影响。'
+      ? '每天打开时自动检查一次，也可以在菜单「Marginal Vocabulary → Check for Updates…」里检查。有新版本时直接在应用里下载安装：新版本替换旧版本，不会留下多个版本；背诵进度存在应用的数据文件夹里，不受影响，更新前还会自动备份一份。'
       : ONLINE
         ? '在线版每次打开都是最新版本；如果页面开着时发布了新版本，这里会提示刷新。'
         : '下载到电脑的网页文件不能自己更新；有新版本时会提示，到下载页面再下载一次即可（先导出备份）。';
@@ -4815,7 +4831,7 @@ window.MARGIN_PETS = {
     if (!n) return;
     save();
     if (n === 1) toast('解锁成就「' + last.name + '」 +' + last.reward);
-    else toast('解锁 ' + n + ' 个成就 +' + sum + (quiet ? '，到「宠物」页看看' : ''));
+    else toast('解锁 ' + n + ' 个成就 +' + sum + (quiet ? '，到「商店 → 挑战与成就」看看' : ''));
   }
 
   // 种活的树一共几棵
@@ -5121,7 +5137,7 @@ window.MARGIN_PETS = {
       '<div class="chips">' + FOCUS_OPTS.map((x) => '<button class="chip' + (x[0] === o[0] ? ' on' : '') + '" data-act="focusMin" data-min="' + x[0] + '">' + x[0] + ' 分钟</button>').join('') + '</div>' +
       '<p class="muted small">' + o[0] + ' 分钟内至少答 ' + o[1] + ' 题，种活 +' + o[2] + ' 积分</p>' +
       '<div class="tree-pick">' + open.map((t) => '<button class="tp' + (t.id === pick ? ' on' : '') + '" data-act="pickTree" data-id="' + t.id + '" title="' + t.name + '">' + treeSvg(t.id) + '</button>').join('') +
-      (open.length < TREES.size ? '<button class="link" data-act="nav" data-view="pet">解锁更多树种</button>' : '') + '</div>' +
+      (open.length < TREES.size ? '<button class="link" data-act="openShop" data-tab="forest">解锁更多树种</button>' : '') + '</div>' +
       '<div class="actions"><button class="btn" data-act="startFocus">开始种树</button></div></div></section>'
     );
   }
@@ -5136,7 +5152,7 @@ window.MARGIN_PETS = {
   const roam = { x: null, y: null, tx: 0, ty: 0, moving: false, last: 0, lastAct: Date.now(), sleeping: false, bubbleTimer: 0, hungryAt: 0 };
 
   function petShown() {
-    return petAlive() && state.settings.petRoam !== false && ui.view !== 'pet';
+    return petAlive() && state.settings.petRoam !== false && !onPetTab();
   }
 
   function petEl() {
@@ -5218,7 +5234,7 @@ window.MARGIN_PETS = {
   function petSay(kind, vars) {
     const text = petLine(kind, vars);
     if (!text) return;
-    const box = ui.view === 'pet' ? document.querySelector('.pet-stage') : petShown() ? petEl() : null;
+    const box = onPetTab() ? document.querySelector('.pet-stage') : petShown() ? petEl() : null;
     if (!box) return;
     const b = box.querySelector('.pet-bubble');
     if (!b) return;
@@ -5361,7 +5377,26 @@ window.MARGIN_PETS = {
     }
   }, 1000);
 
-  // ---------- 宠物页 ----------
+  // ---------- 商店 ----------
+  // 积分能换的东西都放在这里，分几栏；以后加新东西就多加一栏
+
+  const SHOP_TABS = [
+    ['pet', '宠物'],
+    ['forest', '森林'],
+    ['wardrobe', '衣柜'],
+    ['goals', '挑战与成就'],
+    ['rules', '积分规则'],
+  ];
+
+  function shopTab() {
+    return SHOP_TABS.some((t) => t[0] === ui.shopTab) ? ui.shopTab : 'pet';
+  }
+
+  // 商店的「宠物」栏里有一只大的，页面上走动的那只就先藏起来
+  function onPetTab() {
+    return ui.view === 'shop' && shopTab() === 'pet';
+  }
+
 
   function speciesPrice(id) {
     return SPECIES_PRICE[id] || 0;
@@ -5545,31 +5580,41 @@ window.MARGIN_PETS = {
     );
   }
 
-  VIEWS.pet = function () {
-    petCheckDeath();
+  function rulesHtml() {
     return (
-      '<main class="page">' +
-      '<h1 class="h1">宠物</h1><p class="sub">背单词攒积分：领养宠物、每天喂饱它、解锁新品种，给它买装扮。</p>' +
-      pointsPanelHtml() +
-      petPanelHtml() +
-      challengesHtml(false) +
-      forestHtml() +
-      shopHtml() +
-      achievementsHtml() +
-      '<section class="panel rules"><h2 class="h2">积分怎么来</h2><ul>' +
+      '<section class="panel rules"><h2 class="h2">积分怎么来、怎么花</h2><ul>' +
       '<li>答对一题 +' + PTS.right + '，每连对 5 题再 +' + PTS.combo + '</li>' +
       '<li>背完一组新词：组里有几个词就 +几；全对再 +' + PTS.perfect + '</li>' +
       '<li>学完一组词根 +' + PTS.rootDone + '，全对再 +' + PTS.rootPerfect + '</li>' +
       '<li>完成每日新词目标 +' + PTS.goal + '，每日词根目标 +' + PTS.rootGoal + '；每日挑战和成就另有奖励</li>' +
       '<li>专注种树：' + FOCUS_OPTS.map((o) => o[0] + ' 分钟答够 ' + o[1] + ' 题 +' + o[2]).join('，') + '</li>' +
       '<li>第一次答错一个词不扣分；以前错过的词再答错 −' + PTS.again + '</li>' +
-      '<li>领养 ' + PTS.adopt + '；每天喂饱大约 ' + FOODS[1].price + '；解锁宠物品种、树种和装扮另算</li>' +
-      '</ul></section>' +
+      '<li>领养宠物 ' + PTS.adopt + '；每天喂饱大约 ' + FOODS[1].price + '；解锁宠物品种、树种和装扮另算</li>' +
+      '</ul></section>'
+    );
+  }
+
+  VIEWS.shop = function () {
+    petCheckDeath();
+    const tab = shopTab();
+    const body = {
+      pet: () => petPanelHtml(),
+      forest: () => '<section class="panel"><div class="head-row"><h2 class="h2">今天的花园</h2><span class="muted">专注种的树长在这里，枯萎的也留着</span></div>' + gardenHtml(todayKey(), false) + '</section>' + forestHtml(),
+      wardrobe: () => shopHtml(),
+      goals: () => challengesHtml(false) + achievementsHtml(),
+      rules: () => rulesHtml(),
+    }[tab]();
+    return (
+      '<main class="page">' +
+      '<h1 class="h1">商店</h1><p class="sub">用背单词攒的积分领养宠物、解锁树种、给宠物买装扮。</p>' +
+      pointsPanelHtml() +
+      '<div class="shop-tabs">' + SHOP_TABS.map(([id, label]) => '<button class="chip' + (id === tab ? ' on' : '') + '" data-act="openShop" data-tab="' + id + '">' + label + '</button>').join('') + '</div>' +
+      body +
       '</main>'
     );
   };
 
-  AFTER.pet = function () {
+  AFTER.shop = function () {
     if (ui.petDied) {
       ui.petDied = false;
       const g = state.pet.graves[state.pet.graves.length - 1];
@@ -5578,6 +5623,11 @@ window.MARGIN_PETS = {
   };
 
   Object.assign(ACTIONS, {
+    openShop(t) {
+      ui.shopTab = t.dataset.tab;
+      if (ui.view !== 'shop') go('shop');
+      else render();
+    },
     startFocus() {
       startFocus();
     },
@@ -5872,7 +5922,7 @@ window.MARGIN_PETS = {
   else if (state.pet.status === 'dead' && ui.petDied) {
     ui.petDied = false;
     const g = state.pet.graves[state.pet.graves.length - 1];
-    if (g) setTimeout(() => toast(g.name + ' 饿死了……到「宠物」页可以再领养一只'), 800);
+    if (g) setTimeout(() => toast(g.name + ' 饿死了……到「商店 → 宠物」可以再领养一只'), 800);
   }
   autoCheckUpdate();
 })();
