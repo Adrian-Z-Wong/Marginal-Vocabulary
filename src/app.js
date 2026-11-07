@@ -2528,7 +2528,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.6.2';
+  const APP_VERSION = '0.6.3';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);

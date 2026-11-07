@@ -1,93 +1,46 @@
-// 斜 45° 俯视（等距视角）的城市：地面是一格格菱形，街道斜着穿过画面，楼房看得到两面墙和屋顶。
+// 斜 45° 俯视（等距视角）的城市：街道斜着穿过画面，楼房看得到两面墙和屋顶。
 // 小偷沿着一条台阶形的路线跑：往右上、往右下拐来拐去，一直跑到他的仓库。
-// 地面（草地、马路、人行道、斑马线、公园、停车场）开局画成一张大图；楼、树、路边的车各自先画好，
-// 每帧按前后顺序和警车、小偷一起画，前面的楼挡住后面的人。
+// 地面（马路、人行道、斑马线、公园、停车场、影子）每帧只画画面里的那一块；
+// 楼画成和屏幕一样精细的小图存起来，树、车、路灯每帧直接画；按前后顺序和警车、小偷一起画。
 
-import { shade } from './sprites';
+import { Ctx, G, TH, TW, TimeOfDay, grade, ix, iy, rgba, rng, shade } from './geo';
+import { BASE, BRICKS, Bld, CarKind, GLASS, Style, WALLS, bldBounds, drawCar, drawHydrant, drawLamp, drawTree, renderBuilding } from './paint';
 
-export type Ctx = CanvasRenderingContext2D;
-export type TimeOfDay = 'day' | 'dusk' | 'night';
+export type { G, TimeOfDay } from './geo';
+export { TH, TW, timeOfDay } from './geo';
 
-export function timeOfDay(d = new Date()): TimeOfDay {
-  const h = d.getHours() + d.getMinutes() / 60;
-  if (h >= 7 && h < 17) return 'day';
-  if ((h >= 17 && h < 19.5) || (h >= 5.5 && h < 7)) return 'dusk';
-  return 'night';
-}
-
-/** 一格的宽和高（菱形） */
-export const TW = 32;
-export const TH = 16;
 const ROAD = 2; // 路宽（格）
 const BLOCK = 8; // 一块地的宽（含一圈人行道）
 export const PITCH = ROAD + BLOCK;
 const MAX_H = 64; // 最高的楼有多高（像素）
 
-interface Pal {
-  grass: string;
-  grassD: string;
-  road: string;
-  roadD: string;
-  walk: string;
-  walkD: string;
-  lane: string;
-  zebra: string;
-  walls: string[];
-  window: string;
-  lit: string;
-  litRate: number;
-  tree: [string, string];
-  water: string;
-}
-
-const PAL: Record<TimeOfDay, Pal> = {
-  day: {
-    grass: '#86bd68', grassD: '#78ae5c', road: '#5b616c', roadD: '#535862', walk: '#dcd3c3', walkD: '#c8bdaa', lane: '#f2d977', zebra: '#f2eee6',
-    walls: ['#e3a982', '#e8cf9a', '#9fc3b6', '#b8bad6', '#d9c3ac', '#c98f78', '#a7b8c9', '#efe2c9'], window: '#9fcbe3', lit: '#ffe39a', litRate: 0,
-    tree: ['#5fa54c', '#3e7f3a'], water: '#62a6d6',
-  },
-  dusk: {
-    grass: '#719a58', grassD: '#658d4d', road: '#4c4e5a', roadD: '#45474f', walk: '#c9b8a8', walkD: '#b3a493', lane: '#e8c67a', zebra: '#e6ddd0',
-    walls: ['#c48268', '#cfae82', '#7f9f97', '#9a99b6', '#bba18e', '#a9705e', '#8796a6', '#d6c4a8'], window: '#5e6c86', lit: '#ffd27a', litRate: 0.4,
-    tree: ['#4f8445', '#386536'], water: '#5a7fb3',
-  },
-  night: {
-    grass: '#3e5a45', grassD: '#38513e', road: '#30323c', roadD: '#2b2d36', walk: '#6e6c78', walkD: '#62606c', lane: '#b49d62', zebra: '#9f9da8',
-    walls: ['#5b4a58', '#635c6c', '#41595d', '#4f4f6b', '#5d525c', '#4c424c', '#465264', '#6a5f62'], window: '#2b3248', lit: '#ffd27a', litRate: 0.5,
-    tree: ['#35593f', '#284634'], water: '#2c4670',
-  },
-};
-
-function rng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export interface G {
-  gx: number;
-  gy: number;
-}
-
-/** 地图上的一样东西：楼、树、路边的车。按 depth 从小到大画（越大越靠前） */
+/** 地图上的一样东西：楼、树、车、路灯。按 depth 从小到大画（越大越靠前） */
 export interface Thing {
-  img: HTMLCanvasElement;
-  x: number; // 在大地图上的位置（左上角）
+  /** 画出来占的范围（大地图上的像素），画面外的不画 */
+  x: number;
   y: number;
+  w: number;
+  h: number;
   depth: number;
   /** 占地的最远角（格子坐标）：人在这两条线以外，就在这样东西前面 */
   mx: number;
   my: number;
   g?: G;
   car?: boolean;
+  /** 楼的轮廓（大地图上的像素），用来判断人是不是被楼挡住 */
+  sil?: [number, number][];
+  /** 画在大地图坐标上；S 是现在一个像素放大多少倍 */
+  draw: (c: Ctx, S: number) => void;
 }
 
-const CAR_COLORS = ['#c94a3f', '#3f6fc9', '#e6c34a', '#6d8b5a', '#e8e4dc', '#3a3d47', '#8a5ab0', '#e08a3c'];
+interface Block {
+  x0: number; // 人行道外沿（格子坐标）
+  y0: number;
+  kind: 'build' | 'park' | 'parking' | 'plaza';
+  seed: number;
+}
+
+const CAR_COLORS = ['#c94a3f', '#3f6fc9', '#e8e4dc', '#3a3d47', '#6d8b5a', '#8a5ab0', '#e08a3c', '#9aa5b1'];
 
 export class IsoCity {
   readonly tod: TimeOfDay;
@@ -97,7 +50,6 @@ export class IsoCity {
   readonly height: number;
   readonly ox: number;
   readonly oy: number;
-  readonly ground: HTMLCanvasElement;
   readonly things: Thing[] = [];
   readonly lamps: G[] = [];
   /** 路线（格子坐标，拐角已磨圆） */
@@ -107,11 +59,17 @@ export class IsoCity {
   readonly hideout: G; // 仓库门口
   readonly house: { gx: number; gy: number; w: number; d: number }; // 仓库占的地
   private readonly rand: () => number;
-  private readonly P: Pal;
+  private readonly blocks: Block[] = [];
+  private readonly blds: Bld[] = [];
+  private readonly treeAt: { g: G; size: number; grate: boolean }[] = [];
+  private grain: CanvasPattern | null = null;
+  private grainS = 0;
+  /** 画好的楼（太多了就把很久没用的扔掉） */
+  private sprites = new Map<Bld, { img: HTMLCanvasElement; S: number; used: number }>();
+  private frame = 0;
 
   constructor(seed: number, wantCells: number, tod: TimeOfDay) {
     this.tod = tod;
-    this.P = PAL[tod];
     this.rand = rng(seed);
     const R = this.rand;
     // 路口：往右下（+gx）或者往右上（-gy）走，台阶一样拐来拐去
@@ -163,10 +121,10 @@ export class IsoCity {
     this.length = s;
     // 屏幕坐标：sx = (gx − gy)·TW/2 + ox，sy = (gx + gy)·TH/2 + oy
     this.ox = this.gh * (TW / 2);
-    this.oy = MAX_H + 20;
+    this.oy = MAX_H + 30;
     this.width = (this.gw + this.gh) * (TW / 2);
     this.height = (this.gw + this.gh) * (TH / 2) + this.oy + 10;
-    this.ground = this.drawGround();
+    this.layout();
   }
 
   /** 格子坐标 → 大地图上的像素 */
@@ -175,6 +133,9 @@ export class IsoCity {
   }
   sy(g: G): number {
     return (g.gx + g.gy) * (TH / 2) + this.oy;
+  }
+  private X(gx: number, gy: number, up = 0): [number, number] {
+    return [ix(gx, gy) + this.ox, iy(gx, gy) + this.oy - up];
   }
 
   /** 路线上离起点 s 格的那一点和方向 */
@@ -197,99 +158,45 @@ export class IsoCity {
     return { gx: p[lo].gx + dx * t, gy: p[lo].gy + dy * t, dir: { gx: dx / len, gy: dy / len } };
   }
 
-  // ---------------- 地面 ----------------
+  // ---------------- 摆东西 ----------------
 
-  private cellKind(gx: number, gy: number): 'road' | 'walk' | 'block' {
-    const mx = ((gx % PITCH) + PITCH) % PITCH;
-    const my = ((gy % PITCH) + PITCH) % PITCH;
-    if (mx < ROAD || my < ROAD) return 'road';
-    if (mx === ROAD || my === ROAD || mx === PITCH - 1 || my === PITCH - 1) return 'walk';
-    return 'block';
-  }
-
-  private diamond(c: Ctx, gx: number, gy: number, w: number, h: number, color: string): void {
-    // 从格子 (gx, gy) 开始、宽 w 格、深 h 格的一块地
-    const a = { gx, gy };
-    const b = { gx: gx + w, gy };
-    const cc = { gx: gx + w, gy: gy + h };
-    const d = { gx, gy: gy + h };
-    c.fillStyle = color;
-    c.beginPath();
-    c.moveTo(this.sx(a), this.sy(a));
-    c.lineTo(this.sx(b), this.sy(b));
-    c.lineTo(this.sx(cc), this.sy(cc));
-    c.lineTo(this.sx(d), this.sy(d));
-    c.closePath();
-    c.fill();
-  }
-
-  private drawGround(): HTMLCanvasElement {
-    const cv = document.createElement('canvas');
-    cv.width = this.width;
-    cv.height = this.height;
-    const c = cv.getContext('2d') as Ctx;
-    const P = this.P;
+  private layout(): void {
     const R = this.rand;
-    c.fillStyle = '#2b2e38';
-    c.fillRect(0, 0, this.width, this.height);
-    // 一格一格铺地
-    for (let gy = 0; gy < this.gh; gy++) {
-      for (let gx = 0; gx < this.gw; gx++) {
-        const k = this.cellKind(gx, gy);
-        const col = k === 'road' ? ((gx + gy) % 7 === 0 ? P.roadD : P.road) : k === 'walk' ? ((gx + gy) % 2 ? P.walk : P.walkD) : (gx * 7 + gy * 13) % 5 === 0 ? P.grassD : P.grass;
-        this.diamond(c, gx, gy, 1, 1, col);
-      }
-    }
-    // 车道线和斑马线
-    c.lineWidth = 1;
-    for (let bx = 0; bx * PITCH < this.gw; bx++) {
-      for (let by = 0; by * PITCH < this.gh; by++) {
-        const x0 = bx * PITCH;
-        const y0 = by * PITCH;
-        // 沿 gx 方向的路（gy 在 y0..y0+2）中线虚线
-        for (let t = ROAD + 0.6; t < PITCH - 0.4; t += 1.2) this.dash(c, { gx: x0 + t, gy: y0 + 1 }, { gx: x0 + t + 0.55, gy: y0 + 1 }, P.lane);
-        // 沿 gy 方向的路
-        for (let t = ROAD + 0.6; t < PITCH - 0.4; t += 1.2) this.dash(c, { gx: x0 + 1, gy: y0 + t }, { gx: x0 + 1, gy: y0 + t + 0.55 }, P.lane);
-        // 斑马线：路口四边
-        for (let k = 0; k < 4; k++) {
-          const u = 0.15 + k * 0.45;
-          this.stripe(c, { gx: x0 + ROAD + 0.15, gy: y0 + u }, { gx: x0 + ROAD + 0.75, gy: y0 + u }, P.zebra);
-          this.stripe(c, { gx: x0 - 0.75, gy: y0 + u }, { gx: x0 - 0.15, gy: y0 + u }, P.zebra);
-          this.stripe(c, { gx: x0 + u, gy: y0 + ROAD + 0.15 }, { gx: x0 + u, gy: y0 + ROAD + 0.75 }, P.zebra);
-          this.stripe(c, { gx: x0 + u, gy: y0 - 0.75 }, { gx: x0 + u, gy: y0 - 0.15 }, P.zebra);
-        }
-        // 路灯：每个路口的北角
-        this.lamps.push({ gx: x0 + ROAD + 0.4, gy: y0 + ROAD + 0.4 });
-      }
-    }
-    // 每一块地：楼、公园或者停车场；仓库压着的地铺成空场
     const hs = this.house;
     const nearHouse = (gx: number, gy: number, w: number, d: number) => gx < hs.gx + hs.w + 1 && gx + w > hs.gx - 1 && gy < hs.gy + hs.d + 1 && gy + d > hs.gy - 1;
+    // 每一块地：楼、公园或者停车场；仓库压着的地铺成空场
     for (let bx = 0; bx * PITCH + ROAD < this.gw; bx++) {
       for (let by = 0; by * PITCH + ROAD < this.gh; by++) {
-        const x0 = bx * PITCH + ROAD + 1;
-        const y0 = by * PITCH + ROAD + 1;
-        if (x0 + 6 > this.gw || y0 + 6 > this.gh) continue;
-        if (nearHouse(x0 - 1, y0 - 1, 8, 8)) {
-          this.diamond(c, x0 - 1, y0 - 1, 8, 8, shade(P.walk, -0.1));
-          continue;
+        const x0 = bx * PITCH + ROAD;
+        const y0 = by * PITCH + ROAD;
+        if (x0 + 7 > this.gw || y0 + 7 > this.gh) continue;
+        const blk: Block = { x0, y0, kind: 'build', seed: Math.floor(R() * 1e9) };
+        if (nearHouse(x0, y0, 8, 8)) blk.kind = 'plaza';
+        else {
+          const r = R();
+          if (r < 0.16) blk.kind = 'park';
+          else if (r < 0.24) blk.kind = 'parking';
         }
-        const r = R();
-        if (r < 0.16) this.park(c, x0, y0);
-        else if (r < 0.24) this.parking(c, x0, y0);
-        else this.buildings(x0, y0);
+        this.blocks.push(blk);
+        if (blk.kind === 'build') this.buildings(x0 + 1, y0 + 1);
+        else if (blk.kind === 'park') this.park(x0 + 1, y0 + 1);
+        else if (blk.kind === 'parking') this.parking(x0 + 1, y0 + 1);
       }
     }
-    // 路边停的车、人行道上的树
+    // 路灯（每个路口的一角）、路边停的车、人行道上的树和消防栓
     for (let bx = 0; bx * PITCH < this.gw; bx++) {
       for (let by = 0; by * PITCH < this.gh; by++) {
         const x0 = bx * PITCH;
         const y0 = by * PITCH;
+        const lamp = { gx: x0 + ROAD + 0.35, gy: y0 + ROAD + 0.35 };
+        this.lamps.push(lamp);
+        if (!nearHouse(lamp.gx, lamp.gy, 0, 0)) this.addLamp(lamp);
         for (let t = ROAD + 1.5; t < PITCH - 1; t += 2.5 + R() * 2) {
-          if (R() < 0.3) this.parked({ gx: x0 + t, gy: y0 + (R() < 0.5 ? 0.35 : 1.65) }, 'x');
-          if (R() < 0.3) this.parked({ gx: x0 + (R() < 0.5 ? 0.35 : 1.65), gy: y0 + t }, 'y');
-          if (R() < 0.35) this.tree({ gx: x0 + t, gy: y0 + ROAD + 0.5 }, 0.8);
-          if (R() < 0.35) this.tree({ gx: x0 + ROAD + 0.5, gy: y0 + t }, 0.8);
+          if (R() < 0.3) this.parked({ gx: x0 + t, gy: y0 + (R() < 0.5 ? 0.42 : 1.58) }, { gx: R() < 0.5 ? 1 : -1, gy: 0 });
+          if (R() < 0.3) this.parked({ gx: x0 + (R() < 0.5 ? 0.42 : 1.58), gy: y0 + t }, { gx: 0, gy: R() < 0.5 ? 1 : -1 });
+          if (R() < 0.35) this.tree({ gx: x0 + t, gy: y0 + ROAD + 0.5 }, 0.8, true);
+          if (R() < 0.35) this.tree({ gx: x0 + ROAD + 0.5, gy: y0 + t }, 0.8, true);
+          if (R() < 0.08) this.hydrant({ gx: x0 + t + 0.6, gy: y0 + ROAD + 0.3 });
         }
       }
     }
@@ -299,32 +206,11 @@ export class IsoCity {
       const t = this.things[k];
       if (t.g && ((t.car && onRoute(t.g)) || nearHouse(t.g.gx, t.g.gy, 0, 0))) this.things.splice(k, 1);
     }
+    for (let k = this.treeAt.length - 1; k >= 0; k--) if (nearHouse(this.treeAt[k].g.gx, this.treeAt[k].g.gy, 0, 0)) this.treeAt.splice(k, 1);
     // 仓库：门开在朝 +gy 的那面墙（看得见的一面），正对路线
-    this.diamond(c, hs.gx - 0.6, hs.gy - 0.6, hs.w + 1.2, hs.d + 1.2, shade(P.road, 0.04));
-    this.box(hs.gx, hs.gy, hs.w, hs.d, 34, { wall: '#6a5f70', roof: '#4a4152', door: { gx: this.hideout.gx, gy: hs.gy + hs.d }, sign: true });
+    this.addBld({ x: hs.gx, y: hs.gy, w: hs.w, d: hs.d, h: 36, style: 'warehouse', wall: '#6c6377', seed: Math.floor(R() * 1e9), door: { gx: this.hideout.gx, gy: hs.gy + hs.d } });
     this.things.sort((a, b) => a.depth - b.depth);
-    return cv;
   }
-
-  private dash(c: Ctx, a: G, b: G, color: string): void {
-    c.strokeStyle = color;
-    c.beginPath();
-    c.moveTo(this.sx(a), this.sy(a));
-    c.lineTo(this.sx(b), this.sy(b));
-    c.stroke();
-  }
-
-  private stripe(c: Ctx, a: G, b: G, color: string): void {
-    c.strokeStyle = color;
-    c.lineWidth = 2;
-    c.beginPath();
-    c.moveTo(this.sx(a), this.sy(a));
-    c.lineTo(this.sx(b), this.sy(b));
-    c.stroke();
-    c.lineWidth = 1;
-  }
-
-  // ---------------- 楼 ----------------
 
   /** 一块地（6 × 6 格）切成 1–4 栋楼 */
   private buildings(x0: number, y0: number): void {
@@ -340,256 +226,452 @@ export class IsoCity {
       lots.push([x0 + 0.3, y0 + 0.3, 2.6, 2.6], [x0 + 3.1, y0 + 0.3, 2.6, 2.6], [x0 + 0.3, y0 + 3.1, 2.6, 2.6], [x0 + 3.1, y0 + 3.1, 2.6, 2.6]);
     }
     for (const [x, y, w, d] of lots) {
-      const big = w * d;
-      const h = Math.round((big > 10 ? 26 : 18) + R() * (big > 10 ? 38 : 28));
-      this.box(x, y, w, d, Math.min(MAX_H, h));
+      const big = w * d > 10;
+      const r = R();
+      const style: Style = big ? (r < 0.4 ? 'office' : r < 0.7 ? 'apt' : 'brick') : r < 0.4 ? 'shop' : r < 0.75 ? 'apt' : 'brick';
+      let h = (big ? 24 : 18) + R() * (big ? 32 : 22);
+      if (style === 'office') h += 8;
+      if (style === 'shop') h = Math.min(h, 30);
+      const wall = style === 'brick' ? BRICKS[Math.floor(R() * BRICKS.length)] : style === 'office' ? GLASS[Math.floor(R() * GLASS.length)] : WALLS[Math.floor(R() * WALLS.length)];
+      this.addBld({ x, y, w, d, h: Math.round(Math.min(MAX_H, h)), style, wall, seed: Math.floor(R() * 1e9) });
     }
   }
 
-  /** 一栋楼：两面墙（带窗户）+ 屋顶，画成一张小图 */
-  private box(x: number, y: number, w: number, d: number, h: number, opt?: { wall?: string; roof?: string; door?: G; sign?: boolean }): void {
-    const R = this.rand;
-    const P = this.P;
-    const wall = opt?.wall || P.walls[Math.floor(R() * P.walls.length)];
-    const roof = opt?.roof || shade(wall, -0.18);
-    // 四个底角的屏幕坐标（相对于这张小图）
-    const A = { gx: x, gy: y };
-    const B = { gx: x + w, gy: y };
-    const C = { gx: x + w, gy: y + d };
-    const D = { gx: x, gy: y + d };
-    const xs = [A, B, C, D].map((g) => this.sx(g));
-    const ys = [A, B, C, D].map((g) => this.sy(g));
-    const left = Math.floor(Math.min(...xs)) - 2;
-    const top = Math.floor(Math.min(...ys)) - h - 2;
-    const W = Math.ceil(Math.max(...xs)) - left + 6;
-    const H = Math.ceil(Math.max(...ys)) - top + 6;
-    const cv = document.createElement('canvas');
-    cv.width = W;
-    cv.height = H;
-    const c = cv.getContext('2d') as Ctx;
-    const p = (g: G, up = 0): [number, number] => [this.sx(g) - left, this.sy(g) - top - up];
-    const poly = (pts: [number, number][], color: string) => {
-      c.fillStyle = color;
-      c.beginPath();
-      pts.forEach(([a, b], k) => (k ? c.lineTo(a, b) : c.moveTo(a, b)));
-      c.closePath();
-      c.fill();
-    };
-    // 影子（往右下落在地上）
-    poly([p(B), p({ gx: B.gx + 0.9, gy: B.gy + 0.2 }), p({ gx: C.gx + 0.9, gy: C.gy + 0.4 }), p({ gx: D.gx + 0.3, gy: D.gy + 0.4 }), p(D), p(C)], 'rgba(15,15,30,.22)');
-    // 右面墙（朝 +gx）：中间色；左面墙（朝 +gy）：暗一点
-    const rightWall = shade(wall, -0.08);
-    const leftWall = shade(wall, -0.28);
-    poly([p(B), p(C), p(C, h), p(B, h)], rightWall);
-    poly([p(D), p(C), p(C, h), p(D, h)], leftWall);
-    // 窗户：每层一排
-    const floors = Math.max(1, Math.floor((h - 6) / 9));
-    const lit = (k: number) => R() < P.litRate || k < 0;
-    const winOn = (g0: G, g1: G, base: string) => {
-      const len = Math.hypot(g1.gx - g0.gx, g1.gy - g0.gy);
-      const cols = Math.max(1, Math.floor(len / 0.62));
-      for (let f = 0; f < floors; f++) {
-        for (let k = 0; k < cols; k++) {
-          const t = (k + 0.5) / cols;
-          const g = { gx: g0.gx + (g1.gx - g0.gx) * t, gy: g0.gy + (g1.gy - g0.gy) * t };
-          const [wx, wy] = p(g, 6 + f * 9);
-          c.fillStyle = lit(0) ? P.lit : base;
-          c.fillRect(Math.round(wx) - 1, Math.round(wy) - 4, 3, 4);
+  private addBld(b: Bld): void {
+    this.blds.push(b);
+    const bb = bldBounds(b);
+    const x = bb.x + this.ox;
+    const y = bb.y + this.oy;
+    this.things.push({
+      x,
+      y,
+      w: bb.w,
+      h: bb.h,
+      depth: b.x + b.w + b.y + b.d,
+      mx: b.x + b.w,
+      my: b.y + b.d,
+      sil: [this.X(b.x, b.y, b.h), this.X(b.x + b.w, b.y, b.h), this.X(b.x + b.w, b.y), this.X(b.x + b.w, b.y + b.d), this.X(b.x, b.y + b.d), this.X(b.x, b.y + b.d, b.h)],
+      draw: (c, S) => {
+        let sp = this.sprites.get(b);
+        if (!sp || sp.S !== S) {
+          sp = { img: renderBuilding(b, this.tod, S), S, used: 0 };
+          this.sprites.set(b, sp);
+          this.evict();
         }
-      }
-    };
-    winOn(B, C, shade(P.window, -0.05));
-    winOn(D, C, shade(P.window, -0.25));
-    // 墙角的竖线、屋檐
-    c.strokeStyle = shade(wall, -0.45);
-    c.lineWidth = 1;
-    c.beginPath();
-    const [cx, cy] = p(C);
-    c.moveTo(cx, cy);
-    c.lineTo(cx, cy - h);
-    c.stroke();
-    // 屋顶
-    poly([p(A, h), p(B, h), p(C, h), p(D, h)], roof);
-    const inset = 0.2;
-    poly(
-      [p({ gx: A.gx + inset, gy: A.gy + inset }, h), p({ gx: B.gx - inset, gy: B.gy + inset }, h), p({ gx: C.gx - inset, gy: C.gy - inset }, h), p({ gx: D.gx + inset, gy: D.gy - inset }, h)],
-      shade(roof, 0.12),
-    );
-    // 屋顶上的空调外机、水箱
-    const n = Math.floor(R() * 3);
-    for (let k = 0; k < n; k++) {
-      const g = { gx: x + 0.6 + R() * (w - 1.4), gy: y + 0.6 + R() * (d - 1.4) };
-      const [ax, ay] = p(g, h);
-      c.fillStyle = '#8f949e';
-      c.fillRect(Math.round(ax) - 3, Math.round(ay) - 4, 6, 4);
-      c.fillStyle = '#6d727c';
-      c.fillRect(Math.round(ax) - 3, Math.round(ay), 6, 1);
-    }
-    if (opt?.door) {
-      const [dx, dy] = p(opt.door);
-      c.fillStyle = '#16141a';
-      c.fillRect(Math.round(dx) - 7, Math.round(dy) - 14, 14, 14);
-    }
-    if (opt?.sign) {
-      const [sx, sy] = p({ gx: x + w / 2, gy: y + d / 2 }, h);
-      c.fillStyle = '#e8b931';
-      c.fillRect(Math.round(sx) - 6, Math.round(sy) - 12, 12, 12);
-      c.fillStyle = '#1c1a20';
-      c.fillRect(Math.round(sx) - 2, Math.round(sy) - 10, 4, 2);
-      c.fillRect(Math.round(sx), Math.round(sy) - 8, 2, 2);
-      c.fillRect(Math.round(sx) - 1, Math.round(sy) - 6, 2, 2);
-      c.fillRect(Math.round(sx) - 1, Math.round(sy) - 3, 2, 2);
-    }
-    this.things.push({ img: cv, x: left, y: top, depth: x + w + y + d, mx: x + w, my: y + d });
+        sp.used = this.frame;
+        c.drawImage(sp.img, x, y, sp.img.width / S, sp.img.height / S);
+      },
+    });
   }
 
-  private park(c: Ctx, x0: number, y0: number): void {
-    const P = this.P;
-    this.diamond(c, x0, y0, 6, 6, shade(P.grass, 0.08));
-    this.diamond(c, x0 + 2.6, y0, 0.8, 6, shade(P.walk, -0.05));
-    this.diamond(c, x0, y0 + 2.6, 6, 0.8, shade(P.walk, -0.05));
-    this.diamond(c, x0 + 2.1, y0 + 2.1, 1.8, 1.8, shade(P.walk, -0.18));
-    this.diamond(c, x0 + 2.3, y0 + 2.3, 1.4, 1.4, P.water);
-    for (const [a, b] of [[0.9, 0.9], [4.7, 1.2], [1.2, 4.6], [4.6, 4.5], [1.6, 2.0], [4.2, 3.6]]) if (this.rand() < 0.85) this.tree({ gx: x0 + a, gy: y0 + b }, 1);
+  /** 每画一帧调用一次：记下哪些楼最近用过 */
+  tick(): void {
+    this.frame++;
   }
 
-  private parking(c: Ctx, x0: number, y0: number): void {
-    const P = this.P;
-    this.diamond(c, x0, y0, 6, 6, P.road);
-    for (let k = 0; k < 6; k += 1) this.dash(c, { gx: x0 + k + 0.5, gy: y0 + 0.2 }, { gx: x0 + k + 0.5, gy: y0 + 1.6 }, P.zebra);
-    for (let k = 0; k < 6; k += 1) this.dash(c, { gx: x0 + k + 0.5, gy: y0 + 4.4 }, { gx: x0 + k + 0.5, gy: y0 + 5.8 }, P.zebra);
+  private evict(): void {
+    if (this.sprites.size <= 48) return;
+    const list = [...this.sprites.entries()].sort((a, b) => a[1].used - b[1].used);
+    for (const [k] of list.slice(0, this.sprites.size - 40)) this.sprites.delete(k);
+  }
+
+  private park(x0: number, y0: number): void {
+    for (const [a, b] of [[0.9, 0.9], [4.7, 1.2], [1.2, 4.6], [4.6, 4.5], [1.0, 2.2], [4.3, 3.4]]) if (this.rand() < 0.85) this.tree({ gx: x0 + a, gy: y0 + b }, 1.1, false);
+  }
+
+  private parking(x0: number, y0: number): void {
     for (let k = 0; k < 5; k++) {
-      if (this.rand() < 0.6) this.parked({ gx: x0 + k + 1, gy: y0 + 0.9 }, 'y');
-      if (this.rand() < 0.6) this.parked({ gx: x0 + k + 1, gy: y0 + 5.1 }, 'y');
+      if (this.rand() < 0.6) this.parked({ gx: x0 + k + 1, gy: y0 + 0.95 }, { gx: 0, gy: -1 });
+      if (this.rand() < 0.6) this.parked({ gx: x0 + k + 1, gy: y0 + 5.05 }, { gx: 0, gy: 1 });
     }
   }
 
-  // ---------------- 树、车 ----------------
+  // ---------------- 树、车、路灯 ----------------
 
-  private tree(g: G, size: number): void {
-    const P = this.P;
-    const r = Math.round(7 * size);
-    const cv = document.createElement('canvas');
-    cv.width = r * 2 + 4;
-    cv.height = r * 2 + 12;
-    const c = cv.getContext('2d') as Ctx;
-    c.fillStyle = 'rgba(15,15,30,.22)';
-    c.beginPath();
-    c.ellipse(r + 3, r * 2 + 9, r * 0.9, r * 0.4, 0, 0, Math.PI * 2);
-    c.fill();
-    c.fillStyle = '#6b4a33';
-    c.fillRect(r + 1, r + 4, 3, r + 4);
-    for (let y = -r; y <= r; y++) {
-      const half = Math.round(Math.sqrt(r * r - y * y));
-      c.fillStyle = y > r / 3 ? P.tree[1] : P.tree[0];
-      c.fillRect(r + 2 - half, r + 2 + y, half * 2, 1);
-    }
-    c.fillStyle = shade(P.tree[0], 0.22);
-    c.fillRect(r - 3, 4, 3, 2);
-    c.fillRect(r + 2, 7, 2, 2);
-    this.things.push({ img: cv, x: Math.round(this.sx(g)) - r - 2, y: Math.round(this.sy(g)) - r * 2 - 9, depth: g.gx + g.gy, mx: g.gx, my: g.gy, g });
+  private tree(g: G, size: number, grate: boolean): void {
+    const R = this.rand;
+    const kind = R() < 0.22 ? 1 : 0;
+    const tint = R();
+    const [x, y] = this.X(g.gx, g.gy);
+    this.treeAt.push({ g, size, grate });
+    this.things.push({
+      x: x - 10 * size,
+      y: y - 26 * size,
+      w: 20 * size,
+      h: 28 * size,
+      depth: g.gx + g.gy,
+      mx: g.gx,
+      my: g.gy,
+      g,
+      draw: (c) => drawTree(c, x, y, size, kind, this.tod, tint),
+    });
   }
 
-  private parked(g: G, along: 'x' | 'y'): void {
-    const color = CAR_COLORS[Math.floor(this.rand() * CAR_COLORS.length)];
-    const cv = document.createElement('canvas');
-    cv.width = 34;
-    cv.height = 26;
-    const c = cv.getContext('2d') as Ctx;
-    drawIsoCar(c, 17, 18, along === 'x' ? { gx: 1, gy: 0 } : { gx: 0, gy: 1 }, color, null);
-    this.things.push({ img: cv, x: Math.round(this.sx(g)) - 17, y: Math.round(this.sy(g)) - 18, depth: g.gx + g.gy, mx: g.gx, my: g.gy, g, car: true });
+  private parked(g: G, dir: G): void {
+    const R = this.rand;
+    const color = CAR_COLORS[Math.floor(R() * CAR_COLORS.length)];
+    const kind: CarKind = R() < 0.14 ? 'taxi' : 'car';
+    const [x, y] = this.X(g.gx, g.gy);
+    this.things.push({
+      x: x - 14,
+      y: y - 14,
+      w: 28,
+      h: 20,
+      depth: g.gx + g.gy,
+      mx: g.gx,
+      my: g.gy,
+      g,
+      car: true,
+      draw: (c) => drawCar(c, x, y, dir, kind === 'taxi' ? '#f0c53c' : color, kind, null, this.tod),
+    });
   }
-}
 
-/**
- * 画一辆等距视角的车：底盘中心在 (cx, cy)，dir 是车头朝的格子方向。
- * light：警灯（0 红、1 蓝、-1 不亮），普通车给 null
- */
-export function drawIsoCar(c: Ctx, cx: number, cy: number, dir: G, color: string, light: number | null): void {
-  const proj = (gx: number, gy: number, up = 0): [number, number] => [cx + (gx - gy) * (TW / 2), cy + (gx + gy) * (TH / 2) - up];
-  const fx = dir.gx;
-  const fy = dir.gy;
-  // 车身的长、宽（格）
-  const L = 0.62;
-  const Wd = 0.34;
-  const side = { gx: -fy, gy: fx };
-  const corner = (a: number, b: number) => ({ gx: fx * a + side.gx * b, gy: fy * a + side.gy * b });
-  const poly = (pts: [number, number][], col: string) => {
-    c.fillStyle = col;
+  private addLamp(g: G): void {
+    const [x, y] = this.X(g.gx, g.gy);
+    this.things.push({ x: x - 14, y: y - 30, w: 36, h: 48, depth: g.gx + g.gy, mx: g.gx, my: g.gy, g, draw: (c) => drawLamp(c, x, y, this.tod, true) });
+  }
+
+  private hydrant(g: G): void {
+    const [x, y] = this.X(g.gx, g.gy);
+    this.things.push({ x: x - 3, y: y - 6, w: 6, h: 7, depth: g.gx + g.gy, mx: g.gx, my: g.gy, g, draw: (c) => drawHydrant(c, x, y, this.tod) });
+  }
+
+  // ---------------- 地面 ----------------
+
+  private quad(c: Ctx, gx: number, gy: number, w: number, d: number, fill: string | CanvasGradient | CanvasPattern, up = 0): void {
+    c.fillStyle = fill;
     c.beginPath();
-    pts.forEach(([a, b], k) => (k ? c.lineTo(a, b) : c.moveTo(a, b)));
+    c.moveTo(...this.X(gx, gy, up));
+    c.lineTo(...this.X(gx + w, gy, up));
+    c.lineTo(...this.X(gx + w, gy + d, up));
+    c.lineTo(...this.X(gx, gy + d, up));
     c.closePath();
     c.fill();
-  };
-  const P = (g: { gx: number; gy: number }, up = 0) => proj(g.gx, g.gy, up);
-  // 影子
-  c.fillStyle = 'rgba(10,12,25,.3)';
-  c.beginPath();
-  c.ellipse(cx + 1, cy + 2, 13, 5, 0, 0, Math.PI * 2);
-  c.fill();
-  const corners = [corner(L, Wd), corner(L, -Wd), corner(-L, -Wd), corner(-L, Wd)];
-  // 底盘的四个角，按屏幕上从后到前排：画能看到的两面
-  const h1 = 5;
-  const faces: [number, number][] = [
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 0],
-  ];
-  // 朝 +gx 或 +gy 的面看得到
-  for (const [a, b] of faces) {
-    const ga = corners[a];
-    const gb = corners[b];
-    const nx = (ga.gx + gb.gx) / 2;
-    const ny = (ga.gy + gb.gy) / 2;
-    if (nx + ny <= 0.001) continue;
-    const front = Math.abs(nx - fx * L) < 0.01 && Math.abs(ny - fy * L) < 0.01;
-    poly([P(ga), P(gb), P(gb, h1), P(ga, h1)], front ? shade(color, -0.12) : shade(color, -0.3));
   }
-  // 车顶面
-  poly(corners.map((g) => P(g, h1)), color);
-  // 车舱（窄一点、短一点，往后挪）
-  const cab = [corner(0.18, Wd * 0.8), corner(0.18, -Wd * 0.8), corner(-0.36, -Wd * 0.8), corner(-0.36, Wd * 0.8)];
-  const h2 = 4;
-  for (const [a, b] of faces) {
-    const ga = cab[a];
-    const gb = cab[b];
-    const nx = (ga.gx + gb.gx) / 2 + fx * 0.09;
-    const ny = (ga.gy + gb.gy) / 2 + fy * 0.09;
-    if (nx + ny <= 0.001) continue;
-    poly([P(ga, h1), P(gb, h1), P(gb, h1 + h2), P(ga, h1 + h2)], '#5f8fb3');
-  }
-  poly(cab.map((g) => P(g, h1 + h2)), light === null ? shade(color, 0.12) : '#f6f5f0');
-  if (light !== null) {
-    // 车门上的深蓝条
-    const s1 = corner(0.3, Wd);
-    const s2 = corner(-0.45, Wd);
-    const s3 = corner(0.3, -Wd);
-    const s4 = corner(-0.45, -Wd);
-    for (const [a, b] of [[s1, s2], [s3, s4]]) {
-      const nx = (a.gx + b.gx) / 2;
-      const ny = (a.gy + b.gy) / 2;
-      if (nx + ny <= 0) continue;
-      poly([P(a, 1.5), P(b, 1.5), P(b, 3.5), P(a, 3.5)], '#23356a');
+
+  /** 沥青上细细的颗粒（和屏幕像素一样大），跟着地图走 */
+  private grainOf(c: Ctx, S: number): CanvasPattern | null {
+    if (this.grain && this.grainS === S) return this.grain;
+    const n = 96;
+    const cv = document.createElement('canvas');
+    cv.width = n;
+    cv.height = n;
+    const g = cv.getContext('2d') as Ctx;
+    const R = rng(91);
+    for (let k = 0; k < 900; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)';
+      g.fillRect(Math.floor(R() * n), Math.floor(R() * n), 1, 1);
     }
-    // 警灯
-    const l1 = corner(-0.05, 0.22);
-    const l2 = corner(-0.05, -0.22);
-    const [ax, ay] = P(l1, h1 + h2 + 1);
-    const [bx, by] = P(l2, h1 + h2 + 1);
-    c.fillStyle = light === 0 ? '#ff4d43' : '#7a2c28';
-    c.fillRect(Math.round(ax) - 1, Math.round(ay) - 2, 3, 3);
-    c.fillStyle = light === 1 ? '#4fa3ff' : '#284a80';
-    c.fillRect(Math.round(bx) - 1, Math.round(by) - 2, 3, 3);
+    this.grain = c.createPattern(cv, 'repeat');
+    this.grainS = S;
+    if (this.grain) this.grain.setTransform(new DOMMatrix().scale(1 / S));
+    return this.grain;
   }
-  // 大灯
-  const hl = corner(L + 0.01, Wd * 0.6);
-  const hr = corner(L + 0.01, -Wd * 0.6);
-  if (fx + fy > 0) {
-    for (const g of [hl, hr]) {
-      const [a, b] = P(g, 2.5);
-      c.fillStyle = '#fff1b0';
-      c.fillRect(Math.round(a), Math.round(b) - 1, 2, 2);
+
+  /** 画 (vx, vy) 起 vw × vh 这一块地面（大地图上的像素），S 是放大倍数 */
+  drawGround(c: Ctx, vx: number, vy: number, vw: number, vh: number, S: number): void {
+    const tod = this.tod;
+    const gd = (h: string) => grade(h, tod);
+    c.fillStyle = gd(BASE.asphalt);
+    c.fillRect(vx, vy, vw, vh);
+    const grain = this.grainOf(c, S);
+    if (grain) {
+      c.fillStyle = grain;
+      c.fillRect(vx, vy, vw, vh);
+    }
+    // 画面四个角换成格子坐标，算出要画哪几块
+    const toG = (px: number, py: number) => {
+      const a = (px - this.ox) / (TW / 2);
+      const b = (py - this.oy) / (TH / 2);
+      return { gx: (a + b) / 2, gy: (b - a) / 2 };
+    };
+    const cs = [toG(vx, vy), toG(vx + vw, vy), toG(vx, vy + vh + MAX_H), toG(vx + vw, vy + vh + MAX_H)];
+    const gx0 = Math.min(...cs.map((p) => p.gx)) - PITCH;
+    const gx1 = Math.max(...cs.map((p) => p.gx)) + PITCH;
+    const gy0 = Math.min(...cs.map((p) => p.gy)) - PITCH;
+    const gy1 = Math.max(...cs.map((p) => p.gy)) + PITCH;
+    const inView = (gx: number, gy: number, w: number, d: number) => gx + w > gx0 && gx < gx1 && gy + d > gy0 && gy < gy1;
+
+    // 路边的排水沟：靠路牙一道暗边
+    c.strokeStyle = 'rgba(0,0,0,.16)';
+    c.lineWidth = 1.4;
+    c.beginPath();
+    for (const b of this.blocks) {
+      if (!inView(b.x0 - 1, b.y0 - 1, BLOCK + 2, BLOCK + 2)) continue;
+      const e = 0.12;
+      c.moveTo(...this.X(b.x0 - e, b.y0 - e));
+      c.lineTo(...this.X(b.x0 + BLOCK + e, b.y0 - e));
+      c.lineTo(...this.X(b.x0 + BLOCK + e, b.y0 + BLOCK + e));
+      c.lineTo(...this.X(b.x0 - e, b.y0 + BLOCK + e));
+      c.closePath();
+    }
+    c.stroke();
+
+    // 车道中线（虚线）、路口的斑马线、井盖
+    this.markings(c, gx0, gx1, gy0, gy1);
+
+    // 每一块地：路牙高出来一点，上面是人行道，里面是楼、公园、停车场
+    for (const b of this.blocks) {
+      if (!inView(b.x0, b.y0, BLOCK, BLOCK)) continue;
+      this.quad(c, b.x0, b.y0, BLOCK, BLOCK, gd(BASE.curb));
+      this.quad(c, b.x0, b.y0, BLOCK, BLOCK, gd(BASE.walk), 1.3);
+      // 人行道的地砖缝
+      c.strokeStyle = 'rgba(80,66,50,.14)';
+      c.lineWidth = 0.3;
+      c.beginPath();
+      for (let k = 0.5; k < BLOCK; k += 0.5) {
+        for (const [a, b2] of [[b.y0, b.y0 + 1], [b.y0 + BLOCK - 1, b.y0 + BLOCK]]) {
+          c.moveTo(...this.X(b.x0 + k, a, 1.3));
+          c.lineTo(...this.X(b.x0 + k, b2, 1.3));
+        }
+        for (const [a, b2] of [[b.x0, b.x0 + 1], [b.x0 + BLOCK - 1, b.x0 + BLOCK]]) {
+          c.moveTo(...this.X(a, b.y0 + k, 1.3));
+          c.lineTo(...this.X(b2, b.y0 + k, 1.3));
+        }
+      }
+      c.stroke();
+      // 路牙顶上一道亮边
+      c.strokeStyle = rgba('#ffffff', tod === 'night' ? 0.08 : 0.35);
+      c.lineWidth = 0.35;
+      c.beginPath();
+      c.moveTo(...this.X(b.x0, b.y0 + BLOCK, 1.3));
+      c.lineTo(...this.X(b.x0 + BLOCK, b.y0 + BLOCK, 1.3));
+      c.lineTo(...this.X(b.x0 + BLOCK, b.y0, 1.3));
+      c.stroke();
+      const x0 = b.x0 + 1;
+      const y0 = b.y0 + 1;
+      if (b.kind === 'park') this.parkGround(c, x0, y0, b.seed);
+      else if (b.kind === 'parking') this.parkingGround(c, x0, y0);
+      else if (b.kind === 'plaza') this.plazaGround(c, b.x0, b.y0);
+      else this.quad(c, x0, y0, BLOCK - 2, BLOCK - 2, gd(BASE.lot), 1.3);
+    }
+    // 人行道上的树坑
+    for (const t of this.treeAt) {
+      if (!t.grate || !inView(t.g.gx, t.g.gy, 0, 0)) continue;
+      this.quad(c, t.g.gx - 0.32, t.g.gy - 0.32, 0.64, 0.64, gd('#8a7c68'), 1.3);
+      this.quad(c, t.g.gx - 0.24, t.g.gy - 0.24, 0.48, 0.48, gd('#5e4a36'), 1.3);
+    }
+    this.shadows(c, inView);
+  }
+
+  private markings(c: Ctx, gx0: number, gx1: number, gy0: number, gy1: number): void {
+    const tod = this.tod;
+    const bx0 = Math.max(0, Math.floor(gx0 / PITCH));
+    const bx1 = Math.ceil(gx1 / PITCH);
+    const by0 = Math.max(0, Math.floor(gy0 / PITCH));
+    const by1 = Math.ceil(gy1 / PITCH);
+    // 中线：一段一段的虚线
+    c.strokeStyle = grade(BASE.lane, tod);
+    c.lineWidth = 0.9;
+    c.setLineDash([5.5, 5]);
+    c.beginPath();
+    for (let bx = bx0; bx <= bx1; bx++) {
+      for (let by = by0; by <= by1; by++) {
+        const x0 = bx * PITCH;
+        const y0 = by * PITCH;
+        if (x0 + PITCH <= this.gw) {
+          c.moveTo(...this.X(x0 + ROAD + 0.9, y0 + 1));
+          c.lineTo(...this.X(x0 + PITCH - 0.9, y0 + 1));
+        }
+        if (y0 + PITCH <= this.gh) {
+          c.moveTo(...this.X(x0 + 1, y0 + ROAD + 0.9));
+          c.lineTo(...this.X(x0 + 1, y0 + PITCH - 0.9));
+        }
+      }
+    }
+    c.stroke();
+    c.setLineDash([]);
+    // 斑马线：路口四边，白色的长条
+    const zebra = grade(BASE.marking, tod);
+    c.fillStyle = tod === 'night' ? rgba(zebra, 0.7) : rgba(zebra, 0.88);
+    const bar = (ax: number, ay: number, bxx: number, byy: number, w: number) => {
+      // 从 a 到 b 的一条，宽 w 格（横着）
+      const dx = bxx - ax;
+      const dy = byy - ay;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * (w / 2);
+      const ny = (dx / len) * (w / 2);
+      c.moveTo(...this.X(ax + nx, ay + ny));
+      c.lineTo(...this.X(bxx + nx, byy + ny));
+      c.lineTo(...this.X(bxx - nx, byy - ny));
+      c.lineTo(...this.X(ax - nx, ay - ny));
+      c.closePath();
+    };
+    c.beginPath();
+    for (let bx = bx0; bx <= bx1; bx++) {
+      for (let by = by0; by <= by1; by++) {
+        const x0 = bx * PITCH;
+        const y0 = by * PITCH;
+        for (let k = 0; k < 6; k++) {
+          const u = 0.2 + k * 0.32;
+          if (x0 + ROAD + 1 < this.gw) bar(x0 + ROAD + 0.18, y0 + u, x0 + ROAD + 0.82, y0 + u, 0.17);
+          if (x0 > 0) bar(x0 - 0.82, y0 + u, x0 - 0.18, y0 + u, 0.17);
+          if (y0 + ROAD + 1 < this.gh) bar(x0 + u, y0 + ROAD + 0.18, x0 + u, y0 + ROAD + 0.82, 0.17);
+          if (y0 > 0) bar(x0 + u, y0 - 0.82, x0 + u, y0 - 0.18, 0.17);
+        }
+      }
+    }
+    c.fill();
+    // 井盖：每段路中间一个
+    for (let bx = bx0; bx <= bx1; bx++) {
+      for (let by = by0; by <= by1; by++) {
+        const [mx, my] = this.X(bx * PITCH + 5.6, by * PITCH + 0.55);
+        c.fillStyle = 'rgba(0,0,0,.25)';
+        c.beginPath();
+        c.ellipse(mx, my, 3, 1.5, 0, 0, Math.PI * 2);
+        c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.1)';
+        c.lineWidth = 0.3;
+        c.beginPath();
+        c.ellipse(mx, my, 2.2, 1.1, 0, 0, Math.PI * 2);
+        c.stroke();
+      }
+    }
+  }
+
+  private parkGround(c: Ctx, x0: number, y0: number, seed: number): void {
+    const gd = (h: string) => grade(h, this.tod);
+    const R = rng(seed);
+    this.quad(c, x0, y0, 6, 6, gd(BASE.grass), 1.3);
+    // 割草的条纹
+    for (let k = 0; k < 6; k += 1) this.quad(c, x0 + k, y0, 0.5, 6, gd(BASE.grassStripe), 1.3);
+    // 十字小路
+    this.quad(c, x0 + 2.65, y0, 0.7, 6, gd(BASE.path), 1.3);
+    this.quad(c, x0, y0 + 2.65, 6, 0.7, gd(BASE.path), 1.3);
+    // 中间的水池：一圈石头边，水面，两道波光
+    const [cx, cy] = this.X(x0 + 3, y0 + 3, 1.3);
+    const ell = (rx: number, ry: number, fill: string | CanvasGradient) => {
+      c.fillStyle = fill;
+      c.beginPath();
+      c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      c.fill();
+    };
+    ell(24, 12, gd('#c9c0b0'));
+    ell(21.5, 10.6, gd('#8e8576'));
+    const wg = c.createLinearGradient(cx, cy - 10, cx, cy + 10);
+    wg.addColorStop(0, gd('#4f93c6'));
+    wg.addColorStop(1, gd(BASE.water));
+    ell(20.5, 9.8, wg);
+    c.strokeStyle = rgba('#ffffff', this.tod === 'night' ? 0.15 : 0.45);
+    c.lineWidth = 0.5;
+    for (const [dx, dy, r] of [[-6, -2, 4], [5, 3, 3]]) {
+      c.beginPath();
+      c.ellipse(cx + dx, cy + dy, r, r / 2, 0, Math.PI * 1.1, Math.PI * 1.9);
+      c.stroke();
+    }
+    // 花坛：几簇小花
+    const cols = ['#f2a7b8', '#f6d35b', '#ffffff', '#b99ae6', '#ef7f6f'];
+    for (const [a, b] of [[0.5, 4.9], [5.2, 0.7], [5.0, 5.1]]) {
+      const col = gd(cols[Math.floor(R() * cols.length)]);
+      for (let k = 0; k < 9; k++) {
+        const [fx, fy] = this.X(x0 + a + (R() - 0.5) * 0.7, y0 + b + (R() - 0.5) * 0.7, 1.3);
+        c.fillStyle = gd('#4f8f45');
+        c.beginPath();
+        c.arc(fx, fy + 0.4, 1, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = col;
+        c.beginPath();
+        c.arc(fx, fy - 0.2, 0.7, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+    // 长椅
+    for (const [a, b] of [[1.6, 2.35], [3.6, 3.75]]) {
+      const [bx, by] = this.X(x0 + a, y0 + b, 1.3);
+      c.fillStyle = 'rgba(10,12,22,.22)';
+      c.fillRect(bx - 4, by, 8, 1.2);
+      c.fillStyle = gd('#8a5a3a');
+      c.fillRect(bx - 4, by - 2.4, 8, 1.4);
+      c.fillStyle = gd('#a86f48');
+      c.fillRect(bx - 4, by - 4.6, 8, 1.2);
+    }
+  }
+
+  private parkingGround(c: Ctx, x0: number, y0: number): void {
+    const gd = (h: string) => grade(h, this.tod);
+    this.quad(c, x0, y0, 6, 6, gd(shade(BASE.asphalt, 0.08)), 1.3);
+    c.strokeStyle = gd(BASE.marking);
+    c.lineWidth = 0.45;
+    c.beginPath();
+    for (let k = 0; k <= 6; k++) {
+      for (const [a, b] of [[y0 + 0.15, y0 + 1.75], [y0 + 4.25, y0 + 5.85]]) {
+        c.moveTo(...this.X(x0 + k + 0.5, a, 1.3));
+        c.lineTo(...this.X(x0 + k + 0.5, b, 1.3));
+      }
+    }
+    c.stroke();
+  }
+
+  private plazaGround(c: Ctx, x0: number, y0: number): void {
+    const gd = (h: string) => grade(h, this.tod);
+    this.quad(c, x0, y0, BLOCK, BLOCK, gd('#b9b3a8'), 1.3);
+    c.strokeStyle = 'rgba(0,0,0,.08)';
+    c.lineWidth = 0.3;
+    c.beginPath();
+    for (let k = 1; k < BLOCK; k++) {
+      c.moveTo(...this.X(x0 + k, y0, 1.3));
+      c.lineTo(...this.X(x0 + k, y0 + BLOCK, 1.3));
+      c.moveTo(...this.X(x0, y0 + k, 1.3));
+      c.lineTo(...this.X(x0 + BLOCK, y0 + k, 1.3));
+    }
+    c.stroke();
+    // 仓库门前的黄黑警示线
+    const hs = this.house;
+    const dx = this.hideout.gx;
+    const dy = hs.gy + hs.d;
+    for (let k = 0; k < 8; k++) {
+      c.fillStyle = gd(k % 2 ? '#2b2b30' : '#e8b931');
+      c.beginPath();
+      const a = dx - 1.2 + k * 0.3;
+      c.moveTo(...this.X(a, dy + 0.15, 1.3));
+      c.lineTo(...this.X(a + 0.3, dy + 0.15, 1.3));
+      c.lineTo(...this.X(a + 0.3, dy + 0.45, 1.3));
+      c.lineTo(...this.X(a, dy + 0.45, 1.3));
+      c.closePath();
+      c.fill();
+    }
+  }
+
+  /** 楼和树的影子：光从右上来，影子落在左下 */
+  private shadows(c: Ctx, inView: (gx: number, gy: number, w: number, d: number) => boolean): void {
+    const a = this.tod === 'night' ? 0.14 : this.tod === 'dusk' ? 0.24 : 0.2;
+    c.fillStyle = 'rgba(16,20,40,' + a + ')';
+    c.beginPath();
+    for (const b of this.blds) {
+      if (!inView(b.x - 4, b.y - 1, b.w + 5, b.d + 6)) continue;
+      const L = b.h * 0.05;
+      const sx = 0.2 * L;
+      const sy = L;
+      const pts: [number, number][] = [
+        [b.x, b.y],
+        [b.x + b.w, b.y],
+        [b.x + b.w + sx, b.y + sy],
+        [b.x + b.w + sx, b.y + b.d + sy],
+        [b.x + sx, b.y + b.d + sy],
+        [b.x, b.y + b.d],
+      ];
+      pts.forEach(([gx, gy], k) => (k ? c.lineTo(...this.X(gx, gy, 1.3)) : c.moveTo(...this.X(gx, gy, 1.3))));
+      c.closePath();
+    }
+    c.fill();
+    // 贴着墙根的一道暗影
+    c.strokeStyle = 'rgba(16,20,40,.22)';
+    c.lineWidth = 1.2;
+    c.beginPath();
+    for (const b of this.blds) {
+      if (!inView(b.x - 1, b.y - 1, b.w + 2, b.d + 2)) continue;
+      c.moveTo(...this.X(b.x, b.y + b.d + 0.04, 1.3));
+      c.lineTo(...this.X(b.x + b.w + 0.04, b.y + b.d + 0.04, 1.3));
+      c.lineTo(...this.X(b.x + b.w + 0.04, b.y, 1.3));
+    }
+    c.stroke();
+    c.fillStyle = 'rgba(16,20,40,' + a * 0.9 + ')';
+    for (const t of this.treeAt) {
+      if (!inView(t.g.gx, t.g.gy, 0, 0)) continue;
+      const [x, y] = this.X(t.g.gx + 0.25, t.g.gy + 0.6, 1.3);
+      c.beginPath();
+      c.ellipse(x, y, 8 * t.size, 3.6 * t.size, -0.35, 0, Math.PI * 2);
+      c.fill();
     }
   }
 }
@@ -623,3 +705,4 @@ function roundCorners(pts: G[], r: number): G[] {
   out.push(pts[pts.length - 1]);
   return out;
 }
+

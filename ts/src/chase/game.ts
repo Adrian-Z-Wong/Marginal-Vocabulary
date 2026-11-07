@@ -7,8 +7,9 @@ import type { GamesSave, Host } from '../host';
 import { clock, TypingRun } from '../typing';
 import { CUSTOM_BOOK, Passage, bookPassages, customPassages, normalizeText, passageByKey, pickPassage, splitPassages } from '../passages';
 import { ChaseScene, SceneState } from './scene';
-import { IsoCity, drawIsoCar, timeOfDay } from './iso';
-import { blitFoot, shadow, thiefSprite } from './sprites';
+import { IsoCity, timeOfDay } from './iso';
+import { drawCar } from './paint';
+import { drawThief, shadow } from './sprites';
 
 export const LEVELS = [
   { name: '慢', wpm: 20, coins: 10 },
@@ -671,33 +672,43 @@ function wordsWithMisses(run: TypingRun): string[] {
 
 let cover = '';
 
-/** 封面：傍晚的城市一角，警车在大街上追小偷 */
+/** 封面：傍晚的城市一角，警车在大街上追小偷（按 4 倍画，卡片上放大也清楚） */
 export function coverImage(): string {
   if (cover) return cover;
   const city = new IsoCity(7, 70, 'dusk');
   const W = 150;
   const H = 68;
+  const S = 4;
   const cv = document.createElement('canvas');
-  cv.width = W;
-  cv.height = H;
+  cv.width = W * S;
+  cv.height = H * S;
   const c = cv.getContext('2d');
   if (!c) return '';
-  c.imageSmoothingEnabled = false;
-  const a = city.at(14);
-  const b = city.at(17.2);
+  // 找一段路：警车和小偷都没有被楼挡住
+  const clear = (g: { gx: number; gy: number }) =>
+    !city.things.some((th) => th.sil && th.mx > g.gx && th.my > g.gy && [1, 10, 22].some((up) => pointIn(th.sil!, city.sx(g), city.sy(g) - up)));
+  let s0 = 14;
+  for (let s = 10; s < city.length - 6; s += 0.5) {
+    if (clear(city.at(s)) && clear(city.at(s + 3.2))) {
+      s0 = s;
+      break;
+    }
+  }
+  const a = city.at(s0);
+  const b = city.at(s0 + 3.2);
   const ox = Math.round((city.sx(a) + city.sx(b)) / 2 - W / 2);
   const oy = Math.round((city.sy(a) + city.sy(b)) / 2 - H * 0.62);
-  c.drawImage(city.ground, ox, oy, W, H, 0, 0, W, H);
-  const axis = (d: { gx: number; gy: number }) => (Math.abs(d.gx) >= Math.abs(d.gy) ? { gx: Math.sign(d.gx) || 1, gy: 0 } : { gx: 0, gy: Math.sign(d.gy) || 1 });
+  c.setTransform(S, 0, 0, S, -ox * S, -oy * S);
+  city.drawGround(c, ox, oy, W, H, S);
   let carDone = false;
   let thiefDone = false;
-  const car = () => drawIsoCar(c, Math.round(city.sx(a) - ox), Math.round(city.sy(a) - oy), axis(a.dir), '#f6f5f0', 0);
+  const car = () => drawCar(c, city.sx(a), city.sy(a), a.dir, '#f4f3ee', 'police', 0, 'dusk');
   const thief = () => {
-    shadow(c, city.sx(b) - ox, city.sy(b) - oy, 5, 2);
-    blitFoot(c, thiefSprite(1), city.sx(b) - ox, city.sy(b) - oy);
+    shadow(c, city.sx(b) + 1.2, city.sy(b) + 0.4, 5, 2);
+    drawThief(c, city.sx(b), city.sy(b), 120, 'run', b.dir.gx - b.dir.gy < -0.1, 'dusk');
   };
   for (const th of city.things) {
-    if (th.x - ox > W || th.y - oy > H || th.x + th.img.width - ox < 0 || th.y + th.img.height - oy < 0) continue;
+    if (th.x > ox + W || th.y > oy + H || th.x + th.w < ox || th.y + th.h < oy) continue;
     if (!thiefDone && th.mx > b.gx && th.my > b.gy) {
       thief();
       thiefDone = true;
@@ -706,15 +717,33 @@ export function coverImage(): string {
       car();
       carDone = true;
     }
-    c.drawImage(th.img, th.x - ox, th.y - oy);
+    th.draw(c, S);
   }
   if (!thiefDone) thief();
   if (!carDone) car();
-  const g = c.createRadialGradient(city.sx(a) - ox, city.sy(a) - oy - 8, 0, city.sx(a) - ox, city.sy(a) - oy - 8, 22);
-  g.addColorStop(0, 'rgba(255,70,60,.35)');
+  c.globalCompositeOperation = 'lighter';
+  const g = c.createRadialGradient(city.sx(a), city.sy(a) - 9, 0, city.sx(a), city.sy(a) - 9, 24);
+  g.addColorStop(0, 'rgba(255,70,60,.38)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   c.fillStyle = g;
-  c.fillRect(0, 0, W, H);
+  c.fillRect(ox, oy, W, H);
+  c.globalCompositeOperation = 'source-over';
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  const sky = c.createLinearGradient(0, 0, 0, H * S);
+  sky.addColorStop(0, 'rgba(255,150,90,.16)');
+  sky.addColorStop(1, 'rgba(120,60,120,.05)');
+  c.fillStyle = sky;
+  c.fillRect(0, 0, W * S, H * S);
   cover = cv.toDataURL();
   return cover;
+}
+
+function pointIn(pts: [number, number][], x: number, y: number): boolean {
+  let n = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) n = !n;
+  }
+  return n;
 }
