@@ -25,3 +25,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## TOEIC 词表
+
+TOEIC 词库的词表（`data/toeic.tsv`，打包进 `src/words.js`）来自 [New General Service List Project](https://www.newgeneralservicelist.com)，按 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) 许可使用；`data/toeic.tsv` 本身同样按 CC BY-SA 4.0 提供。词表里把少数词换成了常见写法（如 headquarter → headquarters），并补写了部分中文释义和音标。
+
+- TOEIC Service List 1.2 — Browne, C. & Culligan, B. (2016)
+- New General Service List 1.2 — Browne, C., Culligan, B. & Phillips, J. (2013)

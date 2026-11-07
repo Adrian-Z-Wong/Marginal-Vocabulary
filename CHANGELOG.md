@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.5.6 · 2026-11-07
+
+- 新增 TOEIC 词库，4,058 词：托业高频词表 TOEIC Service List（Browne、Culligan 用托业教材和模考题统计出来的 1,250 词）加上通用高频词表 New General Service List（2,809 词），合起来约覆盖托业文本 99% 的词。跟其他词库一样有音标、分层释义和词根拆解；词典里释义过时的词（比如 teen、copier、condominium）重新写了释义，新补了 169 个词的拆解。
+- 修正了词典里 160 多个乱码音标（如 exactly、particularly、permanently），所有词库都受益。
+- 所有页面用同一个内容宽度，跟着窗口宽窄变：商标在左、菜单在右，和下面的内容对齐；宽屏上商店一行能摆更多东西，两边不再空一大块。
+- 花园、屋里的画面始终按原比例显示：拖窄窗口不再被挤扁，拖宽也不会比别的页面宽；画面高度正好占满窗口，标题不会被顶到菜单下面。
+
 ## 0.5.5 · 2026-11-07
 
 - MacroFin 新增 193 个宏观金融研究里常用的术语，共 4,332 条。主要是近些年论文里常见的：中介机构与流动性（intermediary capital ratio、margin spiral、funding liquidity、collateral reuse）、银行与存款（deposit market power、unrealized losses、IRRBB）、宏观审慎与金融稳定（liquidity mismatch index、fire-sale contagion、swing pricing、TLAC）、气候金融（transition risk、stranded assets、greenium、green swan）、通胀与预期（nonlinear Phillips curve、information rigidity、sellers' inflation、constant-gain learning）、异质性主体（liquid wealth、earnings heterogeneity channel）、识别方法（narrative identification、granular instrumental variables、LP-IV）。参考了欧洲央行、美联储、IMF 的术语表和 NBER、BIS、纽约联储等的研究文献，每条都和已有词条查过重。

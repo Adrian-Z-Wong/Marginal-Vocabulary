@@ -13,6 +13,7 @@
     { id: 'ky', name: 'GEE', bits: [4, 2, 1] }, // 考研，Graduate Entrance Examination
     { id: 'toefl', name: 'TOEFL', bits: [6] },
     { id: 'ielts', name: 'IELTS', bits: [5] },
+    { id: 'toeic', name: 'TOEIC', bits: [9] },
     { id: 'gre', name: 'GRE', bits: [7] },
     { id: 'gmat', name: 'GMAT', bits: [8] },
   ];
@@ -2516,7 +2517,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.5';
+  const APP_VERSION = '0.5.6';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -4179,6 +4180,8 @@
   document.addEventListener('keydown', () => wakePet(false), true);
 
   window.addEventListener('resize', () => {
+    // 花园、屋里的画面跟着窗口重新排（没有宠物也要排）
+    if (scene) scene.fit();
     // 最小化等情况下窗口尺寸会是 0，不要把宠物挤到角落
     if (roam.x === null || window.innerWidth < 200 || window.innerHeight < 200) return;
     roam.tx = roam.x;
@@ -4187,7 +4190,6 @@
     roam.x = roam.tx;
     roam.y = roam.ty;
     placePet();
-    if (scene) scene.fit();
   });
 
   // 闲着的时候：自己到处跑，偶尔眨眼；太久没动静就睡觉；状态低或生病会说
@@ -4488,17 +4490,33 @@
       },
       { passive: false }
     );
+    // 页面宽度变了（拖窗口、滚动条出现消失）就重新排，画面始终按原比例
+    if (this.ro) this.ro.disconnect();
+    if (window.ResizeObserver) {
+      let lastW = 0;
+      this.ro = new ResizeObserver(() => {
+        const w = this.wrap && this.wrap.getBoundingClientRect().width;
+        if (!this.canvas || !w || w === lastW) return;
+        lastW = w;
+        this.fit();
+      });
+      this.ro.observe(this.wrap);
+    }
     this.fit();
     this.start();
   };
 
-  // 画面占满页面的宽度，高度尽量用满窗口（最高到 4:3）；工具栏浮在画面下面
+  // 画面和页面内容一样宽，高度用满窗口剩下的地方（最高到 4:3），整页不用滚动；工具栏浮在画面下面
   Scene.prototype.box = function () {
-    const w = Math.max(280, this.wrap.clientWidth || 960);
+    // 用精确宽度（页面宽度跟着窗口按比例变，常带小数），画面正好贴满边框，边上不留缝
+    const exact = this.wrap.getBoundingClientRect().width - (this.wrap.offsetWidth - this.wrap.clientWidth);
+    const w = Math.max(280, exact || 960);
     const top = this.wrap.getBoundingClientRect().top + window.scrollY;
+    const border = this.wrap.offsetHeight - this.wrap.clientHeight;
+    const pad = parseFloat(getComputedStyle(this.wrap.parentElement).paddingBottom) || 0;
     // 横着的窗口 4:3；竖着拿的手机可以高一点
     const tall = window.innerHeight > window.innerWidth ? 1.25 : 0.75;
-    const h = Math.round(Math.max(240, Math.min(w * tall, window.innerHeight - top - 16)));
+    const h = Math.floor(Math.max(240, Math.min(w * tall, window.innerHeight - top - pad - border)));
     return [w, h];
   };
 
@@ -4567,6 +4585,8 @@
 
   Scene.prototype.stop = function () {
     cancelAnimationFrame(this.raf);
+    if (this.ro) this.ro.disconnect();
+    this.ro = null;
     this.canvas = null;
   };
 

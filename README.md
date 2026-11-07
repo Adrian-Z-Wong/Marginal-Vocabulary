@@ -4,7 +4,7 @@
 
 **背单词、学词根的小工具**
 
-A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS, GRE, GMAT, Finance and Medicine word books, with a pixel-art garden and pets.
+A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS, TOEIC, GRE, GMAT, Finance, MacroFin and Medicine word books, with a pixel-art garden and pets.
 
 [在线使用](https://adrian-z-wong.github.io/Marginal-Vocabulary/Margin.html) · [下载到电脑](https://adrian-z-wong.github.io/Marginal-Vocabulary/) · [反馈问题](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/issues/new/choose)
 
@@ -23,7 +23,7 @@ A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS,
 - 每日复习：昨天的新词、错题本和按记忆曲线到期的词
 - 强制全对（可选）：一组词某一步有错，这一步整组重来，全对才进入下一步
 - 词根：按词库学词根词缀，每组三步：看词根选意思 → 看意思选词根 → 在单词里填词根；背单词时显示单词拆解
-- 词库：Finance、MacroFin、Medicine、CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT
+- 词库：Finance、MacroFin、Medicine、CET-4、CET-6、GEE、TOEFL、IELTS、TOEIC、GRE、GMAT
 - 导入自己的词表
 - 错题本答对自动移出，已掌握的词不再出现
 - 美式 / 英式发音
@@ -62,10 +62,11 @@ A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS,
 | GEE | 6,511 |
 | TOEFL | 6,974 |
 | IELTS | 5,040 |
+| TOEIC | 4,058 |
 | GRE | 8,806 |
 | GMAT | 4,137 |
 
-Finance 收录经济、金融、会计、管理、公司治理、财务管理、资本市场、货币政策等专业词汇。MacroFin 面向宏观经济与金融研究，收录高级宏微观、DSGE 模型与求解估计、宏观金融、货币政策、财政政策、宏观调控、开放经济、计量方法等术语。Medicine 收录解剖、基础医学、内外妇儿各科疾病、临床检查、药理、公共卫生，以及中医理论、经络穴位、中药方剂。CET-4 包含高考词汇，CET-6 和 GEE（考研）包含 CET-4 词汇。原始表格在 [`data/finance/`](data/finance/)、[`data/macrofin/`](data/macrofin/) 和 [`data/medicine/`](data/medicine/)，可以直接用 Excel 打开。
+Finance 收录经济、金融、会计、管理、公司治理、财务管理、资本市场、货币政策等专业词汇。MacroFin 面向宏观经济与金融研究，收录高级宏微观、DSGE 模型与求解估计、宏观金融、货币政策、财政政策、宏观调控、开放经济、计量方法等术语。Medicine 收录解剖、基础医学、内外妇儿各科疾病、临床检查、药理、公共卫生，以及中医理论、经络穴位、中药方剂。CET-4 包含高考词汇，CET-6 和 GEE（考研）包含 CET-4 词汇。TOEIC 是托业高频词表 TSL 和通用高频词表 NGSL 的合集，原始词表在 [`data/toeic.tsv`](data/toeic.tsv)。原始表格在 [`data/finance/`](data/finance/)、[`data/macrofin/`](data/macrofin/) 和 [`data/medicine/`](data/medicine/)，可以直接用 Excel 打开。
 
 词根板块收录 1208 个前缀、词根、后缀（含医学常用构词成分），以及 1.2 万多个单词的拆解，数据在 [`data/roots/`](data/roots/)。发现不准的地方，欢迎[提 Issue](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/issues/new/choose)。
 
@@ -75,7 +76,7 @@ Finance 收录经济、金融、会计、管理、公司治理、财务管理、
 
 ## 致谢
 
-考试词库、音标和中文词向量来自 [ECDICT](https://github.com/skywind3000/ECDICT)（MIT 许可证），详见 [NOTICE.md](NOTICE.md)。发音来自有道词典。
+考试词库、音标和中文词向量来自 [ECDICT](https://github.com/skywind3000/ECDICT)（MIT 许可证）；TOEIC 词表来自 Browne、Culligan 等人的 [TOEIC Service List 和 New General Service List](https://www.newgeneralservicelist.com)（CC BY-SA 4.0），详见 [NOTICE.md](NOTICE.md)。发音来自有道词典。
 
 ## 许可证
 

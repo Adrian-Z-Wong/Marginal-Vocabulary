@@ -6,9 +6,10 @@
 不给路径时，会自动下载 ECDICT（约 65 MB）到 tools/.cache/。
 ECDICT 项目：https://github.com/skywind3000/ECDICT （MIT 许可证）
 
-补充词表：data/gre.tsv（ECDICT 的 GRE 标签以外补充的 GRE 词）和 data/gmat.tsv（GMAT 词表），
-每行：单词<Tab>中文释义。释义优先用 ECDICT 的，ECDICT 里查不到时才用表里写的；
-表里写的释义判分时也算对。
+补充词表：data/gre.tsv（ECDICT 的 GRE 标签以外补充的 GRE 词）、data/gmat.tsv（GMAT 词表）
+和 data/toeic.tsv（TOEIC 词表），每行：单词<Tab>中文释义。gre、gmat 的释义优先用 ECDICT 的，
+ECDICT 里查不到时才用表里写的，表里写的释义判分时也算对；toeic 表里写了释义（第 2 列）、
+音标（第 3 列）的，直接替换 ECDICT 的。
 """
 
 import csv
@@ -22,12 +23,30 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "tools", ".cache", "ecdict.csv")
 OUT = os.path.join(ROOT, "src", "words.js")
 # 补充词表：标签 -> 文件
-EXTRA = {"gre": os.path.join(ROOT, "data", "gre.tsv"), "gmat": os.path.join(ROOT, "data", "gmat.tsv")}
+EXTRA = {
+    "gre": os.path.join(ROOT, "data", "gre.tsv"),
+    "gmat": os.path.join(ROOT, "data", "gmat.tsv"),
+    "toeic": os.path.join(ROOT, "data", "toeic.tsv"),
+}
+# 这些表里写的释义、音标替换 ECDICT 的（ECDICT 里有些词的释义过时，比如 teen「愤怒，悲哀」）
+OVERRIDE = {"toeic"}
 LAYERS = os.path.join(ROOT, "data", "layers.tsv")
 URL = "https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv"
 
-# 顺序决定位掩码，app.js 里的 EXAM_BOOKS 必须保持一致；gmat 只来自 data/gmat.tsv
-TAGS = ["zk", "gk", "cet4", "cet6", "ky", "ielts", "toefl", "gre", "gmat"]
+# 顺序决定位掩码，app.js 里的 EXAM_BOOKS 必须保持一致；gmat、toeic 只来自 data/ 下的表
+TAGS = ["zk", "gk", "cet4", "cet6", "ky", "ielts", "toefl", "gre", "gmat", "toeic"]
+
+# ECDICT 里音标缺了音、按规则修不回来的几个词
+PHONETIC_FIX = {
+    "gangly": "ˈgæŋgli",
+    "groundless": "ˈgraundlis",
+    "nuanced": "ˈnju:ɑ:nst",
+    "counterfactual": "ˌkauntəˈfæktʃuəl",
+    "simultaneously": "ˌsiməlˈteiniəsli",
+}
+
+# ECDICT 里只有大写写法的几个普通词，显示成小写（进度按小写记，不受影响）
+CASE_FIX = {"CORE": "core", "FAX": "fax", "Mister": "mister", "North": "north"}
 
 MAX_LINES = 4
 MAX_CHARS = 120
@@ -38,7 +57,15 @@ def clean_phonetic(p):
     if not p:
         return ""
     # ECDICT 里混用了一些旧式音标字符，统一成常见写法
-    p = p.replace("ә", "ə").replace("є", "ɛ").replace("'", "ˈ")
+    p = p.replace("ә", "ə").replace("є", "ɛ").replace("ε", "ɛ").replace("'", "ˈ")
+    # 有些词的音标是乱码：^ 是 g，一串反斜杠是 ə（ə: 即 ɜ:），c 是 k；
+    # jj 是 ju，əj 是 əu，其余后面不跟元音的 j 是 u（正常的 j 后面总是元音）
+    p = p.replace("^", "g").replace("c", "k")
+    p = re.sub(r"\\+", "ə", p)
+    p = p.replace("jj", "ju").replace("əj", "əu")
+    p = re.sub(r"j(?![aeiouəɛæɑɒɔʌɪʊ:ː])", "u", p)
+    # 「; (?@) …」是美式读法的片段，只留前面完整的那个
+    p = p.split(";")[0].strip()
     return p
 
 
@@ -112,9 +139,14 @@ def main():
                 cols = [c.strip() for c in line.rstrip("\r\n").split("\t")]
                 if cols and cols[0] and not cols[0].startswith("#"):
                     key = cols[0].lower()
-                    item = extra_lists.setdefault(key, [cols[0], "", 0])
+                    item = extra_lists.setdefault(key, [cols[0], "", 0, "", ""])
                     item[2] |= 1 << TAGS.index(tag)
-                    if len(cols) > 1 and cols[1] and cols[1] not in item[1].split("|"):
+                    if tag in OVERRIDE:
+                        if len(cols) > 1 and cols[1]:
+                            item[3] = cols[1]
+                        if len(cols) > 2 and cols[2]:
+                            item[4] = cols[2]
+                    elif len(cols) > 1 and cols[1] and cols[1] not in item[1].split("|"):
                         item[1] = "|".join(x for x in (item[1], cols[1]) if x)
     layers = load_layers()
     layered = 0
@@ -143,6 +175,13 @@ def main():
             if not meaning:
                 continue
             extra = extra_translation(row["translation"], meaning)
+            phonetic = clean_phonetic(row["phonetic"])
+            if listed and extra_lists[key][3]:
+                # 表里写的释义替换 ECDICT 的，ECDICT 里过时的意思判分时也不算
+                meaning, extra = extra_lists[key][3], ""
+            if listed and extra_lists[key][4]:
+                phonetic = extra_lists[key][4]
+            phonetic = PHONETIC_FIX.get(word, phonetic)
             # 用分好层的释义来显示；词语和原释义对不上时（比如词典更新了）就不用
             if word in layers and term_set(layers[word]) == term_set(meaning):
                 meaning = layers[word]
@@ -151,15 +190,16 @@ def main():
                 # 补充词表里写的语境释义，判分时也算对
                 extra = "|".join(x for x in (extra, extra_lists[key][1]) if x)
             frq = int(row["frq"] or 0) or int(row["bnc"] or 0) or 10**9
-            entries.append((frq, word, clean_phonetic(row["phonetic"]), meaning, mask, extra))
+            entries.append((frq, CASE_FIX.get(word, word), phonetic, meaning, mask, extra))
 
     # ECDICT 里查不到的补充词（多是固定搭配），用表里写的释义
-    for key, (word, meaning, mask) in extra_lists.items():
+    for key, (word, meaning, mask, own, phon) in extra_lists.items():
+        meaning = own or meaning
         if key not in found and meaning:
             if word in layers and term_set(layers[word]) == term_set(meaning):
                 meaning = layers[word]
                 layered += 1
-            entries.append((10**9, word, "", meaning, mask, ""))
+            entries.append((10**9, word, phon, meaning, mask, ""))
 
     # 常用词排前面：背「新词」时先出现
     entries.sort(key=lambda e: (e[0], e[1].lower()))
