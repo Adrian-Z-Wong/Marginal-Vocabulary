@@ -25,7 +25,8 @@ CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库来自 [ECDICT](https://g
 
 ## 改代码
 
-- 不用任何框架和依赖，源码在 `src/`：`index.html`、`style.css`、`app.js`；像素画全部用代码画在 `art.js`（宠物、小人、房子、植物、装饰、家具、物品、花园地面）；宠物、树种、商店货架和台词这些数据在 `pets.js`。
+- 界面源码在 `src/`：`index.html`、`style.css`、`app.js`；像素画全部用代码画在 `art.js`（宠物、小人、房子、植物、装饰、家具、物品、花园地面）；宠物、树种、商店货架和台词这些数据在 `pets.js`。
+- 小游戏用 TypeScript 写在 `ts/src/`（打字追击在 `ts/src/chase/`），和主程序只通过 `ts/src/host.ts` 里的接口打交道。改完在 `ts/` 里运行 `npm install`（第一次）和 `npm run build`，会先做严格的类型检查，再编译成 `src/games.js`。新的界面代码都用 TypeScript 写，`app.js` 会逐页迁过去。
 - 版本号写在 `src/app.js` 的 `APP_VERSION` 和 `desktop/src-tauri/tauri.conf.json` 里，两处要一致（`tools/build.py` 会检查），应用内检查更新靠它比较版本。
 - 开发时直接用浏览器打开 `src/index.html`，改完刷新。
 - 提交前运行 `python3 tools/build.py`，更新打包好的 `Margin.html`。
@@ -38,9 +39,11 @@ python3 tools/build_terms.py     # Finance、MacroFin、Medicine 词库 src/fina
 python3 tools/build_roots.py     # 词根和单词拆解 src/roots.js（data/roots/）
 pip install numpy scipy
 python3 tools/build_vectors.py   # 中文词向量 src/vectors.js
+python3 tools/build_passages.py  # 打字小游戏的文章 data/typing/passages.json、src/passages.js（OpenStax CC BY 教材）
+(cd ts && npm run build)         # 小游戏 src/games.js
 python3 tools/build.py           # 打包 Margin.html
 ```
 
-Mac 应用在 `desktop/`，用 [Tauri](https://tauri.app) 把 `Margin.html` 包成 App。发布新版本：改 `desktop/src-tauri/tauri.conf.json` 里的 `version` 并推送到 `main`，GitHub Actions 会自动打包 `.dmg`、创建 `v版本号` 标签并发布到 Releases。也可以在 Actions 页面手动运行「Mac 应用」。
+Mac、Windows 应用在 `desktop/`，用 [Tauri](https://tauri.app) 把 `Margin.html` 包成 App（Rust 写的外壳在 `desktop/src-tauri/src/`）。发布新版本：改 `desktop/src-tauri/tauri.conf.json` 里的 `version` 并推送到 `main`，GitHub Actions 会先打包 Mac 的 `.dmg`、创建 `v版本号` 标签并发布到 Releases，再打包 Windows 的安装程序 `…_x64-setup.exe` 传到同一个 Release。也可以在 Actions 页面手动运行「桌面应用」。
 - 风格：米白纸面、墨色文字、陶土色点缀（深色外观是暖调炭灰）；英文用 Times New Roman 斜体，中文用仿宋；界面文字用中文。
 - 进度存在浏览器 `localStorage` 的 `margin.v1` 里。改数据结构时要兼容旧数据。

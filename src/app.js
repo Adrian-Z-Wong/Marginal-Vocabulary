@@ -29,6 +29,9 @@
 
   const BASIC_MASK = (1 << 0) | (1 << 1); // 中考、高考
 
+  // 小游戏模块（ts/ 下的 TypeScript 编译成 games.js），没有就不显示小游戏
+  const GAMES = window.MARGIN_GAMES || null;
+
   const WRONG_BOOK = '__wrong';
   const REVIEW_BOOK = '__review';
 
@@ -184,6 +187,8 @@
     for (const k of ['points', 'world']) if (saved[k] && typeof saved[k] === 'object') Object.assign(s[k], saved[k]);
     for (const k of ['pets', 'petGraves', 'petWardrobe']) if (Array.isArray(saved[k])) s[k] = saved[k];
     for (const k of ['petMain', 'petSeq']) if (typeof saved[k] === 'number') s[k] = saved[k];
+    // 小游戏：成绩、自定义文章、今天领了多少金币
+    if (saved.games && typeof saved.games === 'object') s.games = saved.games;
     // 旧版本的数据，迁移时用：0.3 的森林记录、0.3 / 0.4 的单只宠物和树种解锁
     if (saved.garden && typeof saved.garden === 'object') s.garden = saved.garden;
     if (saved.pet && typeof saved.pet === 'object') s.pet = saved.pet;
@@ -244,6 +249,8 @@
 
   // 桌面版（Tauri）里没有浏览器下载，改成直接存到「下载」文件夹
   const DESKTOP = !!(window.__TAURI__ && window.__TAURI__.core);
+  // Windows 版更新是下载安装程序；Mac 版是直接替换应用
+  const WINDOWS = DESKTOP && /Windows/i.test(navigator.userAgent);
 
   function downloadText(name, text, type) {
     if (DESKTOP) {
@@ -1061,6 +1068,9 @@
 
   function go(view) {
     if (ui.view === 'practice' && view !== 'practice') stopSpeech();
+    // 小游戏：离开时停下正在进行的一局；点顶栏「小游戏」回到游戏列表
+    if (GAMES && ui.view === 'games' && view !== 'games') GAMES.leave();
+    if (GAMES && view === 'games') GAMES.home();
     if (view !== ui.view) ui.tool = null; // 换页面就把手里的工具放下
     ui.view = view;
     render();
@@ -1336,6 +1346,7 @@
       ['roots', '词根'],
       ['books', '词库'],
       ['wrong', '错题本' + (wrongN ? '<sup>' + wrongN + '</sup>' : '')],
+      ['games', '小游戏'],
       ['garden', '花园'],
       ['shop', '商店' + (petNeedsCare() ? '<i class="dot" title="' + (petSick() ? '宠物生病了' : '宠物状态不太好') + '"></i>' : '')],
       ['settings', '设置'],
@@ -2517,7 +2528,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.6';
+  const APP_VERSION = '0.6.0';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -2561,7 +2572,7 @@
         ui.update = { checking: false, latest: latest || APP_VERSION, none: true };
         if (manual) toast('已经是最新版本（' + APP_VERSION + '）');
       } else {
-        const asset = (rel.assets || []).find((a) => /\.app\.tar\.gz$/.test(a.name));
+        const asset = (rel.assets || []).find((a) => (WINDOWS ? /-setup\.exe$/ : /\.app\.tar\.gz$/).test(a.name));
         let notes = [];
         try {
           const r2 = await fetch('https://raw.githubusercontent.com/' + REPO + '/main/CHANGELOG.md', { cache: 'no-store' });
@@ -2639,7 +2650,7 @@
       main = '<b>新版本 ' + esc(u.latest) + ' 装好了</b><span class="muted">重新打开就是新版本，进度不受影响。</span>';
       acts = '<button class="btn small" data-act="relaunchApp">重新打开</button>';
     } else if (u.installing) {
-      main = '<b>正在下载新版本 ' + esc(u.latest) + '…</b><span class="muted">大约 4 MB，装好后会提示你重新打开。</span>';
+      main = '<b>正在下载新版本 ' + esc(u.latest) + '…</b><span class="muted">' + (WINDOWS ? '下载好后会打开安装程序，按提示装好就是新版本。' : '大约 4 MB，装好后会提示你重新打开。') + '</span>';
       acts = '<span class="spin" aria-hidden="true"></span>';
     } else {
       main = '<b>发现新版本 ' + esc(u.latest) + '</b><span class="muted">当前 ' + APP_VERSION + '</span>';
@@ -2670,7 +2681,9 @@
           : u.latest && versionNewer(u.latest, APP_VERSION)
             ? '有新版本 ' + u.latest
             : '';
-    const desc = DESKTOP
+    const desc = WINDOWS
+      ? '每天打开时自动检查一次。有新版本时在应用里下载安装程序，打开后按提示装好：新版本覆盖旧版本，不会留下多个版本；背诵进度存在应用的数据文件夹里，不受影响，更新前还会自动备份一份。'
+      : DESKTOP
       ? '每天打开时自动检查一次，也可以在菜单「Marginal Vocabulary → Check for Updates…」里检查。有新版本时直接在应用里下载安装：新版本替换旧版本，不会留下多个版本；背诵进度存在应用的数据文件夹里，不受影响，更新前还会自动备份一份。'
       : ONLINE
         ? '在线版每次打开都是最新版本；如果页面开着时发布了新版本，这里会提示刷新。'
@@ -6665,6 +6678,27 @@
   if (window.__MARGIN_TEST) window.__setSky = (w, m) => { ui.forceWeather = w; ui.forceMinute = m; };
   if (window.__MARGIN_TEST) window.__houseInfo = () => ({ house: { x: HOUSE.x, y: HOUSE.y, w: HOUSE.w, h: HOUSE.h, sprite: HOUSE.sprite }, oy: OY, fixed: GFIXED.map((d) => ({ id: d.id, x: d.x, y: d.y })), pond: [...GPOND], gw: GW, gh: GH });
   if (window.__MARGIN_TEST) window.__sceneDebug = () => (scene ? { cx: scene.cam.x, cy: scene.cam.y, w: scene.w, h: scene.h, swimT: scene.swimT || 0, setSwimT: (v) => { scene.swimT = v; }, avf: scene.avFrame, av: scene.av, pet: scene.mainEnt(), pets: scene.pets, fish: scene.fish, scale: scene.scale, vw: scene.vw, blocked: () => scene.blocked(), walk: (x, y) => scene.walkTo(x, y) } : null);
+
+  // 小游戏（TypeScript 写的，打包在 games.js）：给它一个读写进度、加金币、换页面的接口
+  if (GAMES) {
+    GAMES.init({
+      state: () => state,
+      save,
+      gain,
+      toast,
+      render,
+      go,
+      esc,
+      fmt,
+      books: () => allBooks().concat(Object.values(state.books).sort((a, b) => a.t - b.t).map((b) => b.id)).map((id) => ({ id, name: bookName(id) })),
+      bookWords: (id) => bookEntries(id).map((e) => e.w),
+      studyBook,
+      today: () => dayNum(),
+      confirm: askConfirm,
+    });
+  }
+  VIEWS.games = () => (GAMES ? GAMES.view() : '');
+  AFTER.games = () => GAMES && GAMES.after();
 
   layoutGarden();
   migrate();

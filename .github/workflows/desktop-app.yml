@@ -1,0 +1,105 @@
+# 打包 Mac 和 Windows 应用并发布到 Releases 页面。
+# 改了 desktop/src-tauri/tauri.conf.json 里的版本号并推送到 main，就会自动发布这个版本；
+# 也可以在 GitHub 的 Actions 页面手动运行。版本标签（比如 v0.6.0）由这里自动创建。
+# 先打 Mac 版（同时创建这个版本的 Release），再打 Windows 版，把安装程序传到同一个 Release 里。
+name: 桌面应用
+
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/src-tauri/tauri.conf.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_BODY: |
+    **Mac**：下载以 `_aarch64.dmg` 结尾的文件，双击打开，把 Marginal Vocabulary 拖进「应用程序」文件夹。第一次打开如果提示「无法验证开发者」，打开「系统设置 → 隐私与安全性」，往下找到 Marginal Vocabulary，点「仍要打开」。适用于 Apple 芯片（M1–M4）的 Mac，需要 macOS 11 或更新版本。
+
+    **Windows**：下载以 `_x64-setup.exe` 结尾的文件，双击安装。如果提示「Windows 已保护你的电脑」，点「更多信息」→「仍要运行」。需要 Windows 10 或 11（64 位）。
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: 编译小游戏（TypeScript）
+        working-directory: ts
+        run: |
+          npm ci
+          npm run build
+
+      - name: 准备网页文件
+        run: |
+          python3 tools/build.py
+          mkdir -p desktop/www
+          cp Margin.html desktop/www/index.html
+
+      - name: 安装 Tauri 命令行
+        working-directory: desktop
+        run: npm install
+
+      - name: 打包并发布
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          args: --target aarch64-apple-darwin --bundles app,dmg
+          tagName: v__VERSION__
+          releaseName: Marginal Vocabulary v__VERSION__
+          releaseBody: ${{ env.RELEASE_BODY }}
+          releaseDraft: false
+
+  windows:
+    needs: mac
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: 编译小游戏（TypeScript）
+        working-directory: ts
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+
+      - name: 准备网页文件
+        shell: bash
+        run: |
+          python tools/build.py
+          mkdir -p desktop/www
+          cp Margin.html desktop/www/index.html
+
+      - name: 安装 Tauri 命令行
+        working-directory: desktop
+        shell: bash
+        run: npm install
+
+      - name: 打包并上传到同一个 Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          args: --bundles nsis
+          tagName: v__VERSION__
+          releaseName: Marginal Vocabulary v__VERSION__
+          releaseBody: ${{ env.RELEASE_BODY }}
+          releaseDraft: false

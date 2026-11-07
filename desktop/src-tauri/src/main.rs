@@ -4,6 +4,7 @@
 mod update;
 
 use std::path::Path;
+#[cfg(target_os = "macos")]
 use tauri::menu::{Menu, MenuItem, MenuItemKind};
 use tauri::Manager;
 
@@ -20,14 +21,37 @@ fn save_to_downloads(app: tauri::AppHandle, name: String, contents: String) -> R
     Ok(path.to_string_lossy().into_owned())
 }
 
-/// 下载并安装新版本（地址来自 GitHub Releases），在后台线程里跑，不卡界面
+/// 下载并安装新版本（地址来自 GitHub Releases），在后台线程里跑，不卡界面。
+/// macOS：直接替换应用，装好后由页面提示重新打开；Windows：打开安装程序，应用自己退出
 #[tauri::command(async)]
-fn install_update(url: String) -> Result<String, String> {
-    if !url.starts_with(update::RELEASE_PREFIX) || !url.ends_with(".app.tar.gz") {
+fn install_update(app: tauri::AppHandle, url: String) -> Result<String, String> {
+    if !url.starts_with(update::RELEASE_PREFIX) {
         return Err("更新地址不对".into());
     }
-    let bundle = update::current_bundle()?;
-    update::install(&url, &bundle).map(|p| p.to_string_lossy().into_owned())
+    #[cfg(target_os = "macos")]
+    {
+        let _ = &app;
+        if !url.ends_with(".app.tar.gz") {
+            return Err("更新地址不对".into());
+        }
+        let bundle = update::current_bundle()?;
+        update::install(&url, &bundle).map(|p| p.to_string_lossy().into_owned())
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if !url.ends_with("-setup.exe") {
+            return Err("更新地址不对".into());
+        }
+        let installer = update::download_installer(&url)?;
+        update::launch_installer(&installer)?;
+        app.exit(0);
+        Ok(installer.to_string_lossy().into_owned())
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let _ = &app;
+        Err("这个系统还不支持自动更新".into())
+    }
 }
 
 /// 更新前把全部进度存一份到应用自己的数据文件夹（每次覆盖，只留最新一份）
@@ -44,23 +68,37 @@ fn save_update_backup(app: tauri::AppHandle, contents: String) -> Result<String,
 /// 装好新版本后重新打开应用
 #[tauri::command]
 fn relaunch(app: tauri::AppHandle) -> Result<(), String> {
-    let bundle = update::current_bundle()?;
-    std::process::Command::new("open").arg("-n").arg(&bundle).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    {
+        let bundle = update::current_bundle()?;
+        std::process::Command::new("open").arg("-n").arg(&bundle).spawn().map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        std::process::Command::new(exe).spawn().map_err(|e| e.to_string())?;
+    }
     app.exit(0);
     Ok(())
 }
 
 fn main() {
     tauri::Builder::default()
-        // 在应用菜单（Marginal Vocabulary）里「About」下面加一项「Check for Updates…」
+        // Mac：在应用菜单（Marginal Vocabulary）里「About」下面加一项「Check for Updates…」
+        // Windows 不要菜单栏，检查更新在「设置」里
         .setup(|app| {
-            let handle = app.handle();
-            let menu = Menu::default(handle)?;
-            let check = MenuItem::with_id(handle, "check_updates", "Check for Updates…", true, None::<&str>)?;
-            if let Some(MenuItemKind::Submenu(app_menu)) = menu.items()?.first() {
-                app_menu.insert(&check, 1)?;
+            #[cfg(target_os = "macos")]
+            {
+                let handle = app.handle();
+                let menu = Menu::default(handle)?;
+                let check = MenuItem::with_id(handle, "check_updates", "Check for Updates…", true, None::<&str>)?;
+                if let Some(MenuItemKind::Submenu(app_menu)) = menu.items()?.first() {
+                    app_menu.insert(&check, 1)?;
+                }
+                app.set_menu(menu)?;
             }
-            app.set_menu(menu)?;
+            #[cfg(not(target_os = "macos"))]
+            let _ = app;
             Ok(())
         })
         .on_menu_event(|app, event| {

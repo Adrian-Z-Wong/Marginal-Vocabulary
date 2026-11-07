@@ -30,15 +30,18 @@ A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS,
 - 打卡热力图
 - 金币和商店：背单词攒金币，买宠物、树木和花草的种子、锄头、水、肥料、宠物用品、装饰、家具和装扮，同一种可以买很多个；每日挑战和成就
 - 花园：像星露谷那样的俯视像素农场，有自己的小人和房子；一开始是荒地，用镰刀、十字镐、斧头清理杂草、石头、野树，攒木材和石料；用锄头开垦，种下种子，浇水施肥，从种子长成大树；18 种树、10 种花草、3 种灌木；池塘里养鱼，人也能下水游泳；花园和房子都能扩建 10 次，房子从小木屋一步步变成别墅、庄园，大房子有二楼、三楼；家具屋里屋外都能摆，能坐能躺；光线跟着现实的时间变，每天的天气不一样；可以拉近拉远，拉到最远能看到整个花园
+- 小游戏：打字追击——打对一个字母，警车就往前开一点，在小偷跑进仓库前追上他；文章按词库挑（OpenStax 开放教材原文，金融、宏观、医学、托福、GRE……），也可以贴自己的文章；四档速度，抓到小偷有金币，记录最快速度
 - 宠物：21 种宠物和 5 种观赏鱼，同一种可以养好几只；每只都要吃饭、陪它玩，生病了要吃药，不然会死；选一只陪你背单词，它会在页面上走动、用英文说话
 - 右下角的背包装着买来的东西
-- Mac 应用可以检查更新（菜单 Check for Updates… 或设置里），一键安装，新版本替换旧版本，进度不受影响
+- Mac、Windows 应用可以检查更新（设置里；Mac 菜单里也有 Check for Updates…），一键安装，新版本替换旧版本，进度不受影响
 - 浅色 / 深色两种外观（米白纸面、陶土色点缀）
-- Mac 应用，也可以在线用或下载网页文件，离线可用
+- Mac、Windows 应用，也可以在线用或下载网页文件，离线可用
 
 ![背诵界面](docs/screenshots/practice.png)
 
 ![花园](docs/screenshots/garden.png)
+
+![打字追击](docs/screenshots/typing.png)
 
 ## 怎么用
 
@@ -47,6 +50,8 @@ A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS,
 **下载到电脑**：打开 <https://adrian-z-wong.github.io/Marginal-Vocabulary/>，点「下载到电脑」，再双击下载好的 `Marginal Vocabulary.html`（推荐 Chrome 或 Edge）。
 
 **Mac 应用**：在 [Releases](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/releases/latest) 下载以 `_aarch64.dmg` 结尾的文件，双击后把 Marginal Vocabulary 拖进「应用程序」。第一次打开如果提示「无法验证开发者」，打开「系统设置 → 隐私与安全性」，点「仍要打开」。适用于 Apple 芯片（M1–M4）的 Mac。
+
+**Windows 应用**：在 [Releases](https://github.com/Adrian-Z-Wong/Marginal-Vocabulary/releases/latest) 下载以 `_x64-setup.exe` 结尾的文件，双击安装。如果提示「Windows 已保护你的电脑」，点「更多信息」→「仍要运行」。需要 Windows 10 或 11。
 
 进度保存在浏览器或 App 里。换电脑之前，在「设置」里导出备份。
 
@@ -72,11 +77,11 @@ Finance 收录经济、金融、会计、管理、公司治理、财务管理、
 
 ## 开发
 
-不依赖任何框架。源码在 `src/`，运行 `python3 tools/build.py` 打包成 `Margin.html`。Mac 应用在 `desktop/`（[Tauri](https://tauri.app)），由 GitHub Actions 自动打包发布。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+桌面应用用 [Tauri](https://tauri.app)：外壳和系统相关的部分（下载更新、存文件）是 Rust（`desktop/src-tauri/`），界面在 `src/`，小游戏是 TypeScript（`ts/`，用 esbuild 编译成 `src/games.js`），原有的界面代码会逐页迁到 TypeScript。运行 `python3 tools/build.py` 打包成 `Margin.html`；Mac 和 Windows 安装包由 GitHub Actions 自动打包发布。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 
-考试词库、音标和中文词向量来自 [ECDICT](https://github.com/skywind3000/ECDICT)（MIT 许可证）；TOEIC 词表来自 Browne、Culligan 等人的 [TOEIC Service List 和 New General Service List](https://www.newgeneralservicelist.com)（CC BY-SA 4.0），详见 [NOTICE.md](NOTICE.md)。发音来自有道词典。
+考试词库、音标和中文词向量来自 [ECDICT](https://github.com/skywind3000/ECDICT)（MIT 许可证）；TOEIC 词表来自 Browne、Culligan 等人的 [TOEIC Service List 和 New General Service List](https://www.newgeneralservicelist.com)（CC BY-SA 4.0）；打字小游戏的文章节选自 [OpenStax](https://openstax.org) 的开放教材（CC BY 4.0），每段都标了出处，详见 [NOTICE.md](NOTICE.md)。发音来自有道词典。
 
 ## 许可证
 

@@ -32,3 +32,9 @@ TOEIC 词库的词表（`data/toeic.tsv`，打包进 `src/words.js`）来自 [Ne
 
 - TOEIC Service List 1.2 — Browne, C. & Culligan, B. (2016)
 - New General Service List 1.2 — Browne, C., Culligan, B. & Phillips, J. (2013)
+
+## 打字小游戏的文章
+
+打字追击里的文章（`data/typing/passages.json`，打包进 `src/passages.js`）节选自 OpenStax（Rice University）的开放教材，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 许可使用，每段都标了书名和章节。节选时把弯引号、破折号换成了键盘能直接打出来的字符，去掉了图表引用。
+
+- Biology、Astronomy、Psychology、Anatomy and Physiology、Introduction to Sociology 2e、Principles of Economics 2e、Principles of Macroeconomics 2e、Introduction to Business、American Government 3e — OpenStax, Rice University, https://openstax.org
