@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.5.5 · 2026-11-07
+
+- MacroFin 新增 193 个宏观金融研究里常用的术语，共 4,332 条。主要是近些年论文里常见的：中介机构与流动性（intermediary capital ratio、margin spiral、funding liquidity、collateral reuse）、银行与存款（deposit market power、unrealized losses、IRRBB）、宏观审慎与金融稳定（liquidity mismatch index、fire-sale contagion、swing pricing、TLAC）、气候金融（transition risk、stranded assets、greenium、green swan）、通胀与预期（nonlinear Phillips curve、information rigidity、sellers' inflation、constant-gain learning）、异质性主体（liquid wealth、earnings heterogeneity channel）、识别方法（narrative identification、granular instrumental variables、LP-IV）。参考了欧洲央行、美联储、IMF 的术语表和 NBER、BIS、纽约联储等的研究文献，每条都和已有词条查过重。
+- 池塘再大一半，大约 210 格。以前的存档里压在新水面上的植物、摆设会挪到最近的空地，杂物直接清掉。
+- 新开的花园和扩建出来的荒地上，杂草、石头、树枝、树桩、野树都是原来的两倍。
+
 ## 0.5.4 · 2026-11-07
 
 - 花园一开始就是 64 × 48 格，能扩建 10 次，最大 104 × 78 格。以前的花园按原来的等级换算，也都变大了。

@@ -55,7 +55,7 @@ A free vocabulary and word-root app for Chinese learners: CET-4/6, TOEFL, IELTS,
 | 词库 | 词数 |
 | --- | --- |
 | Finance | 18,356 |
-| MacroFin | 4,139 |
+| MacroFin | 4,332 |
 | Medicine | 24,293 |
 | CET-4 | 5,331 |
 | CET-6 | 7,086 |

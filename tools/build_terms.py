@@ -39,7 +39,7 @@ BOOKS = [
         "dir": "macrofin",
         "out": "macrofin.js",
         "var": "MARGIN_MACROFIN",
-        "priority": ["macro.tsv", "policy.tsv", "finance.tsv", "micro.tsv", "methods.tsv"],
+        "priority": ["macro.tsv", "policy.tsv", "finance.tsv", "micro.tsv", "methods.tsv", "research.tsv"],
     },
 ]
 

@@ -2516,7 +2516,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.5.4';
+  const APP_VERSION = '0.5.5';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -3084,7 +3084,7 @@
     { id: 'mailbox', x: 22, y: 8 },
     { id: 'logs', side: 'left', y: 6 },
   ];
-  const POND = { x: 1, y: 28, w: 20, h: 16 }; // 池塘可能出现的范围（形状在 art.js 的 pondInside）
+  const POND = { x: 1, y: 26, w: 20, h: 20 }; // 池塘可能出现的范围（形状在 art.js 的 pondInside）
   // 屋里的大小跟着房子变；门在下沿正中两格
   let RW = 18;
   let RH = 11;
@@ -3585,7 +3585,7 @@
     for (let j = 0; j < D.h; j++) for (let i = 0; i < D.w; i++) if (tilled(x + i, y + j) || nearHouse(x + i, y + j)) return false;
     return true;
   }
-  // 在 ok(x, y) 允许的空草地上撒杂物（每 100 格大约：杂草 4、石头 2、树枝 1.5、野树 0.5、大石头 0.3、树桩 0.3）
+  // 在 ok(x, y) 允许的空草地上撒杂物（每 100 格大约：杂草 8、石头 4、树枝 3、野树 1、大石头 0.6、树桩 0.6）
   function seedDebris(ok) {
     const W = state.world;
     if (!W.debris) W.debris = [];
@@ -3593,7 +3593,7 @@
     const cand = [];
     for (let y = GB; y < GH - GB; y++) for (let x = GB; x < GW - GB; x++) if (ok(x, y)) cand.push([x, y]);
     const R = Math.random;
-    for (const [k, per] of [['tree', 0.5], ['boulder', 0.3], ['stump', 0.3], ['rock', 2], ['twig', 1.5], ['weed', 4]]) {
+    for (const [k, per] of [['tree', 1], ['boulder', 0.6], ['stump', 0.6], ['rock', 4], ['twig', 3], ['weed', 8]]) {
       const D = DEBRIS[k];
       let n = Math.round((cand.length * per) / 100);
       for (let tries = 0; n > 0 && tries < 40 * n + 40; tries++) {
@@ -3682,7 +3682,8 @@
   }
 
   // 格子上有什么：房子、池塘、地上本来有的东西、植物、装饰
-  function gardenOcc(skip) {
+  // 只有房子、池塘、地上本来有的东西
+  function baseOcc() {
     const occ = new Map();
     for (let y = HOUSE.y; y < HOUSE.y + HOUSE.h; y++) for (let x = HOUSE.x; x < HOUSE.x + HOUSE.w; x++) occ.set(x + ',' + y, { house: true });
     for (const k of GPOND) occ.set(k, { pond: true });
@@ -3690,6 +3691,11 @@
       const [w, h] = decorSize(d.id);
       for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occ.set(d.x + i + ',' + (d.y + j), { fixed: d });
     }
+    return occ;
+  }
+
+  function gardenOcc(skip) {
+    const occ = baseOcc();
     for (const pl of state.world.plants) {
       if (pl === skip) continue;
       const [w, h] = plantSize(pl);
@@ -3757,7 +3763,15 @@
     });
     // 杂物压到房子、路、池塘、植物、摆设上的，直接没了
     if (W.debris) {
-      const occD = new Map([...gardenOcc()].filter(([, v]) => !v.debris));
+      const occD = baseOcc();
+      for (const pl of W.plants) {
+        const [w, h] = plantSize(pl);
+        for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occD.set(pl.x + i + ',' + (pl.y + j), { plant: pl });
+      }
+      for (const d of W.decor) {
+        const [w, h] = decorSize(d.id);
+        for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) occD.set(d.x + i + ',' + (d.y + j), { decor: d });
+      }
       W.debris = W.debris.filter((d) => {
         const D = DEBRIS[d.k];
         if (!D || !gardenFree(d.x, d.y, D.w, D.h, occD)) return false;
@@ -3766,7 +3780,7 @@
       });
     }
     // 开垦过的地：压到房子、路、池塘、原来就有的东西下面的不算了；植物底下一定是开垦过的
-    const base = new Map([...gardenOcc()].filter(([, v]) => v.house || v.pond || v.fixed));
+    const base = baseOcc();
     for (const k of Object.keys(W.till || {})) {
       const [x, y] = k.split(',').map(Number);
       if (!gardenFree(x, y, 1, 1, base)) delete W.till[k];
