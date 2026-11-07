@@ -1346,9 +1346,9 @@
       ['roots', '词根'],
       ['books', '词库'],
       ['wrong', '错题本' + (wrongN ? '<sup>' + wrongN + '</sup>' : '')],
-      ['games', '小游戏'],
       ['garden', '花园'],
       ['shop', '商店' + (petNeedsCare() ? '<i class="dot" title="' + (petSick() ? '宠物生病了' : '宠物状态不太好') + '"></i>' : '')],
+      ['games', '小游戏'],
       ['settings', '设置'],
     ];
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots', room: 'garden' }[ui.view] || ui.view;
@@ -2528,7 +2528,7 @@
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.6.0';
+  const APP_VERSION = '0.6.1';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -3599,7 +3599,8 @@
     for (let j = 0; j < D.h; j++) for (let i = 0; i < D.w; i++) if (tilled(x + i, y + j) || nearHouse(x + i, y + j)) return false;
     return true;
   }
-  // 在 ok(x, y) 允许的空草地上撒杂物（每 100 格大约：杂草 8、石头 4、树枝 3、野树 1、大石头 0.6、树桩 0.6）
+  // 在 ok(x, y) 允许的空草地上撒杂物：新开的地是一片荒地，长满杂草、野树，遍地石头
+  // （每 100 格大约：杂草 20、石头 9、树枝 7、野树 4、大石头 1.6、树桩 1.6）
   function seedDebris(ok) {
     const W = state.world;
     if (!W.debris) W.debris = [];
@@ -3607,7 +3608,7 @@
     const cand = [];
     for (let y = GB; y < GH - GB; y++) for (let x = GB; x < GW - GB; x++) if (ok(x, y)) cand.push([x, y]);
     const R = Math.random;
-    for (const [k, per] of [['tree', 1], ['boulder', 0.6], ['stump', 0.6], ['rock', 4], ['twig', 3], ['weed', 8]]) {
+    for (const [k, per] of [['tree', 4], ['boulder', 1.6], ['stump', 1.6], ['rock', 9], ['twig', 7], ['weed', 20]]) {
       const D = DEBRIS[k];
       let n = Math.round((cand.length * per) / 100);
       for (let tries = 0; n > 0 && tries < 40 * n + 40; tries++) {

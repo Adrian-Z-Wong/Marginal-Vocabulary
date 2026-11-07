@@ -1,11 +1,14 @@
-// 打字追击：选词库和难度 → 倒数 → 打字追小偷 → 成绩。
-// 打对一个字警车往前一点；小偷按难度匀速跑。追上就抓到了，小偷先跑进仓库就跑掉了。
+// 打字追击：选词库和难度 → 打字追小偷 → 成绩。
+// 打对一个字母，警车就往前开一点（字母不分大小写，空格和标点要打对）；打错不会卡住，但这一下不前进，还会打滑退一点。
+// 连续打对 12 个字母，警车加速冲一段。小偷按难度跑，速度时快时慢；追上就抓到了，小偷先跑进仓库就跑掉了。
+// 地图是俯视的城市，每局随机一条拐来拐去的路线。
 
 import type { GamesSave, Host } from '../host';
 import { clock, TypingRun } from '../typing';
 import { CUSTOM_BOOK, Passage, bookPassages, customPassages, normalizeText, passageByKey, pickPassage, splitPassages } from '../passages';
 import { ChaseScene, SceneState } from './scene';
-import { PALETTES, drawCar, drawThief, Y } from './art';
+import { City, timeOfDay } from './city';
+import { blit, policeSprite, shadow, thiefSprite } from './sprites';
 
 export const LEVELS = [
   { name: '慢', wpm: 20, coins: 10 },
@@ -16,8 +19,14 @@ export const LEVELS = [
 /** 每天从打字游戏最多领多少金币 */
 export const DAILY_COINS = 150;
 /** 开局小偷领先全程的多少 */
-const HEAD = 0.15;
-const COUNT_MS = 3000;
+const HEAD = 0.14;
+/** 连续打对几个字母加速一次，加速相当于多打了几个字母 */
+const COMBO_EVERY = 12;
+const BOOST_CHARS = 4;
+/** 打错一次，警车打滑退回几个字母的距离 */
+const SKID_CHARS = 1.5;
+/** 一个字母对应路线上多少像素（文章越长路线越长） */
+const PX_PER_CHAR = 7;
 
 type Route = 'setup' | 'play';
 
@@ -27,15 +36,17 @@ interface Play {
   level: number;
   book: string;
   phase: SceneState['phase'];
-  countAt: number; // 倒数开始的时刻
-  runAt: number; // 正式开跑的时刻
+  runAt: number; // 开跑的时刻（第一下按键）
   pausedAt: number;
   pausedTotal: number;
   endAt: number;
-  thief: number;
-  reward: number; // 这局领到的金币
-  capped: boolean; // 今天的金币领满了
+  thief: number; // 小偷的进度 0–1
+  thiefT: number; // 小偷跑了多少秒（算时快时慢用）
+  bonus: number; // 加速、打滑带来的额外距离（字母数）
+  reward: number;
+  capped: boolean;
   newBest: boolean;
+  pop: { text: string; at: number } | null; // 「连击」「加速」的提示
 }
 
 export class ChaseGame {
@@ -45,13 +56,14 @@ export class ChaseGame {
   private preview: Passage | null = null;
   private scene: ChaseScene;
   private tick = 0;
+  private lastStep = 0;
   private spans: HTMLElement[] = [];
   private shownPos = -1;
   private keyHandler = (ev: KeyboardEvent) => this.onKey(ev);
 
   constructor(host: Host) {
     this.host = host;
-    this.scene = new ChaseScene(() => this.sceneState());
+    this.scene = new ChaseScene(() => this.sceneState(), new City(1, 600, timeOfDay()));
     document.addEventListener('keydown', this.keyHandler, true);
   }
 
@@ -92,8 +104,10 @@ export class ChaseGame {
       if (canvas && wrap) this.scene.attach(canvas, wrap);
       this.spans = Array.from(document.querySelectorAll<HTMLElement>('#chase-text span'));
       this.shownPos = -1;
+      this.lastOverlay = '';
       this.paintText();
       this.paintHud(performance.now());
+      if (this.play.phase === 'won' || this.play.phase === 'lost') this.paintResult();
       this.startTick();
     } else {
       this.scene.detach();
@@ -105,7 +119,7 @@ export class ChaseGame {
   leave(): void {
     this.scene.detach();
     this.stopTick();
-    if (this.play && (this.play.phase === 'run' || this.play.phase === 'count' || this.play.phase === 'paused')) this.play = null;
+    if (this.play && (this.play.phase === 'run' || this.play.phase === 'ready' || this.play.phase === 'paused')) this.play = null;
     this.route = 'setup';
   }
 
@@ -174,9 +188,8 @@ export class ChaseGame {
       '<main class="page games play">' +
       '<div class="cp-top"><div><h1 class="h1">打字追击</h1><p class="muted">' + h.esc(bookName) + ' · 小偷 ' + L.name + '（' + L.wpm + ' 词 / 分钟）</p></div>' +
       '<div class="actions"><button class="btn ghost small" data-game="pause">暂停<kbd>Esc</kbd></button><button class="btn ghost small" data-game="quit">不追了</button></div></div>' +
-      '<div class="chase-wrap" id="chase-wrap"><canvas id="chase-canvas" class="chase-canvas"></canvas><div class="cp-overlay" id="chase-overlay"></div></div>' +
-      '<div class="cp-track"><div class="tr-line"><i class="tr-done" id="tr-done"></i></div><img class="tr-icon tr-car" id="tr-car" alt="" src="' + icon('car') + '"><img class="tr-icon tr-thief" id="tr-thief" alt="" src="' + icon('thief') + '"><span class="tr-flag" title="小偷的仓库"></span></div>' +
-      '<div class="cp-stats"><div><b id="st-wpm">0</b><span>词 / 分钟</span></div><div><b id="st-acc">100%</b><span>正确率</span></div><div><b id="st-time">00:00</b><span>用时</span></div><div><b id="st-gap">0</b><span>米 · 离小偷</span></div></div>' +
+      '<div class="chase-wrap" id="chase-wrap"><canvas id="chase-canvas" class="chase-canvas"></canvas><div class="cp-pop" id="chase-pop"></div><div class="cp-overlay" id="chase-overlay"></div></div>' +
+      '<div class="cp-stats"><div><b id="st-wpm">0</b><span>词 / 分钟</span></div><div><b id="st-acc">100%</b><span>正确率</span></div><div><b id="st-combo">0</b><span>连击</span></div><div><b id="st-gap">0</b><span>米 · 离小偷</span></div></div>' +
       '<div class="cp-textbox" id="chase-box"><div class="cp-scroll" id="chase-scroll"><p class="cp-text" id="chase-text">' + chars + '</p></div></div>' +
       '<p class="cp-source muted small">' + h.esc(p.passage.source) + '</p>' +
       '</main>'
@@ -201,40 +214,43 @@ export class ChaseGame {
       run: new TypingRun(ps.text),
       level: c.level,
       book,
-      phase: 'count',
-      countAt: performance.now(),
+      phase: 'ready',
       runAt: 0,
       pausedAt: 0,
       pausedTotal: 0,
       endAt: 0,
       thief: HEAD,
+      thiefT: 0,
+      bonus: 0,
       reward: 0,
       capped: false,
       newBest: false,
+      pop: null,
     };
+    // 每局一张新地图：路线长短跟着文章长短
+    const seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
+    this.scene.reset(new City(seed, Math.max(900, ps.text.length * PX_PER_CHAR), timeOfDay()));
     this.route = 'play';
     this.host.render();
   }
 
-  private sceneState(): SceneState {
-    const p = this.play;
-    if (!p) return { police: 0, thief: HEAD, phase: 'ready', wrong: false, endAt: 0 };
-    return { police: p.run.progress(), thief: p.thief, phase: p.phase, wrong: p.run.wrong !== null, endAt: p.endAt };
+  /** 警车的进度：打对的字母 + 加速、打滑 */
+  private policeProgress(p: Play): number {
+    const n = p.passage.text.length;
+    return Math.max(0, Math.min(1, (p.run.pos + p.bonus) / n));
   }
 
-  /** 小偷跑了多少秒（暂停不算） */
-  private chaseSeconds(now: number): number {
+  private sceneState(): SceneState {
     const p = this.play;
-    if (!p || !p.runAt) return 0;
-    const end = p.pausedAt || p.endAt || now;
-    return Math.max(0, (end - p.runAt - p.pausedTotal) / 1000);
+    if (!p) return { police: 0, thief: HEAD, phase: 'ready', endAt: 0 };
+    return { police: this.policeProgress(p), thief: p.thief, phase: p.phase, endAt: p.endAt };
   }
 
   private startTick(): void {
     this.stopTick();
+    this.lastStep = performance.now();
     const loop = () => {
       if (!document.getElementById('chase-text')) {
-        // 页面被换掉了
         this.stopTick();
         return;
       }
@@ -252,15 +268,16 @@ export class ChaseGame {
   private step(now: number): void {
     const p = this.play;
     if (!p) return;
-    if (p.phase === 'count' && now - p.countAt >= COUNT_MS) {
-      p.phase = 'run';
-      p.runAt = now;
-      p.run.start(now);
-    }
+    const dt = Math.min(0.1, Math.max(0, (now - this.lastStep) / 1000));
+    this.lastStep = now;
     if (p.phase === 'run') {
+      // 小偷的速度时快时慢，平均正好是这一档的速度
+      p.thiefT += dt;
+      const t = p.thiefT;
+      const vary = 1 + 0.16 * Math.sin(t * 0.8) + 0.07 * Math.sin(t * 2.1 + 1.3);
       const cps = (LEVELS[p.level].wpm * 5) / 60;
-      p.thief = Math.min(1, HEAD + (cps * this.chaseSeconds(now)) / p.passage.text.length);
-      if (p.run.progress() >= p.thief) this.finish(true, now);
+      p.thief = Math.min(1, p.thief + (cps * vary * dt) / p.passage.text.length);
+      if (this.policeProgress(p) >= p.thief) this.finish(true, now);
       else if (p.thief >= 1) this.finish(false, now);
     }
     this.paintHud(now);
@@ -289,17 +306,12 @@ export class ChaseGame {
     }
     c.history = [{ t: Date.now(), book: p.book, level: p.level, wpm: Math.round(wpm * 10) / 10, acc: Math.round(acc * 1000) / 1000, won }].concat(c.history).slice(0, 30);
     this.host.save();
-    // 结尾动画播一会儿再弹成绩
-    setTimeout(() => this.paintResult(), won ? 900 : 1100);
+    setTimeout(() => this.paintResult(), won ? 900 : 1300);
   }
 
   private pause(now: number): void {
     const p = this.play;
-    if (!p || (p.phase !== 'run' && p.phase !== 'count')) return;
-    if (p.phase === 'count') {
-      p.countAt = now; // 倒数重新来
-      return;
-    }
+    if (!p || p.phase !== 'run') return;
     p.phase = 'paused';
     p.pausedAt = now;
     p.run.pause(now);
@@ -313,6 +325,7 @@ export class ChaseGame {
     p.pausedAt = 0;
     p.run.resume(now);
     p.phase = 'run';
+    this.lastStep = now;
     this.paintOverlay();
   }
 
@@ -327,7 +340,7 @@ export class ChaseGame {
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
     const now = performance.now();
     if (this.route === 'setup' || !this.play) {
-      if (!inField && ev.key === 'Enter' && view.classList.contains('games') && document.querySelector('[data-game="start"]:not([disabled])')) {
+      if (!inField && ev.key === 'Enter' && document.querySelector('[data-game="start"]:not([disabled])')) {
         ev.preventDefault();
         this.start();
       }
@@ -336,9 +349,11 @@ export class ChaseGame {
     const p = this.play;
     if (inField) return;
     if (ev.isComposing || ev.keyCode === 229 || ev.key === 'Process') {
-      this.flash('切换到英文输入法再打');
+      this.flash('请切换到英文输入法');
       return;
     }
+    // 游戏里的按键不要让页面滚动（空格）或者触发浏览器的快捷查找（引号）
+    if (ev.key.length === 1 || ev.key === 'Backspace') ev.preventDefault();
     if (p.phase === 'won' || p.phase === 'lost') {
       if (ev.key === 'Enter') {
         ev.preventDefault();
@@ -356,14 +371,10 @@ export class ChaseGame {
       return;
     }
     if (p.phase === 'paused') {
-      if (ev.key === 'Enter' || ev.key === ' ') {
+      if (ev.key === 'Enter') {
         ev.preventDefault();
         this.resume(now);
       }
-      return;
-    }
-    if (p.phase !== 'run') {
-      if (ev.key.length === 1 || ev.key === 'Backspace') ev.preventDefault();
       return;
     }
     if (ev.key === 'Backspace') {
@@ -373,8 +384,24 @@ export class ChaseGame {
     }
     if (ev.key.length !== 1) return;
     ev.preventDefault();
+    // 第一下按键：小偷开跑，开始计时
+    if (p.phase === 'ready') {
+      p.phase = 'run';
+      p.runAt = now;
+      p.run.start(now);
+      this.lastStep = now;
+      this.paintOverlay();
+    }
     const r = p.run.type(ev.key);
-    if (r === 'blocked') this.nudge();
+    if (r === 'wrong') {
+      p.bonus = Math.max(-p.run.pos, p.bonus - SKID_CHARS);
+      this.scene.skid();
+      this.nudge();
+    } else if ((r === 'ok' || r === 'done') && p.run.combo > 0 && p.run.combo % COMBO_EVERY === 0) {
+      p.bonus += BOOST_CHARS;
+      this.scene.boost(now);
+      this.popup('连击 ' + p.run.combo + ' · 加速');
+    }
     this.paintText();
     this.step(now);
   }
@@ -385,13 +412,13 @@ export class ChaseGame {
     const p = this.play;
     if (!p || !this.spans.length) return;
     const pos = p.run.pos;
-    const from = Math.max(0, Math.min(this.shownPos < 0 ? 0 : this.shownPos, pos) - 1);
-    for (let i = this.shownPos < 0 ? 0 : from; i < (this.shownPos < 0 ? this.spans.length : Math.min(this.spans.length, Math.max(pos, this.shownPos) + 2)); i++) {
-      const s = this.spans[i];
-      s.className = i < pos ? (p.run.missed[i] ? 'ok was' : 'ok') : i === pos ? (p.run.wrong !== null ? 'cur err' : 'cur') : '';
+    const first = this.shownPos < 0;
+    const from = first ? 0 : Math.max(0, Math.min(this.shownPos, pos) - 1);
+    const to = first ? this.spans.length : Math.min(this.spans.length, Math.max(pos, this.shownPos) + 2);
+    for (let i = from; i < to; i++) {
+      this.spans[i].className = i < pos ? (p.run.missed[i] ? 'ok was' : 'ok') : i === pos ? (p.run.wrong !== null ? 'cur err' : 'cur') : '';
     }
     this.shownPos = pos;
-    // 当前这行保持在框里第二行附近
     const cur = this.spans[Math.min(pos, this.spans.length - 1)];
     const box = document.getElementById('chase-scroll');
     if (cur && box) {
@@ -411,15 +438,8 @@ export class ChaseGame {
     };
     set('st-wpm', String(Math.round(p.run.wpm(now))));
     set('st-acc', Math.round(p.run.accuracy() * 100) + '%');
-    set('st-time', clock(p.run.elapsed(now)));
-    set('st-gap', String(Math.max(0, Math.round((p.thief - p.run.progress()) * 1000))));
-    const pct = (x: number) => (Math.max(0, Math.min(1, x)) * 100).toFixed(2) + '%';
-    const car = document.getElementById('tr-car');
-    const th = document.getElementById('tr-thief');
-    const done = document.getElementById('tr-done');
-    if (car) car.style.left = pct(p.run.progress());
-    if (th) th.style.left = pct(p.thief);
-    if (done) done.style.width = pct(p.run.progress());
+    set('st-combo', String(p.run.combo));
+    set('st-gap', String(Math.max(0, Math.round((p.thief - this.policeProgress(p)) * 1000))));
     this.paintOverlay(now);
   }
 
@@ -430,9 +450,8 @@ export class ChaseGame {
     const el = document.getElementById('chase-overlay');
     if (!p || !el) return;
     let html = '';
-    if (p.phase === 'count') {
-      const n = Math.ceil((COUNT_MS - (now - p.countAt)) / 1000);
-      html = '<div class="ov-count" data-n="' + n + '">' + (n > 0 ? n : '追') + '</div>';
+    if (p.phase === 'ready') {
+      html = '<div class="ov-ready"><b>开始打字，就开始追</b><span>字母不分大小写 · 打错了不前进</span></div>';
     } else if (p.phase === 'paused') {
       html = '<div class="ov-card"><b>暂停</b><div class="actions"><button class="btn" data-game="resume">继续<kbd>Esc</kbd></button><button class="btn ghost" data-game="quit">不追了</button></div></div>';
     } else if (p.phase === 'won' || p.phase === 'lost') {
@@ -442,6 +461,23 @@ export class ChaseGame {
       el.innerHTML = html;
       this.lastOverlay = html;
     }
+    // 连击提示一会儿就消失
+    const pop = document.getElementById('chase-pop');
+    if (pop && p.pop && now - p.pop.at > 1100) {
+      p.pop = null;
+      pop.classList.remove('show');
+    }
+  }
+
+  private popup(text: string): void {
+    const p = this.play;
+    const pop = document.getElementById('chase-pop');
+    if (!p || !pop) return;
+    p.pop = { text, at: performance.now() };
+    pop.textContent = text;
+    pop.classList.remove('show');
+    void pop.offsetWidth;
+    pop.classList.add('show');
   }
 
   private paintResult(): void {
@@ -463,7 +499,7 @@ export class ChaseGame {
     const html =
       '<div class="ov-card result ' + p.phase + '">' +
       '<div class="ov-main"><div class="ov-title"><b>' + title + '</b><span class="ov-sub">' + h.esc(sub) + '</span></div>' +
-      '<div class="ov-stats"><div><b>' + wpm + '</b><span>词 / 分钟</span></div><div><b>' + acc + '%</b><span>正确率</span></div><div><b>' + clock(p.run.elapsed(now)) + '</b><span>用时</span></div></div>' +
+      '<div class="ov-stats"><div><b>' + wpm + '</b><span>词 / 分钟</span></div><div><b>' + acc + '%</b><span>正确率</span></div><div><b>' + p.run.bestCombo + '</b><span>最长连击</span></div><div><b>' + clock(p.run.elapsed(now)) + '</b><span>用时</span></div></div>' +
       '<div class="ov-acts"><button class="btn" data-game="next">再来一篇<kbd>Enter</kbd></button><button class="btn ghost" data-game="setup">换难度<kbd>Esc</kbd></button></div></div>' +
       (missedWords.length ? '<p class="ov-miss"><span class="muted small">打错过</span> ' + missedWords.map((w) => '<span class="mw">' + h.esc(w) + '</span>').join(' ') + '</p>' : '') +
       '</div>';
@@ -501,8 +537,7 @@ export class ChaseGame {
     const p = this.play;
     if (!p) return;
     const c = this.save();
-    const ps = pickPassage(this.host, p.book, c.seen, p.passage.key);
-    this.start(ps);
+    this.start(pickPassage(this.host, p.book, c.seen, p.passage.key));
   }
 
   toSetup(): void {
@@ -602,7 +637,6 @@ export class ChaseGame {
     this.host.render();
   }
 
-  /** 从存档里恢复上次的文章（测试用） */
   passage(key: string): Passage | null {
     return passageByKey(this.host, key);
   }
@@ -610,7 +644,9 @@ export class ChaseGame {
   /** 测试用：当前这局 */
   debug(): unknown {
     const p = this.play;
-    return p ? { phase: p.phase, pos: p.run.pos, len: p.passage.text.length, thief: p.thief, wrong: p.run.wrong, text: p.passage.text, reward: p.reward, keys: p.run.keys, hits: p.run.hits } : null;
+    return p
+      ? { phase: p.phase, pos: p.run.pos, len: p.passage.text.length, thief: p.thief, police: this.policeProgress(p), wrong: p.run.wrong, text: p.passage.text, reward: p.reward, keys: p.run.keys, hits: p.run.hits, combo: p.run.combo, bonus: p.bonus }
+      : null;
   }
 }
 
@@ -631,56 +667,36 @@ function wordsWithMisses(run: TypingRun): string[] {
   return out.slice(0, 12);
 }
 
-// ---------------- 小图标（进度条上的警车、小偷，小游戏首页的封面） ----------------
+// ---------------- 小游戏首页的封面 ----------------
 
-const icons: Record<string, string> = {};
+let cover = '';
 
-export function icon(kind: 'car' | 'thief' | 'cover'): string {
-  if (icons[kind]) return icons[kind];
+/** 封面：傍晚的城市一角，警车在路口追小偷 */
+export function coverImage(): string {
+  if (cover) return cover;
+  const city = new City(7, 700, 'dusk');
+  const W = 140;
+  const H = 63;
   const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
   const c = cv.getContext('2d');
   if (!c) return '';
-  if (kind === 'car') {
-    cv.width = 40;
-    cv.height = 20;
-    c.translate(2, -(Y.ground - 19));
-    drawCar(c, 0, 1, 0, 0, true);
-  } else if (kind === 'thief') {
-    cv.width = 16;
-    cv.height = 24;
-    c.translate(3, -(Y.ground - 23));
-    drawThief(c, 0, 1, 'run');
-  } else {
-    // 封面：傍晚的街，警车追小偷
-    cv.width = 160;
-    cv.height = 72;
-    const p = PALETTES.dusk;
-    const g = c.createLinearGradient(0, 0, 0, 72);
-    g.addColorStop(0, p.sky[0]);
-    g.addColorStop(0.6, p.sky[1]);
-    g.addColorStop(1, p.sky[2]);
-    c.fillStyle = g;
-    c.fillRect(0, 0, 160, 72);
-    for (let i = 0; i < 12; i++) {
-      const h = 14 + ((i * 37) % 22);
-      c.fillStyle = p.far;
-      c.fillRect(i * 14, 46 - h, 13, h + 6);
-    }
-    c.fillStyle = p.sidewalk;
-    c.fillRect(0, 46, 160, 6);
-    c.fillStyle = p.road;
-    c.fillRect(0, 52, 160, 20);
-    c.fillStyle = p.lane;
-    for (let x = 4; x < 160; x += 24) c.fillRect(x, 63, 12, 1);
-    c.save();
-    c.translate(18, -(Y.ground - 70));
-    drawCar(c, 0, 1, 0.3, 0, true);
-    c.restore();
-    c.save();
-    c.translate(104, -(Y.ground - 70));
-    drawThief(c, 0, 2, 'run');
-    c.restore();
-  }
-  icons[kind] = cv.toDataURL();
-  return icons[kind];
+  c.imageSmoothingEnabled = false;
+  const a = city.at(120);
+  const b = city.at(165);
+  const ox = Math.round(Math.max(0, Math.min(city.width - W, (a.x + b.x) / 2 - W / 2)));
+  const oy = Math.round(Math.max(0, Math.min(city.height - H, (a.y + b.y) / 2 - H / 2)));
+  c.drawImage(city.map, ox, oy, W, H, 0, 0, W, H);
+  shadow(c, b.x - ox, b.y - oy, 5, 3);
+  blit(c, thiefSprite(1), b.x - ox, b.y - oy, b.angle);
+  shadow(c, a.x - ox, a.y - oy, 11, 5);
+  blit(c, policeSprite(0), a.x - ox, a.y - oy, a.angle);
+  const g = c.createRadialGradient(a.x - ox, a.y - oy, 0, a.x - ox, a.y - oy, 24);
+  g.addColorStop(0, 'rgba(255,70,60,.35)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g;
+  c.fillRect(a.x - ox - 24, a.y - oy - 24, 48, 48);
+  cover = cv.toDataURL();
+  return cover;
 }

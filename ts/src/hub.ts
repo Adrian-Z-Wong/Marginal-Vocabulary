@@ -1,7 +1,7 @@
 // 「小游戏」页：列出所有英语小游戏。以后加游戏就往 GAMES 里加一项。
 
 import type { Host } from './host';
-import { DAILY_COINS, LEVELS, icon } from './chase/game';
+import { DAILY_COINS, LEVELS, coverImage } from './chase/game';
 
 export interface GameCard {
   id: string;
@@ -14,8 +14,8 @@ export const GAMES: GameCard[] = [
   {
     id: 'chase',
     name: '打字追击',
-    desc: '打对一个字母，警车就往前开一点，在小偷跑进仓库前追上他。文章按词库挑，金融、医学、托福、GRE……',
-    cover: () => icon('cover'),
+    desc: '在城市的大街小巷里追小偷：打对一个字母，警车就往前开一点，连击还能加速，要在他跑进仓库前追上。文章按词库挑，金融、医学、托福、GRE……',
+    cover: coverImage,
   },
 ];
 

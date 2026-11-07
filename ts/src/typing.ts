@@ -1,21 +1,32 @@
-// 打字的核心：光标走到哪、哪个字打错了、速度和正确率。
-// 规则：打错的字母标红，必须按退格改掉才能接着打；打对的字不能再退回去。
+// 打字的核心：光标走到哪、打错了几次、速度和正确率。
+// 规则：字母不分大小写；空格和标点要打对。打错不会卡住，只是这一下不往前走，
+// 打对的下一个字照常往前；打错的那个位置会记下来，成绩里列出来。
 
-export type KeyResult = 'ok' | 'wrong' | 'blocked' | 'done' | 'ignored';
+export type KeyResult = 'ok' | 'wrong' | 'done' | 'ignored';
+
+/** 两个字符算不算打对：字母不分大小写，其他（空格、标点、数字）要一样 */
+export function sameChar(typed: string, want: string): boolean {
+  if (typed === want) return true;
+  return /[A-Za-z]/.test(want) && typed.toLowerCase() === want.toLowerCase();
+}
 
 export class TypingRun {
   readonly text: string;
   /** 已经打对的字符数 */
   pos = 0;
-  /** 光标处打错的那个字（还没退格改掉时） */
+  /** 刚刚打错的字（下一个字打对就清掉，用来把当前位置标红） */
   wrong: string | null = null;
-  /** 按过的字符键总数（不算退格） */
+  /** 按过的字符键总数 */
   keys = 0;
   /** 打对的按键数 */
   hits = 0;
-  /** 打错的次数（同一个位置错几次算几次） */
+  /** 打错的次数 */
   misses = 0;
-  /** 每个位置是不是错过（显示成绩时标出来） */
+  /** 连续打对了几个字 */
+  combo = 0;
+  /** 这一局最长的连击 */
+  bestCombo = 0;
+  /** 每个位置是不是打错过（成绩里标出来） */
   readonly missed: Uint8Array;
   private startedAt = 0;
   private pausedAt = 0;
@@ -64,23 +75,23 @@ export class TypingRun {
   type(ch: string): KeyResult {
     if (this.done) return 'done';
     if (ch.length !== 1) return 'ignored';
-    if (this.wrong !== null) {
-      // 还有错字没改：再按字母不算数
-      this.keys++;
-      return 'blocked';
-    }
     this.keys++;
-    if (ch === this.text[this.pos]) {
+    if (sameChar(ch, this.text[this.pos])) {
       this.hits++;
       this.pos++;
+      this.wrong = null;
+      this.combo++;
+      if (this.combo > this.bestCombo) this.bestCombo = this.combo;
       return this.done ? 'done' : 'ok';
     }
     this.misses++;
     this.missed[this.pos] = 1;
     this.wrong = ch;
+    this.combo = 0;
     return 'wrong';
   }
 
+  /** 退格：把标红去掉（打对的字不会退回去） */
   backspace(): boolean {
     if (this.wrong === null) return false;
     this.wrong = null;
@@ -91,7 +102,7 @@ export class TypingRun {
   wpm(now: number): number {
     const s = this.elapsed(now);
     if (s < 1) return 0;
-    return (this.pos / 5) / (s / 60);
+    return this.pos / 5 / (s / 60);
   }
 
   /** 正确率：打对的按键 / 全部按键 */

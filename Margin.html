@@ -1582,7 +1582,7 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
   font: inherit; color: inherit; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .game-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
-.gc-cover { width: 100%; aspect-ratio: 160 / 72; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--line); }
+.gc-cover { width: 100%; aspect-ratio: 140 / 63; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--line); }
 .gc-body { display: flex; flex-direction: column; gap: 8px; padding: 18px 22px 20px; }
 .gc-name { font: 400 26px/1.2 var(--serif); }
 .gc-desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
@@ -1619,6 +1619,20 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
 .chase-canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 .cp-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
 .cp-overlay > * { pointer-events: auto; }
+.ov-ready {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 26px; border-radius: 16px;
+  background: rgba(16, 18, 28, .62); color: #fff; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  animation: ready-pulse 1.6s ease-in-out infinite; pointer-events: none;
+}
+.ov-ready b { font: 400 30px/1.2 var(--serif); }
+.ov-ready span { font-size: 14px; opacity: .8; }
+@keyframes ready-pulse { 50% { transform: scale(1.03); } }
+.cp-pop {
+  position: absolute; left: 50%; top: 18%; transform: translateX(-50%); pointer-events: none; opacity: 0;
+  font: 400 26px/1 var(--serif); color: #ffd37e; text-shadow: 0 2px 0 rgba(0, 0, 0, .35), 0 0 18px rgba(255, 160, 60, .55); white-space: nowrap;
+}
+.cp-pop.show { animation: pop-up 1.1s ease-out both; }
+@keyframes pop-up { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.08); } 70% { opacity: 1; transform: translate(-50%, -6px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -16px); } }
 .ov-count {
   font: 400 96px/1 var(--serif); color: #fff; text-shadow: 0 4px 0 rgba(0, 0, 0, .25), 0 0 40px rgba(255, 220, 160, .45);
   animation: ov-pop .9s ease-out both;
@@ -1648,15 +1662,6 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
 .ov-miss { margin: 4px 0 0; max-width: 640px; text-align: center; line-height: 2; }
 .mw { display: inline-block; padding: 0 8px; border-radius: 8px; background: var(--bad-soft); color: var(--bad); font-family: var(--typing); font-size: 14px; line-height: 1.8; }
 .ov-card .actions { justify-content: center; margin-top: 4px; }
-
-.cp-track { position: relative; height: 34px; margin: 14px 18px 4px; }
-.tr-line { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.tr-done { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #5aa8ff, #3a53a0); border-radius: 4px; transition: width .2s linear; }
-.tr-icon { position: absolute; top: 50%; image-rendering: pixelated; transition: left .2s linear; }
-.tr-car { width: 40px; height: 20px; margin: -14px 0 0 -20px; }
-.tr-thief { width: 16px; height: 24px; margin: -18px 0 0 -8px; }
-.tr-flag { position: absolute; right: -6px; top: 50%; width: 14px; height: 18px; margin-top: -16px; border-left: 2px solid var(--muted); }
-.tr-flag::after { content: ''; position: absolute; left: 0; top: 0; width: 11px; height: 8px; background: repeating-conic-gradient(var(--fg) 0 25%, var(--surface) 0 50%) 0 0 / 5.5px 4px; }
 
 .cp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 14px; }
 .cp-stats div { padding: 10px 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
@@ -5978,18 +5983,26 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
 "use strict";
 (() => {
   // src/typing.ts
+  function sameChar(typed, want) {
+    if (typed === want) return true;
+    return /[A-Za-z]/.test(want) && typed.toLowerCase() === want.toLowerCase();
+  }
   var TypingRun = class {
     constructor(text) {
       /** 已经打对的字符数 */
       this.pos = 0;
-      /** 光标处打错的那个字（还没退格改掉时） */
+      /** 刚刚打错的字（下一个字打对就清掉，用来把当前位置标红） */
       this.wrong = null;
-      /** 按过的字符键总数（不算退格） */
+      /** 按过的字符键总数 */
       this.keys = 0;
       /** 打对的按键数 */
       this.hits = 0;
-      /** 打错的次数（同一个位置错几次算几次） */
+      /** 打错的次数 */
       this.misses = 0;
+      /** 连续打对了几个字 */
+      this.combo = 0;
+      /** 这一局最长的连击 */
+      this.bestCombo = 0;
       this.startedAt = 0;
       this.pausedAt = 0;
       this.pausedTotal = 0;
@@ -6027,21 +6040,22 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     type(ch) {
       if (this.done) return "done";
       if (ch.length !== 1) return "ignored";
-      if (this.wrong !== null) {
-        this.keys++;
-        return "blocked";
-      }
       this.keys++;
-      if (ch === this.text[this.pos]) {
+      if (sameChar(ch, this.text[this.pos])) {
         this.hits++;
         this.pos++;
+        this.wrong = null;
+        this.combo++;
+        if (this.combo > this.bestCombo) this.bestCombo = this.combo;
         return this.done ? "done" : "ok";
       }
       this.misses++;
       this.missed[this.pos] = 1;
       this.wrong = ch;
+      this.combo = 0;
       return "wrong";
     }
+    /** 退格：把标红去掉（打对的字不会退回去） */
     backspace() {
       if (this.wrong === null) return false;
       this.wrong = null;
@@ -6188,441 +6202,595 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     return out;
   }
 
-  // src/chase/art.ts
-  var PALETTES = {
-    day: {
-      sky: ["#7fbde8", "#a9d4f0", "#dcefF7".toLowerCase()],
-      far: "#a7c0d4",
-      farLit: "#a7c0d4",
-      buildings: ["#d98b6a", "#e9c88e", "#8db4a6", "#c8b6a2", "#9fa6c8", "#e3a37e"],
-      shade: "rgba(40,30,50,.18)",
-      window: "#cfe7f3",
-      lit: "#cfe7f3",
-      litRate: 0,
-      sidewalk: "#d6cdbd",
-      sidewalkLine: "#bfb4a2",
-      curb: "#9c9283",
-      road: "#4b5059",
-      roadEdge: "#3d4148",
-      lane: "#f1e3b8",
-      lamp: "#5a5f6b",
-      glow: null,
-      sun: "#fff1b8",
-      moon: null,
-      stars: false,
-      tree: ["#5f9e4f", "#3f7a3c"]
-    },
-    dusk: {
-      sky: ["#4c5b98", "#d98a73", "#f4c48b"],
-      far: "#7a6688",
-      farLit: "#f2b77a",
-      buildings: ["#9a5d55", "#b48a6e", "#5f7d7a", "#8c7a72", "#6f6f94", "#a8705c"],
-      shade: "rgba(30,20,40,.25)",
-      window: "#56607a",
-      lit: "#ffd37e",
-      litRate: 0.35,
-      sidewalk: "#b8a99a",
-      sidewalkLine: "#9f907f",
-      curb: "#7e7266",
-      road: "#3d3f4a",
-      roadEdge: "#30323b",
-      lane: "#e8c98f",
-      lamp: "#3f4250",
-      glow: "rgba(255,214,140,.22)",
-      sun: "#ffd89a",
-      moon: null,
-      stars: false,
-      tree: ["#4e7a45", "#355a34"]
-    },
-    night: {
-      sky: ["#0d1430", "#1b2752", "#2c3e70"],
-      far: "#1b2446",
-      farLit: "#e9c46a",
-      buildings: ["#2e3657", "#3a3f5e", "#2b4652", "#433c58", "#353a4f", "#40364c"],
-      shade: "rgba(0,0,10,.3)",
-      window: "#262c45",
-      lit: "#ffd27a",
-      litRate: 0.45,
-      sidewalk: "#5d5d6b",
-      sidewalkLine: "#4c4c59",
-      curb: "#40404c",
-      road: "#26272f",
-      roadEdge: "#1d1e25",
-      lane: "#b9a36e",
-      lamp: "#2c2f3c",
-      glow: "rgba(255,214,140,.3)",
-      sun: null,
-      moon: "#f3ecd2",
-      stars: true,
-      tree: ["#2f4a39", "#223a2c"]
-    }
-  };
-  function paletteNow(d = /* @__PURE__ */ new Date()) {
-    const h = d.getHours() + d.getMinutes() / 60;
-    if (h >= 7 && h < 17) return PALETTES.day;
-    if (h >= 17 && h < 19.5 || h >= 5.5 && h < 7) return PALETTES.dusk;
-    return PALETTES.night;
+  // src/chase/sprites.ts
+  function canvas(w, h) {
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const x = c.getContext("2d");
+    x.imageSmoothingEnabled = false;
+    return [c, x];
   }
-  function hash(n) {
-    let x = (n | 0) * 374761393 + 668265263;
-    x = (x ^ x >>> 13) * 1274126177;
-    return ((x ^ x >>> 16) >>> 0) / 4294967296;
-  }
-  function rect(c, x, y, w, h, color) {
+  function px(c, x, y, w, h, color) {
     c.fillStyle = color;
-    c.fillRect(Math.round(x), Math.round(y), w, h);
+    c.fillRect(x, y, w, h);
   }
-  var Y = {
-    farBase: 86,
-    midBase: 93,
-    walkTop: 93,
-    curb: 101,
-    roadTop: 103,
-    lane: 116,
-    lane2Top: 110,
-    ground: 121,
-    // 车轮、人脚着地的地方
-    height: 128
-  };
-  function drawSky(c, w, p, t) {
-    const g = c.createLinearGradient(0, 0, 0, Y.midBase);
-    g.addColorStop(0, p.sky[0]);
-    g.addColorStop(0.55, p.sky[1]);
-    g.addColorStop(1, p.sky[2]);
-    c.fillStyle = g;
-    c.fillRect(0, 0, w, Y.midBase);
-    if (p.stars) {
-      for (let i = 0; i < w / 6; i++) {
-        const x = Math.floor(hash(i * 7 + 1) * w);
-        const y = Math.floor(hash(i * 13 + 5) * 54);
-        const tw = 0.5 + 0.5 * Math.sin(t / 700 + i);
-        c.fillStyle = `rgba(255,248,220,${(0.35 + 0.5 * tw * hash(i)).toFixed(2)})`;
-        c.fillRect(x, y, 1, 1);
-      }
-    }
-    if (p.sun) {
-      const sx = Math.round(w * 0.78);
-      const sy = p === PALETTES.dusk ? 62 : 22;
-      c.fillStyle = p === PALETTES.dusk ? "rgba(255,214,150,.35)" : "rgba(255,250,220,.35)";
-      c.beginPath();
-      c.arc(sx, sy, 13, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = p.sun;
-      c.beginPath();
-      c.arc(sx, sy, 8, 0, Math.PI * 2);
-      c.fill();
-    }
-    if (p.moon) {
-      const mx = Math.round(w * 0.8);
-      c.fillStyle = "rgba(243,236,210,.15)";
-      c.beginPath();
-      c.arc(mx, 20, 11, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = p.moon;
-      c.beginPath();
-      c.arc(mx, 20, 6, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = p.sky[0];
-      c.beginPath();
-      c.arc(mx + 3, 18, 5, 0, Math.PI * 2);
-      c.fill();
-    }
+  var K = "#151a28";
+  var WHITE = "#f6f5f0";
+  var WHITE_D = "#dcdbd4";
+  var NAVY = "#23356a";
+  var GLASS = "#5f97bd";
+  var GLASS_L = "#9fd0ea";
+  function drawPolice(c, flash) {
+    for (const [x, y] of [[4, 1], [16, 1], [4, 12], [16, 12]]) px(c, x, y, 4, 1, "#0d0f14");
+    px(c, 1, 2, 22, 10, K);
+    px(c, 0, 3, 24, 8, K);
+    px(c, 2, 3, 20, 8, WHITE);
+    px(c, 1, 4, 22, 6, WHITE);
+    px(c, 6, 3, 11, 1, NAVY);
+    px(c, 6, 10, 11, 1, NAVY);
+    px(c, 15, 4, 2, 6, GLASS);
+    px(c, 15, 4, 1, 2, GLASS_L);
+    px(c, 5, 4, 2, 6, GLASS);
+    px(c, 7, 4, 8, 6, WHITE);
+    px(c, 7, 9, 8, 1, WHITE_D);
+    px(c, 10, 3, 3, 8, K);
+    px(c, 11, 4, 1, 3, flash === 0 ? "#ff4d43" : "#8a2f2b");
+    px(c, 11, 7, 1, 3, flash === 1 ? "#4fa3ff" : "#284a80");
+    px(c, 23, 4, 1, 2, "#fff1b0");
+    px(c, 23, 8, 1, 2, "#fff1b0");
+    px(c, 0, 4, 1, 2, "#d0463c");
+    px(c, 0, 8, 1, 2, "#d0463c");
+    px(c, 19, 4, 3, 1, "#ffffff");
   }
-  function drawFar(c, w, cam, p) {
-    const off = cam * 0.25;
-    const unit = 14;
-    const first = Math.floor(off / unit) - 1;
-    for (let i = first; i < first + Math.ceil(w / unit) + 3; i++) {
-      const x = Math.round(i * unit - off);
-      const h = 14 + Math.floor(hash(i * 3 + 11) * 30);
-      const bw = unit - (hash(i * 5) < 0.3 ? 3 : 0);
-      rect(c, x, Y.farBase - h, bw, h + 8, p.far);
-      if (hash(i * 17) < 0.18) rect(c, x + Math.floor(bw / 2), Y.farBase - h - 5, 1, 5, p.far);
-      if (p.litRate) {
-        for (let k = 0; k < 4; k++) {
-          if (hash(i * 31 + k) < p.litRate * 0.5) rect(c, x + 2 + Math.floor(hash(i * 41 + k) * (bw - 4)), Y.farBase - h + 3 + Math.floor(hash(i * 43 + k) * (h - 4)), 1, 1, p.farLit);
-        }
-      }
+  var SKIN = "#f0c48e";
+  var HAT = "#22232c";
+  var STRIPE_A = "#efece4";
+  var STRIPE_B = "#2b2e3b";
+  var BAG = "#c9a066";
+  var BAG_D = "#9c7744";
+  function drawThief(c, frame, caught) {
+    const leg = caught ? 0 : [2, 0, -2, 0][frame];
+    const arm = caught ? 0 : [-2, 0, 2, 0][frame];
+    px(c, 6 + leg, 3, 3, 2, "#2f3650");
+    px(c, 6 - leg, 9, 3, 2, "#2f3650");
+    px(c, 8 + leg, 3, 1, 2, "#111");
+    px(c, 8 - leg, 9, 1, 2, "#111");
+    if (!caught) {
+      px(c, 1, 4, 4, 6, BAG_D);
+      px(c, 2, 3, 3, 8, BAG);
+      px(c, 2, 5, 1, 1, "#ffe2a6");
+      px(c, 3, 6, 1, 2, "#5a3f1f");
     }
+    px(c, 5, 4, 5, 6, STRIPE_A);
+    for (let i = 0; i < 5; i += 2) px(c, 5 + i, 4, 1, 6, STRIPE_B);
+    if (caught) {
+      px(c, 7, 0, 2, 4, STRIPE_A);
+      px(c, 7, 10, 2, 4, STRIPE_A);
+      px(c, 7, 0, 2, 1, SKIN);
+      px(c, 7, 13, 2, 1, SKIN);
+    } else {
+      px(c, 6 + arm, 2, 3, 2, STRIPE_A);
+      px(c, 6 - arm, 10, 3, 2, STRIPE_A);
+      px(c, 9 + arm, 2, 1, 2, SKIN);
+      px(c, 9 - arm, 10, 1, 2, SKIN);
+    }
+    px(c, 8, 5, 4, 4, HAT);
+    px(c, 9, 4, 2, 6, HAT);
+    px(c, 12, 6, 1, 2, SKIN);
+    px(c, 11, 5, 1, 4, "#3a3b46");
+    px(c, 9, 5, 1, 1, "#4a4c58");
   }
-  function drawMid(c, w, cam, p) {
-    const off = cam * 0.55;
-    const unit = 46;
-    const first = Math.floor(off / unit) - 1;
-    for (let i = first; i < first + Math.ceil(w / unit) + 3; i++) {
-      const r = hash(i * 9 + 3);
-      const bw = 34 + Math.floor(hash(i * 2 + 7) * 12);
-      const h = 26 + Math.floor(r * 34);
-      const x = Math.round(i * unit - off + (unit - bw) / 2);
-      const color = p.buildings[Math.floor(hash(i * 19) * p.buildings.length)];
-      const top = Y.midBase - h;
-      rect(c, x, top, bw, h, color);
-      rect(c, x - 1, top, bw + 2, 2, shadeOf(color, -0.25));
-      c.fillStyle = p.shade;
-      c.fillRect(x + bw - 4, top + 2, 4, h - 2);
-      const cols = Math.floor((bw - 6) / 6);
-      const rows = Math.floor((h - 10) / 8);
-      for (let ry = 0; ry < rows; ry++) {
-        for (let cx = 0; cx < cols; cx++) {
-          const lit = hash(i * 101 + ry * 7 + cx) < p.litRate;
-          const wx = x + 4 + cx * 6;
-          const wy = top + 5 + ry * 8;
-          rect(c, wx, wy, 4, 5, lit ? p.lit : p.window);
-          rect(c, wx, wy + 5, 4, 1, shadeOf(color, -0.18));
-        }
-      }
-      if (hash(i * 23) < 0.5) {
-        const aw = shadeOf(p.buildings[Math.floor(hash(i * 29) * p.buildings.length)], -0.1);
-        for (let k = 0; k < bw - 4; k += 4) rect(c, x + 2 + k, Y.midBase - 9, 2, 3, k % 8 ? "#f4efe6" : aw);
-        rect(c, x + 2, Y.midBase - 6, bw - 4, 6, shadeOf(color, -0.35));
-        if (p.litRate) rect(c, x + 4, Y.midBase - 5, bw - 8, 4, "rgba(255,214,140,.55)");
-      } else {
-        rect(c, x + Math.floor(bw / 2) - 3, Y.midBase - 9, 6, 9, shadeOf(color, -0.4));
-      }
-    }
+  function drawParked(c, color) {
+    const d = shade(color, -0.3);
+    for (const [x, y] of [[3, 0], [14, 0], [3, 10], [14, 10]]) px(c, x, y, 3, 1, "#0d0f14");
+    px(c, 0, 1, 20, 9, d);
+    px(c, 1, 1, 18, 9, color);
+    px(c, 12, 2, 2, 7, "#4d6f88");
+    px(c, 4, 2, 2, 7, "#4d6f88");
+    px(c, 6, 2, 6, 7, shade(color, 0.15));
+    px(c, 16, 2, 2, 1, shade(color, 0.4));
   }
-  function drawStreet(c, w, cam, p, t) {
-    rect(c, 0, Y.walkTop, w, Y.curb - Y.walkTop, p.sidewalk);
-    const off = Math.floor(cam);
-    for (let x = -(off % 12); x < w; x += 12) rect(c, x, Y.walkTop, 1, Y.curb - Y.walkTop, p.sidewalkLine);
-    rect(c, 0, Y.curb, w, 2, p.curb);
-    rect(c, 0, Y.roadTop, w, Y.height - Y.roadTop, p.road);
-    rect(c, 0, Y.roadTop, w, 1, p.roadEdge);
-    for (let x = -(off % 28); x < w; x += 28) rect(c, x, Y.lane, 14, 1, p.lane);
-    for (let x = -(off % 9); x < w; x += 9) {
-      const n = Math.floor((x + off) / 9);
-      if (hash(n) < 0.35) rect(c, x + Math.floor(hash(n * 3) * 8), Y.roadTop + 3 + Math.floor(hash(n * 5) * 22), 1, 1, p.roadEdge);
+  function drawTree(c, light, dark) {
+    const r = 7;
+    for (let y = -r; y <= r; y++) {
+      const half = Math.round(Math.sqrt(r * r - y * y));
+      px(c, 8 - half, 8 + y, half * 2, 1, y > 2 ? dark : light);
     }
-    const unit = 90;
-    const first = Math.floor(cam / unit) - 1;
-    for (let i = first; i < first + Math.ceil(w / unit) + 2; i++) {
-      const x = Math.round(i * unit - cam);
-      rect(c, x, Y.walkTop - 30, 2, 31, p.lamp);
-      rect(c, x, Y.walkTop - 30, 8, 2, p.lamp);
-      rect(c, x + 6, Y.walkTop - 29, 3, 2, p.glow ? "#ffe7a8" : "#d9d4c4");
-      if (p.glow) {
-        const g = c.createRadialGradient(x + 7, Y.walkTop - 27, 1, x + 7, Y.walkTop - 27, 22);
-        g.addColorStop(0, p.glow);
-        g.addColorStop(1, "rgba(255,214,140,0)");
-        c.fillStyle = g;
-        c.fillRect(x - 16, Y.walkTop - 50, 46, 60);
-      }
-      const tx = x + 45;
-      if (hash(i * 7 + 2) < 0.75) {
-        rect(c, tx, Y.walkTop - 8, 2, 9, "#6b4a33");
-        const sway = Math.round(Math.sin(t / 900 + i) * 0.6);
-        blob(c, tx + 1 + sway, Y.walkTop - 15, 8, 7, p.tree[0], p.tree[1]);
-      } else {
-        rect(c, tx, Y.walkTop - 6, 4, 6, "#c4473d");
-        rect(c, tx - 1, Y.walkTop - 4, 6, 1, "#9e352e");
-        rect(c, tx + 1, Y.walkTop - 7, 2, 1, "#9e352e");
-      }
-    }
+    px(c, 4, 4, 3, 2, shade(light, 0.2));
+    px(c, 9, 6, 2, 2, shade(light, 0.25));
+    px(c, 6, 10, 3, 1, shade(dark, -0.15));
+    px(c, 11, 9, 2, 2, shade(dark, -0.1));
   }
-  function blob(c, cx, cy, rx, ry, light, dark) {
-    for (let y = -ry; y <= ry; y++) {
-      const half = Math.round(rx * Math.sqrt(1 - y * y / (ry * ry)));
-      rect(c, cx - half, cy + y, half * 2, 1, y > ry / 3 ? dark : light);
-    }
-    rect(c, cx - 3, cy - ry + 2, 2, 1, "rgba(255,255,255,.25)");
-  }
-  function shadeOf(hex, amt) {
+  function shade(hex, amt) {
     const m = /^#([0-9a-f]{6})$/i.exec(hex);
     if (!m) return hex;
     const n = parseInt(m[1], 16);
     const f = (v) => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
     return "#" + [n >> 16 & 255, n >> 8 & 255, n & 255].map((v) => f(v).toString(16).padStart(2, "0")).join("");
   }
-  var CAR_W = 36;
-  function drawCar(c, x, flash, wheel, bump, lightsOn) {
-    const g = Y.ground;
-    const b = bump;
-    const K = "#1c2232";
-    const W = "#f5f4ef";
-    const Wd = "#d9d8d2";
-    const N = "#26386d";
-    const Nl = "#3a53a0";
-    const G = "#a9d9f1";
-    const Gd = "#7db6d6";
-    c.fillStyle = "rgba(0,0,0,.28)";
-    c.fillRect(Math.round(x) + 2, g - 1, CAR_W - 2, 2);
-    const X = Math.round(x);
-    const yb = g - 3 + b;
-    rect(c, X, yb - 8, CAR_W, 8, K);
-    rect(c, X + 1, yb - 7, CAR_W - 2, 6, W);
-    rect(c, X + 1, yb - 3, CAR_W - 2, 2, Wd);
-    rect(c, X + 9, yb - 6, 18, 3, N);
-    rect(c, X + 9, yb - 6, 18, 1, Nl);
-    rect(c, X + 16, yb - 6, 2, 2, "#f2c94c");
-    rect(c, X + CAR_W - 3, yb - 7, 2, 2, "#ffe9a6");
-    rect(c, X + CAR_W - 1, yb - 3, 2, 2, "#9aa1ad");
-    rect(c, X + 1, yb - 7, 1, 2, "#d0463c");
-    rect(c, X - 1, yb - 3, 2, 2, "#9aa1ad");
-    rect(c, X + 8, yb - 14, 19, 7, K);
-    rect(c, X + 9, yb - 13, 17, 6, W);
-    rect(c, X + 10, yb - 12, 7, 4, G);
-    rect(c, X + 18, yb - 12, 7, 4, G);
-    rect(c, X + 10, yb - 12, 2, 1, "#e3f4fb");
-    rect(c, X + 18, yb - 12, 2, 1, "#e3f4fb");
-    rect(c, X + 10, yb - 9, 7, 1, Gd);
-    rect(c, X + 18, yb - 9, 7, 1, Gd);
-    rect(c, X + 13, yb - 16, 9, 2, K);
-    const red = lightsOn && flash ? "#ff5b4f" : "#9e3a34";
-    const blue = lightsOn && !flash ? "#5aa8ff" : "#2f4d86";
-    rect(c, X + 14, yb - 16, 3, 1, red);
-    rect(c, X + 18, yb - 16, 3, 1, blue);
-    if (lightsOn) {
-      const gx = flash ? X + 15 : X + 19;
-      const col = flash ? "rgba(255,90,80,.28)" : "rgba(90,168,255,.28)";
-      const gr = c.createRadialGradient(gx, yb - 16, 0, gx, yb - 16, 14);
-      gr.addColorStop(0, col);
-      gr.addColorStop(1, "rgba(0,0,0,0)");
-      c.fillStyle = gr;
-      c.fillRect(gx - 14, yb - 30, 28, 28);
-    }
-    wheelAt(c, X + 8, g - 3, wheel);
-    wheelAt(c, X + CAR_W - 8, g - 3, wheel);
+  var police = null;
+  var thief = null;
+  var thiefCaught = null;
+  var parked = /* @__PURE__ */ new Map();
+  var trees = /* @__PURE__ */ new Map();
+  function make(w, h, draw) {
+    const [cv, c] = canvas(w, h);
+    draw(c);
+    return { img: cv, cx: w / 2, cy: h / 2 };
   }
-  function wheelAt(c, cx, cy, phase) {
-    rect(c, cx - 3, cy - 2, 6, 5, "#15171d");
-    rect(c, cx - 2, cy - 3, 4, 7, "#15171d");
-    rect(c, cx - 1, cy - 1, 2, 2, "#9aa1ad");
-    const a = phase * Math.PI * 2;
-    rect(c, cx + Math.round(Math.cos(a) * 2) - 0.5, cy + Math.round(Math.sin(a) * 2) - 0.5, 1, 1, "#5d6370");
+  function policeSprite(flash) {
+    if (!police) police = [0, 1, -1].map((f) => make(24, 14, (c) => drawPolice(c, f)));
+    return police[flash === 0 ? 0 : flash === 1 ? 1 : 2];
   }
-  function drawThief(c, x, frame, pose) {
-    const g = Y.ground;
-    const X = Math.round(x);
-    const skin = "#f0c48e";
-    const skinD = "#d9a56f";
-    const hat = "#2a2b35";
-    const stripeA = "#eceae4";
-    const stripeB = "#2c2f3c";
-    const pants = "#3b4462";
-    const shoe = "#141419";
-    const bag = "#c8a066";
-    const bagD = "#a47e4a";
-    const run = pose === "run";
-    const lift = run && (frame === 1 || frame === 3) ? -1 : 0;
-    const top = g - 21 + lift;
-    c.fillStyle = "rgba(0,0,0,.25)";
-    c.fillRect(X, g - 1, 11, 2);
-    if (pose !== "caught") {
-      rect(c, X - 3, top + 6, 7, 7, bagD);
-      rect(c, X - 2, top + 5, 5, 8, bag);
-      rect(c, X - 1, top + 4, 3, 1, bagD);
-      rect(c, X, top + 7, 1, 4, "#5a3f1f");
-      rect(c, X - 1, top + 8, 3, 1, "#5a3f1f");
-      rect(c, X - 1, top + 10, 3, 1, "#5a3f1f");
-    }
-    const lf = run ? [[-3, 3], [-1, 1], [3, -3], [1, -1]][frame] : [0, 0];
-    rect(c, X + 3 + lf[1], top + 14, 2, 6 - (run && frame % 2 === 0 ? 1 : 0), shadeOf(pants, -0.25));
-    rect(c, X + 3 + lf[1] - (lf[1] < 0 ? 1 : 0), g - 2 + (run && frame % 2 === 0 ? -1 : 0), 3, 2, shoe);
-    rect(c, X + 6 + lf[0], top + 14, 2, 6, pants);
-    rect(c, X + 6 + lf[0], g - 2, 3, 2, shoe);
-    for (let r = 0; r < 7; r++) rect(c, X + 2, top + 7 + r, 8, 1, r % 2 ? stripeB : stripeA);
-    rect(c, X + 9, top + 8, 1, 6, "rgba(0,0,0,.15)");
-    if (pose === "caught") {
-      rect(c, X + 1, top + 1, 2, 7, stripeA);
-      rect(c, X + 9, top + 1, 2, 7, stripeA);
-      rect(c, X + 1, top, 2, 2, skin);
-      rect(c, X + 9, top, 2, 2, skin);
-    } else {
-      const sw = run ? [2, 0, -2, 0][frame] : 0;
-      rect(c, X + 7 + sw, top + 8, 2, 4, stripeA);
-      rect(c, X + 7 + sw, top + 12, 2, 1, skin);
-      rect(c, X + 1, top + 7, 2, 3, stripeB);
-    }
-    rect(c, X + 3, top + 1, 6, 6, skin);
-    rect(c, X + 8, top + 3, 2, 2, skin);
-    rect(c, X + 3, top + 5, 6, 1, skinD);
-    rect(c, X + 3, top + 3, 7, 2, "#1b1c22");
-    rect(c, X + 7, top + 3, 1, 1, "#ffffff");
-    rect(c, X + 2, top - 1, 8, 3, hat);
-    rect(c, X + 3, top - 2, 6, 1, hat);
-    rect(c, X + 2, top + 1, 8, 1, shadeOf(hat, 0.2));
+  function thiefSprite(frame, caught = false) {
+    if (caught) return thiefCaught || (thiefCaught = make(14, 14, (c) => drawThief(c, 0, true)));
+    if (!thief) thief = [0, 1, 2, 3].map((f) => make(14, 14, (c) => drawThief(c, f, false)));
+    return thief[frame & 3];
   }
-  function drawHideout(c, x, doorOpen, p) {
-    const X = Math.round(x);
-    const w = 62;
-    const h = 46;
-    const base = Y.curb + 1;
-    const top = base - h;
-    const wall = p === PALETTES.night ? "#4a4256" : "#8a6f5e";
-    rect(c, X, top, w, h, wall);
-    for (let k = 2; k < w; k += 4) rect(c, X + k, top + 4, 1, h - 4, shadeOf(wall, -0.18));
-    rect(c, X - 3, top - 4, w + 6, 4, "#3d3340");
-    rect(c, X - 3, top - 4, w + 6, 1, "#5a4d5d");
-    const dw = 30;
-    const dh = 28;
-    const dx = X + 16;
-    const dy = base - dh;
-    rect(c, dx - 1, dy - 1, dw + 2, dh + 1, "#2a2430");
-    rect(c, dx, dy, dw, dh, "#141118");
-    const shut = Math.round(dh * (1 - doorOpen));
-    rect(c, dx, dy, dw, shut, "#9aa0aa");
-    for (let k = 1; k < shut; k += 3) rect(c, dx, dy + k, dw, 1, "#7d8390");
-    rect(c, dx + 10, top + 4, 10, 6, "#2a2430");
-    rect(c, dx + 11, top + 5, 8, 4, "#e8b84a");
-    rect(c, dx + 14, top + 6, 2, 2, "#2a2430");
-    if (p.glow) {
-      const g = c.createRadialGradient(dx + dw / 2, top + 8, 1, dx + dw / 2, top + 8, 26);
-      g.addColorStop(0, "rgba(255,200,110,.35)");
-      g.addColorStop(1, "rgba(255,200,110,0)");
-      c.fillStyle = g;
-      c.fillRect(dx - 12, top - 14, dw + 24, 48);
-    }
+  function parkedSprite(color) {
+    let s = parked.get(color);
+    if (!s) parked.set(color, s = make(20, 11, (c) => drawParked(c, color)));
+    return s;
   }
-  function drawStars(c, cx, cy, t) {
-    for (let i = 0; i < 3; i++) {
-      const a = t / 300 + i * Math.PI * 2 / 3;
-      const x = Math.round(cx + Math.cos(a) * 6);
-      const y = Math.round(cy + Math.sin(a) * 2);
-      rect(c, x, y - 1, 1, 3, "#ffd75e");
-      rect(c, x - 1, y, 3, 1, "#ffd75e");
-    }
+  function treeSprite(light, dark) {
+    const key = light + dark;
+    let s = trees.get(key);
+    if (!s) trees.set(key, s = make(16, 16, (c) => drawTree(c, light, dark)));
+    return s;
   }
-  function drawDust(c, x, y, age) {
-    const a = Math.max(0, 0.45 - age * 0.45);
-    c.fillStyle = `rgba(220,210,190,${a.toFixed(2)})`;
-    const r = 1 + Math.round(age * 3);
-    c.fillRect(Math.round(x - r), Math.round(y - r - age * 3), r * 2, r * 2);
+  function blit(c, s, x, y, angle) {
+    c.save();
+    c.translate(Math.round(x), Math.round(y));
+    const a = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+    if (a) c.rotate(a);
+    c.drawImage(s.img, -Math.round(s.cx), -Math.round(s.cy));
+    c.restore();
+  }
+  function shadow(c, x, y, rx, ry) {
+    c.fillStyle = "rgba(10,12,25,.28)";
+    c.beginPath();
+    c.ellipse(Math.round(x) + 1, Math.round(y) + 2, rx, ry, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  // src/chase/city.ts
+  function timeOfDay(d = /* @__PURE__ */ new Date()) {
+    const h = d.getHours() + d.getMinutes() / 60;
+    if (h >= 7 && h < 17) return "day";
+    if (h >= 17 && h < 19.5 || h >= 5.5 && h < 7) return "dusk";
+    return "night";
+  }
+  var PAL = {
+    day: {
+      grass: "#7fb663",
+      grassD: "#6aa152",
+      road: "#555b66",
+      roadD: "#4b505a",
+      walk: "#d7cfc0",
+      walkD: "#c3b9a8",
+      curb: "#a39887",
+      lane: "#f0d77a",
+      zebra: "#eeeae0",
+      roofs: ["#c97b5d", "#d9b27a", "#7fa79c", "#a7a9c2", "#c6b29d", "#9b7f6a", "#e0a17a", "#8c9aa8"],
+      tree: ["#5ea24b", "#3f7f3a"],
+      water: "#5b9fd0"
+    },
+    dusk: {
+      grass: "#6d9555",
+      grassD: "#5c8247",
+      road: "#4a4b57",
+      roadD: "#40414c",
+      walk: "#c4b3a3",
+      walkD: "#ae9f8f",
+      curb: "#8c7f73",
+      lane: "#e8c67a",
+      zebra: "#e6ddd0",
+      roofs: ["#b06a56", "#c49a72", "#6f8f8a", "#9493b0", "#b39c8b", "#8a6d60", "#c98b6c", "#7f8798"],
+      tree: ["#4f8445", "#386536"],
+      water: "#5a7fb3"
+    },
+    night: {
+      grass: "#3f5a45",
+      grassD: "#354e3c",
+      road: "#30323c",
+      roadD: "#2a2c35",
+      walk: "#6e6c78",
+      walkD: "#615f6b",
+      curb: "#55535e",
+      lane: "#b9a165",
+      zebra: "#9f9da8",
+      roofs: ["#5b4652", "#5e5866", "#3f565a", "#4d4d68", "#5a5058", "#4a4048", "#665058", "#45505e"],
+      tree: ["#35593f", "#284634"],
+      water: "#2c4670"
+    }
+  };
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = a + 1831565813 >>> 0;
+      let t = a;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var ROAD = 30;
+  var BLOCK = 92;
+  var PITCH = ROAD + BLOCK;
+  var WALK = 5;
+  var City = class {
+    /** want：路线大概要多长（画布像素） */
+    constructor(seed, want, tod) {
+      /** 路线上的点（已经把拐角磨圆） */
+      this.path = [];
+      /** 每个点到起点的距离 */
+      this.cum = [];
+      /** 路口的路灯 */
+      this.lights = [];
+      this.tod = tod;
+      this.rand = rng(seed);
+      const R = this.rand;
+      this.ny = 5;
+      const nodes = [[0, 2]];
+      const seen = /* @__PURE__ */ new Set(["0,2"]);
+      let len = 0;
+      let last = "r";
+      while (len < want) {
+        const [i, j] = nodes[nodes.length - 1];
+        const opts = [];
+        opts.push(["r", i + 1, j], ["r", i + 1, j]);
+        if (last === "r") opts.push(["r", i + 1, j]);
+        if (j > 0 && !seen.has(i + "," + (j - 1))) opts.push(["u", i, j - 1], ["u", i, j - 1]);
+        if (j < this.ny - 1 && !seen.has(i + "," + (j + 1))) opts.push(["d", i, j + 1], ["d", i, j + 1]);
+        const [d, ni, nj] = opts[Math.floor(R() * opts.length)];
+        if ((d === "u" || d === "d") && (last === "u" || last === "d") && R() < 0.6) continue;
+        nodes.push([ni, nj]);
+        seen.add(ni + "," + nj);
+        last = d;
+        len += PITCH;
+      }
+      this.nx = nodes[nodes.length - 1][0] + 2;
+      this.width = this.nx * PITCH + ROAD;
+      this.height = this.ny * PITCH - BLOCK + ROAD + 2 * PITCH;
+      const oy = PITCH;
+      const center = (i, j) => ({ x: i * PITCH + ROAD / 2, y: oy + j * PITCH + ROAD / 2 });
+      const pts = nodes.map(([i, j]) => center(i, j));
+      pts.unshift({ x: pts[0].x - 40, y: pts[0].y });
+      const a = pts[pts.length - 2];
+      const b = pts[pts.length - 1];
+      const dir = { x: Math.sign(b.x - a.x), y: Math.sign(b.y - a.y) };
+      const end = { x: b.x + dir.x * 46, y: b.y + dir.y * 46 };
+      pts.push(end);
+      this.path = roundCorners(pts, 12);
+      let s = 0;
+      this.cum.push(0);
+      for (let k = 1; k < this.path.length; k++) {
+        s += Math.hypot(this.path[k].x - this.path[k - 1].x, this.path[k].y - this.path[k - 1].y);
+        this.cum.push(s);
+      }
+      this.length = s;
+      const hw = 64;
+      const hh = 52;
+      this.hideout = {
+        x: dir.x > 0 ? end.x + 4 : dir.x < 0 ? end.x - 4 - hw : end.x - hw / 2,
+        y: dir.y > 0 ? end.y + 4 : dir.y < 0 ? end.y - 4 - hh : end.y - hh / 2,
+        w: hw,
+        h: hh,
+        doorX: end.x,
+        doorY: end.y,
+        dir
+      };
+      this.map = this.render(oy);
+    }
+    /** 路线上距离起点 s 的那一点，和那里的方向（弧度） */
+    at(s) {
+      const p = this.path;
+      const c = this.cum;
+      s = Math.max(0, Math.min(this.length, s));
+      let lo = 0;
+      let hi = c.length - 1;
+      while (hi - lo > 1) {
+        const mid = lo + hi >> 1;
+        if (c[mid] <= s) lo = mid;
+        else hi = mid;
+      }
+      const seg = c[hi] - c[lo] || 1;
+      const t = (s - c[lo]) / seg;
+      const x = p[lo].x + (p[hi].x - p[lo].x) * t;
+      const y = p[lo].y + (p[hi].y - p[lo].y) * t;
+      return { x, y, angle: Math.atan2(p[hi].y - p[lo].y, p[hi].x - p[lo].x) };
+    }
+    // ---------------- 画地图 ----------------
+    render(oy) {
+      const cv = document.createElement("canvas");
+      cv.width = this.width;
+      cv.height = this.height;
+      const c = cv.getContext("2d");
+      c.imageSmoothingEnabled = false;
+      const P = PAL[this.tod];
+      const R = this.rand;
+      px(c, 0, 0, this.width, this.height, P.grass);
+      for (let k = 0; k < this.width * this.height / 90; k++) px(c, Math.floor(R() * this.width), Math.floor(R() * this.height), 2, 1, P.grassD);
+      const rows = this.ny + 2;
+      const xs = [];
+      const ys = [];
+      for (let i = 0; i <= this.nx; i++) xs.push(i * PITCH);
+      for (let j = -1; j < rows; j++) ys.push(oy + j * PITCH);
+      for (let i = 0; i < this.nx; i++) {
+        for (const y02 of ys) {
+          const bx2 = i * PITCH + ROAD;
+          const by2 = y02 + ROAD;
+          if (by2 > this.height || by2 + BLOCK < 0) continue;
+          this.block(c, bx2, by2, P);
+        }
+      }
+      for (const y02 of ys) this.roadH(c, 0, this.width, y02, P);
+      for (const x02 of xs) this.roadV(c, x02, 0, this.height, P);
+      for (const x02 of xs) for (const y02 of ys) this.crossing(c, x02, y02, P);
+      const h = this.hideout;
+      const bi = Math.floor((h.doorX + h.dir.x * 20) / PITCH);
+      const bj = Math.floor((h.doorY + h.dir.y * 20 - oy) / PITCH);
+      px(c, bi * PITCH + ROAD, oy + bj * PITCH + ROAD, BLOCK, BLOCK, P.grassD);
+      const from = this.path[this.path.length - 1];
+      const d = h.dir;
+      const bx = from.x - d.x * 46;
+      const by = from.y - d.y * 46;
+      const x0 = Math.min(bx, from.x) - (d.x ? 0 : 8);
+      const y0 = Math.min(by, from.y) - (d.y ? 0 : 8);
+      px(c, Math.round(x0), Math.round(y0), d.x ? 46 : 16, d.y ? 46 : 16, P.road);
+      this.hideoutRoof(c);
+      return cv;
+    }
+    roadH(c, x0, x1, y, P) {
+      px(c, x0, y, x1 - x0, ROAD, P.road);
+      px(c, x0, y, x1 - x0, WALK, P.walk);
+      px(c, x0, y + ROAD - WALK, x1 - x0, WALK, P.walk);
+      px(c, x0, y + WALK, x1 - x0, 1, P.curb);
+      px(c, x0, y + ROAD - WALK - 1, x1 - x0, 1, P.curb);
+      for (let x = x0; x < x1; x += 6) {
+        px(c, x, y, 1, WALK, P.walkD);
+        px(c, x, y + ROAD - WALK, 1, WALK, P.walkD);
+      }
+      for (let x = x0 + 4; x < x1; x += 14) px(c, x, y + ROAD / 2, 7, 1, P.lane);
+      for (let x = x0; x < x1; x += 3) if (this.rand() < 0.25) px(c, x, y + WALK + 2 + Math.floor(this.rand() * (ROAD - 2 * WALK - 4)), 1, 1, P.roadD);
+      for (let x = x0 + 30; x < x1 - 30; x += 40 + Math.floor(this.rand() * 60)) {
+        if (this.rand() < 0.45) {
+          const s = parkedSprite(CAR_COLORS[Math.floor(this.rand() * CAR_COLORS.length)]);
+          const top = this.rand() < 0.5;
+          c.drawImage(s.img, x, top ? y + WALK + 1 : y + ROAD - WALK - 12);
+        }
+      }
+    }
+    roadV(c, x, y0, y1, P) {
+      px(c, x, y0, ROAD, y1 - y0, P.road);
+      px(c, x, y0, WALK, y1 - y0, P.walk);
+      px(c, x + ROAD - WALK, y0, WALK, y1 - y0, P.walk);
+      px(c, x + WALK, y0, 1, y1 - y0, P.curb);
+      px(c, x + ROAD - WALK - 1, y0, 1, y1 - y0, P.curb);
+      for (let y = y0; y < y1; y += 6) {
+        px(c, x, y, WALK, 1, P.walkD);
+        px(c, x + ROAD - WALK, y, WALK, 1, P.walkD);
+      }
+      for (let y = y0 + 4; y < y1; y += 14) px(c, x + ROAD / 2, y, 1, 7, P.lane);
+      for (let y = y0; y < y1; y += 3) if (this.rand() < 0.25) px(c, x + WALK + 2 + Math.floor(this.rand() * (ROAD - 2 * WALK - 4)), y, 1, 1, P.roadD);
+    }
+    /** 路口：清掉中线，四边画斑马线，角上一盏路灯 */
+    crossing(c, x, y, P) {
+      px(c, x + WALK, y + WALK, ROAD - 2 * WALK, ROAD - 2 * WALK, P.road);
+      for (let k = 0; k < ROAD - 2 * WALK; k += 3) {
+        px(c, x + WALK + k, y - 6, 2, 5, P.zebra);
+        px(c, x + WALK + k, y + ROAD + 1, 2, 5, P.zebra);
+        px(c, x - 6, y + WALK + k, 5, 2, P.zebra);
+        px(c, x + ROAD + 1, y + WALK + k, 5, 2, P.zebra);
+      }
+      px(c, x + 1, y + 1, 3, 3, "#3b3f4c");
+      px(c, x + 2, y + 2, 1, 1, "#ffe7a6");
+      this.lights.push({ x: x + 2, y: y + 2 });
+    }
+    /** 一块地：几栋楼、公园或者停车场 */
+    block(c, x, y, P) {
+      const R = this.rand;
+      const kind = R();
+      if (kind < 0.17) return this.park(c, x, y, P);
+      if (kind < 0.25) return this.parking(c, x, y, P);
+      const lots = [];
+      const split = R();
+      if (split < 0.25) lots.push([x + 4, y + 4, BLOCK - 8, BLOCK - 8]);
+      else if (split < 0.6) {
+        const m = Math.floor(BLOCK * (0.35 + R() * 0.3));
+        lots.push([x + 4, y + 4, m - 6, BLOCK - 8], [x + m + 2, y + 4, BLOCK - m - 6, BLOCK - 8]);
+      } else {
+        const m = Math.floor(BLOCK / 2);
+        lots.push([x + 4, y + 4, m - 6, m - 6], [x + m + 2, y + 4, m - 6, m - 6], [x + 4, y + m + 2, m - 6, m - 6], [x + m + 2, y + m + 2, m - 6, m - 6]);
+      }
+      px(c, x, y, BLOCK, BLOCK, shade(P.grass, -0.05));
+      for (const [lx, ly, lw, lh] of lots) this.building(c, lx, ly, lw, lh, P);
+      const t = treeSprite(P.tree[0], P.tree[1]);
+      for (let k = 0; k < 3; k++) if (R() < 0.5) c.drawImage(t.img, x + Math.floor(R() * (BLOCK - 16)), y + (R() < 0.5 ? -4 : BLOCK - 12));
+    }
+    building(c, x, y, w, h, P) {
+      const R = this.rand;
+      const roof = P.roofs[Math.floor(R() * P.roofs.length)];
+      c.fillStyle = "rgba(15,15,30,.28)";
+      c.fillRect(x + 4, y + 4, w, h);
+      px(c, x, y, w, h, shade(roof, -0.35));
+      px(c, x + 1, y + 1, w - 2, h - 2, roof);
+      px(c, x + 1, y + 1, w - 2, 1, shade(roof, 0.25));
+      px(c, x + 1, y + h - 2, w - 2, 1, shade(roof, -0.2));
+      const n = 2 + Math.floor(R() * 4);
+      for (let k = 0; k < n; k++) {
+        const ax = x + 4 + Math.floor(R() * Math.max(1, w - 14));
+        const ay = y + 4 + Math.floor(R() * Math.max(1, h - 14));
+        const t = R();
+        if (t < 0.35) {
+          px(c, ax, ay, 7, 5, "#9aa0aa");
+          px(c, ax, ay + 4, 7, 1, "#6c717b");
+          px(c, ax + 2, ay + 1, 3, 3, "#5d626c");
+        } else if (t < 0.55) {
+          px(c, ax + 1, ay, 6, 8, "#7a6252");
+          px(c, ax, ay + 1, 8, 6, "#7a6252");
+          px(c, ax + 2, ay + 2, 4, 4, "#94796a");
+        } else if (t < 0.8) {
+          const lit = this.tod !== "day" && R() < 0.6;
+          px(c, ax, ay, 9, 6, "#3d4a5a");
+          px(c, ax + 1, ay + 1, 7, 4, lit ? "#ffd780" : "#6f8fa8");
+          px(c, ax + 4, ay + 1, 1, 4, "#3d4a5a");
+        } else {
+          px(c, ax, ay, 3, 3, "#4b4f58");
+        }
+      }
+    }
+    park(c, x, y, P) {
+      const R = this.rand;
+      px(c, x, y, BLOCK, BLOCK, shade(P.grass, 0.06));
+      const pathC = shade(P.walk, -0.05);
+      px(c, x + BLOCK / 2 - 3, y, 6, BLOCK, pathC);
+      px(c, x, y + BLOCK / 2 - 3, BLOCK, 6, pathC);
+      if (R() < 0.6) {
+        const cx = x + BLOCK / 2;
+        const cy = y + BLOCK / 2;
+        c.fillStyle = shade(P.walk, -0.2);
+        c.beginPath();
+        c.arc(cx, cy, 13, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = P.water;
+        c.beginPath();
+        c.arc(cx, cy, 10, 0, Math.PI * 2);
+        c.fill();
+        px(c, cx - 4, cy - 4, 3, 1, "#ffffff");
+      }
+      const t = treeSprite(P.tree[0], P.tree[1]);
+      for (let k = 0; k < 9; k++) {
+        const tx = x + 2 + Math.floor(R() * (BLOCK - 18));
+        const ty = y + 2 + Math.floor(R() * (BLOCK - 18));
+        if (Math.abs(tx + 8 - (x + BLOCK / 2)) < 18 && Math.abs(ty + 8 - (y + BLOCK / 2)) < 18) continue;
+        c.drawImage(t.img, tx, ty);
+      }
+      px(c, x + BLOCK / 2 + 6, y + 10, 10, 3, "#8a5a3a");
+      px(c, x + 10, y + BLOCK / 2 + 6, 3, 10, "#8a5a3a");
+    }
+    parking(c, x, y, P) {
+      const R = this.rand;
+      px(c, x + 2, y + 2, BLOCK - 4, BLOCK - 4, P.road);
+      for (let k = 0; k < BLOCK - 10; k += 14) {
+        px(c, x + 6 + k, y + 6, 1, 22, P.zebra);
+        px(c, x + 6 + k, y + BLOCK - 28, 1, 22, P.zebra);
+      }
+      for (let k = 0; k + 14 < BLOCK - 10; k += 14) {
+        if (R() < 0.6) {
+          const s = parkedSprite(CAR_COLORS[Math.floor(R() * CAR_COLORS.length)]);
+          c.save();
+          c.translate(x + 7 + k + 6, y + 6 + 11);
+          c.rotate(Math.PI / 2);
+          c.drawImage(s.img, -10, -6);
+          c.restore();
+        }
+        if (R() < 0.6) {
+          const s = parkedSprite(CAR_COLORS[Math.floor(R() * CAR_COLORS.length)]);
+          c.save();
+          c.translate(x + 7 + k + 6, y + BLOCK - 28 + 11);
+          c.rotate(-Math.PI / 2);
+          c.drawImage(s.img, -10, -6);
+          c.restore();
+        }
+      }
+    }
+    hideoutRoof(c) {
+      const h = this.hideout;
+      c.fillStyle = "rgba(15,15,30,.3)";
+      c.fillRect(h.x + 4, h.y + 4, h.w, h.h);
+      px(c, h.x, h.y, h.w, h.h, "#2d2833");
+      px(c, h.x + 1, h.y + 1, h.w - 2, h.h - 2, "#4a4152");
+      for (let k = 3; k < h.w - 2; k += 4) px(c, h.x + k, h.y + 2, 1, h.h - 4, "#3c3444");
+      const d = h.dir;
+      const len = 26;
+      for (let k = 0; k < len; k += 4) {
+        const col = k / 4 % 2 ? "#1c1a20" : "#e8b931";
+        if (d.x) px(c, d.x > 0 ? h.x : h.x + h.w - 3, h.doorY - len / 2 + k, 3, 4, col);
+        else px(c, h.doorX - len / 2 + k, d.y > 0 ? h.y : h.y + h.h - 3, 4, 3, col);
+      }
+      const sx = h.x + h.w / 2 - 5;
+      const sy = h.y + h.h / 2 - 7;
+      px(c, sx, sy, 11, 14, "#e8b931");
+      px(c, sx + 3, sy + 2, 5, 2, "#1c1a20");
+      px(c, sx + 6, sy + 4, 2, 2, "#1c1a20");
+      px(c, sx + 4, sy + 6, 3, 2, "#1c1a20");
+      px(c, sx + 4, sy + 10, 3, 2, "#1c1a20");
+    }
+  };
+  var CAR_COLORS = ["#c94a3f", "#3f6fc9", "#e6c34a", "#6d8b5a", "#e8e4dc", "#3a3d47", "#8a5ab0", "#e08a3c"];
+  function roundCorners(pts, r) {
+    const out = [pts[0]];
+    for (let k = 1; k < pts.length - 1; k++) {
+      const a = pts[k - 1];
+      const b = pts[k];
+      const n = pts[k + 1];
+      const d1 = { x: Math.sign(b.x - a.x), y: Math.sign(b.y - a.y) };
+      const d2 = { x: Math.sign(n.x - b.x), y: Math.sign(n.y - b.y) };
+      if (d1.x === d2.x && d1.y === d2.y) {
+        out.push(b);
+        continue;
+      }
+      const p1 = { x: b.x - d1.x * r, y: b.y - d1.y * r };
+      const p2 = { x: b.x + d2.x * r, y: b.y + d2.y * r };
+      out.push(p1);
+      for (let t = 1; t < 6; t++) {
+        const u = t / 6;
+        out.push({ x: (1 - u) * (1 - u) * p1.x + 2 * (1 - u) * u * b.x + u * u * p2.x, y: (1 - u) * (1 - u) * p1.y + 2 * (1 - u) * u * b.y + u * u * p2.y });
+      }
+      out.push(p2);
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
   }
 
   // src/chase/scene.ts
-  var TRACK = 1800;
-  var GAP0 = 4;
+  var START = 34;
+  var THIEF_AHEAD = 18;
+  var DOOR_BEFORE = 6;
   var ChaseScene = class {
-    constructor(get) {
+    constructor(get, city) {
       this.canvas = null;
       this.wrap = null;
       this.ctx = null;
       this.raf = 0;
       this.ro = null;
-      this.w = 320;
-      this.scale = 3;
-      this.cam = 0;
-      this.carX = 0;
+      this.w = 300;
+      this.h = 160;
+      this.scale = 2;
+      this.camX = 0;
+      this.camY = 0;
+      this.policeS = START;
       // 画面上的警车位置（平滑跟随）
       this.last = 0;
-      this.dust = [];
-      this.pal = paletteNow();
+      this.skids = [];
+      this.sparks = [];
+      this.boostUntil = 0;
+      this.light = null;
       this.get = get;
+      this.city = city;
     }
-    attach(canvas, wrap) {
+    /** 换一局：新地图 */
+    reset(city) {
+      this.city = city;
+      this.policeS = START;
+      this.skids = [];
+      this.sparks = [];
+      this.boostUntil = 0;
+      this.snapCamera();
+    }
+    attach(canvas2, wrap) {
       this.detach();
-      this.canvas = canvas;
+      this.canvas = canvas2;
       this.wrap = wrap;
-      this.ctx = canvas.getContext("2d");
-      this.pal = paletteNow();
-      const s = this.get();
-      this.carX = this.carWorld(s.police);
-      this.cam = this.camTarget(s);
+      this.ctx = canvas2.getContext("2d");
       if (window.ResizeObserver) {
         this.ro = new ResizeObserver(() => this.fit());
         this.ro.observe(wrap);
       }
       this.fit();
+      this.snapCamera();
       this.last = performance.now();
       const loop = (t) => {
         if (!this.canvas || !document.body.contains(this.canvas)) return;
@@ -6638,37 +6806,64 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       this.canvas = null;
       this.ctx = null;
     }
-    /** 画布高 128 像素，按页面宽度选整数倍；宽度跟着页面变 */
+    /** 打错：轮胎在地上留一道刹车印 */
+    skid() {
+      const p = this.city.at(this.policeS);
+      this.skids.push({ x: p.x, y: p.y, a: p.angle, t: 0 });
+      if (this.skids.length > 60) this.skids.shift();
+    }
+    /** 连击加速：车尾冒火 */
+    boost(now) {
+      this.boostUntil = now + 900;
+    }
+    /** 画布按整数倍放大（像素清楚），宽度跟着页面，高度占窗口的一半左右 */
     fit() {
       if (!this.canvas || !this.wrap) return;
       const r = this.wrap.getBoundingClientRect();
       const border = this.wrap.offsetWidth - this.wrap.clientWidth;
       const cssW = Math.max(300, r.width - border);
-      const maxH = Math.max(240, Math.min(420, window.innerHeight * 0.42));
-      this.scale = Math.max(2, Math.min(4, Math.floor(maxH / Y.height)));
+      const top = r.top + window.scrollY;
+      const cssH = Math.round(Math.max(240, Math.min(480, window.innerHeight - top - 345)));
+      this.scale = cssW >= 700 && cssH >= 300 ? 3 : 2;
       this.w = Math.ceil(cssW / this.scale);
+      this.h = Math.ceil(cssH / this.scale);
       this.canvas.width = this.w;
-      this.canvas.height = Y.height;
+      this.canvas.height = this.h;
       this.canvas.style.width = cssW + "px";
-      this.canvas.style.height = Y.height * this.scale + "px";
-      this.wrap.style.height = Y.height * this.scale + "px";
+      this.canvas.style.height = this.h * this.scale + "px";
+      this.wrap.style.height = this.h * this.scale + "px";
       if (this.ctx) this.ctx.imageSmoothingEnabled = false;
     }
-    carWorld(p) {
-      return 30 + p * TRACK;
+    track() {
+      return this.city.length - START - THIEF_AHEAD - DOOR_BEFORE;
     }
-    thiefWorld(q) {
-      return 30 + q * TRACK + CAR_W + GAP0;
+    thiefS(q) {
+      return START + THIEF_AHEAD + q * this.track();
     }
+    policeTarget(p) {
+      return START + p * this.track();
+    }
+    /** 镜头：两个人都放得下就放在中间；放不下就跟着警车，往小偷那边偏 */
     camTarget(s) {
-      const thiefRight = this.thiefWorld(s.thief) + 14;
-      const span = thiefRight - this.carX;
-      let want = span < this.w - 40 ? this.carX - (this.w - span) / 2 : this.carX - 24;
-      if (s.thief > 0.8) {
-        const end = this.thiefWorld(1) + 90 - this.w;
-        want = Math.max(want, Math.min(end, thiefRight + 20 - this.w));
-      }
-      return Math.max(-20, want);
+      const a = this.city.at(this.policeS);
+      const b = this.city.at(this.thiefS(s.thief));
+      let dx = b.x - a.x;
+      let dy = b.y - a.y;
+      const mx = this.w / 2 - 34;
+      const my = this.h / 2 - 26;
+      dx = Math.max(-mx, Math.min(mx, dx / 2));
+      dy = Math.max(-my, Math.min(my, dy / 2));
+      const yAt = s.phase === "won" || s.phase === "lost" ? 0.74 : 0.5;
+      let cx = a.x + dx - this.w / 2;
+      let cy = a.y + dy - this.h * yAt;
+      cx = Math.max(0, Math.min(this.city.width - this.w, cx));
+      cy = Math.max(0, Math.min(this.city.height - this.h, cy));
+      return [cx, cy];
+    }
+    snapCamera() {
+      const s = this.get();
+      this.policeS = this.policeTarget(s.police);
+      [this.camX, this.camY] = this.camTarget(s);
     }
     draw(t) {
       const c = this.ctx;
@@ -6676,67 +6871,212 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const dt = Math.min(0.05, (t - this.last) / 1e3);
       this.last = t;
       const s = this.get();
-      const carTarget = this.carWorld(s.police);
-      this.carX += (carTarget - this.carX) * Math.min(1, dt * 9);
-      if (Math.abs(carTarget - this.carX) < 0.05) this.carX = carTarget;
-      const camT = this.camTarget(s);
-      this.cam += (camT - this.cam) * Math.min(1, dt * 4);
-      const cam = Math.round(this.cam);
+      const city = this.city;
+      const target = this.policeTarget(s.police);
+      this.policeS += (target - this.policeS) * Math.min(1, dt * 8);
+      if (Math.abs(target - this.policeS) < 0.05) this.policeS = target;
+      const [tx, ty] = this.camTarget(s);
+      this.camX += (tx - this.camX) * Math.min(1, dt * 3.5);
+      this.camY += (ty - this.camY) * Math.min(1, dt * 3.5);
+      const cx = Math.round(this.camX);
+      const cy = Math.round(this.camY);
       const w = this.w;
-      const p = this.pal;
-      const moving = s.phase === "run" && !s.wrong;
-      drawSky(c, w, p, t);
-      drawFar(c, w, cam, p);
-      drawMid(c, w, cam, p);
-      drawStreet(c, w, cam, p, t);
-      const hx = this.thiefWorld(1) + 14 - cam;
+      const h = this.h;
+      px(c, 0, 0, w, h, "#2b2e38");
+      c.drawImage(city.map, cx, cy, Math.min(w, city.width - cx), Math.min(h, city.height - cy), 0, 0, Math.min(w, city.width - cx), Math.min(h, city.height - cy));
+      for (const k of this.skids) {
+        k.t += dt;
+        const al = Math.max(0, 0.45 - k.t / 14);
+        if (al <= 0) continue;
+        c.save();
+        c.translate(Math.round(k.x - cx), Math.round(k.y - cy));
+        c.rotate(Math.round(k.a / (Math.PI / 2)) * (Math.PI / 2));
+        c.fillStyle = `rgba(20,20,26,${al.toFixed(2)})`;
+        c.fillRect(-14, -5, 9, 1);
+        c.fillRect(-14, 4, 9, 1);
+        c.restore();
+      }
+      this.skids = this.skids.filter((k) => k.t < 7);
+      const hd = city.hideout;
       let door = 1;
-      if (s.phase === "lost") door = Math.max(0, 1 - (t - s.endAt) / 700);
-      if (hx < w + 10) drawHideout(c, hx, door, p);
-      const tx = this.thiefWorld(s.thief) - cam;
-      const thiefRunning = s.phase === "run" || s.phase === "count";
-      const frame = thiefRunning && s.phase === "run" ? Math.floor(t / 90) % 4 : 0;
-      const escaped = s.phase === "lost" && t - s.endAt > 500;
-      if (!escaped) {
-        const pose = s.phase === "won" ? "caught" : s.phase === "run" ? "run" : "idle";
-        drawThief(c, tx, frame, pose);
-        if (s.phase === "won") drawStars(c, tx + 6, Y.ground - 25, t);
+      if (s.phase === "lost") door = Math.max(0, 1 - (t - s.endAt - 350) / 500);
+      this.drawDoor(c, hd, door, cx, cy);
+      const thiefPos = city.at(this.thiefS(s.thief));
+      const gone = s.phase === "lost" && t - s.endAt > 350;
+      if (!gone) {
+        const running = s.phase === "run";
+        shadow(c, thiefPos.x - cx, thiefPos.y - cy, 5, 3);
+        const spr = s.phase === "won" ? thiefSprite(0, true) : thiefSprite(running ? Math.floor(t / 85) : 0);
+        blit(c, spr, thiefPos.x - cx, thiefPos.y - cy, thiefPos.angle);
+        if (running && Math.random() < dt * 9) this.sparks.push({ x: thiefPos.x - Math.cos(thiefPos.angle) * 5, y: thiefPos.y - Math.sin(thiefPos.angle) * 5, vx: 0, vy: 0, t: 0, kind: "dust" });
+        if (s.phase === "won") this.stars(c, thiefPos.x - cx, thiefPos.y - cy - 9, t);
       }
-      if (s.phase === "run" && Math.random() < dt * 8) this.dust.push({ x: this.thiefWorld(s.thief) + 2, y: Y.ground - 1, t: 0 });
-      const flash = Math.floor(t / 140) % 2;
-      const wheel = moving || Math.abs(carTarget - this.carX) > 0.5 ? t / 220 % 1 : 0;
-      const bump = moving && Math.floor(t / 110) % 3 === 0 ? -1 : 0;
-      const shake = s.wrong && s.phase === "run" ? Math.floor(t / 50) % 2 ? 1 : -1 : 0;
-      const cx = this.carX - cam + shake;
-      if (moving && Math.random() < dt * 10) this.dust.push({ x: this.carX + 2, y: Y.ground - 1, t: 0 });
-      if (moving && carTarget - this.carX > 1.5) {
-        c.fillStyle = "rgba(255,255,255,.35)";
-        for (let i = 0; i < 3; i++) c.fillRect(Math.round(cx - 10 - (t / 20 + i * 7) % 14), Y.ground - 6 - i * 4, 6, 1);
+      const pol = city.at(this.policeS);
+      const moving = Math.abs(target - this.policeS) > 0.3 && s.phase === "run";
+      const flash = s.phase === "ready" ? -1 : Math.floor(t / 130) % 2;
+      shadow(c, pol.x - cx, pol.y - cy, 11, 5);
+      blit(c, policeSprite(flash), pol.x - cx, pol.y - cy, pol.angle);
+      if (t < this.boostUntil && s.phase === "run") {
+        for (let k = 0; k < 2; k++)
+          this.sparks.push({
+            x: pol.x - Math.cos(pol.angle) * 12,
+            y: pol.y - Math.sin(pol.angle) * 12 + (Math.random() - 0.5) * 6,
+            vx: -Math.cos(pol.angle) * 30,
+            vy: -Math.sin(pol.angle) * 30,
+            t: 0,
+            kind: "flame"
+          });
+      } else if (moving && Math.random() < dt * 12) {
+        this.sparks.push({ x: pol.x - Math.cos(pol.angle) * 12, y: pol.y - Math.sin(pol.angle) * 12, vx: 0, vy: 0, t: 0, kind: "dust" });
       }
-      drawCar(c, cx, flash, wheel, bump, s.phase !== "ready");
-      if (s.wrong && s.phase === "run") {
-        rect(c, cx + 27, Y.ground - 30, 5, 8, "#ffffff");
-        rect(c, cx + 28, Y.ground - 29, 3, 4, "#d6453b");
-        rect(c, cx + 28, Y.ground - 24, 3, 1, "#d6453b");
+      for (const p of this.sparks) {
+        p.t += dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.kind === "flame") {
+          const col = p.t < 0.12 ? "#fff3b0" : p.t < 0.25 ? "#ffb347" : "#e8553d";
+          if (p.t < 0.4) px(c, Math.round(p.x - cx), Math.round(p.y - cy), 2, 2, col);
+        } else {
+          const a = Math.max(0, 0.4 - p.t * 0.5);
+          c.fillStyle = `rgba(225,215,195,${a.toFixed(2)})`;
+          const r = 1 + Math.round(p.t * 3);
+          c.fillRect(Math.round(p.x - cx - r), Math.round(p.y - cy - r), r * 2, r * 2);
+        }
       }
-      for (const d of this.dust) {
-        d.t += dt;
-        drawDust(c, d.x - cam, d.y, d.t);
+      this.sparks = this.sparks.filter((p) => p.t < (p.kind === "flame" ? 0.4 : 0.9));
+      this.lighting(c, city.tod, pol, flash, cx, cy);
+      this.minimap(c, s, pol, thiefPos);
+      if (!gone) this.arrow(c, thiefPos.x - cx, thiefPos.y - cy);
+    }
+    drawDoor(c, hd, open, cx, cy) {
+      const d = hd.dir;
+      const len = 18;
+      const thick = 3;
+      const dx = d.x ? d.x > 0 ? hd.x : hd.x + hd.w - thick : hd.doorX - len / 2;
+      const dy = d.y ? d.y > 0 ? hd.y : hd.y + hd.h - thick : hd.doorY - len / 2;
+      const w = d.x ? thick : len;
+      const hh = d.x ? len : thick;
+      px(c, Math.round(dx - cx), Math.round(dy - cy), w, hh, "#101015");
+      if (open < 1) {
+        const k = 1 - open;
+        if (d.x) px(c, Math.round(dx - cx), Math.round(dy - cy), w, Math.round(hh * k), "#9aa0aa");
+        else px(c, Math.round(dx - cx), Math.round(dy - cy), Math.round(w * k), hh, "#9aa0aa");
       }
-      this.dust = this.dust.filter((d) => d.t < 1);
-      if (tx > w - 6 && !escaped) {
-        const ay = Y.ground - 12;
-        c.fillStyle = "rgba(20,20,30,.55)";
-        c.fillRect(w - 13, ay - 6, 12, 12);
-        rect(c, w - 10, ay - 1, 5, 2, "#ffffff");
-        rect(c, w - 6, ay - 3, 1, 6, "#ffffff");
-        rect(c, w - 5, ay - 2, 1, 4, "#ffffff");
-        rect(c, w - 4, ay - 1, 1, 2, "#ffffff");
+    }
+    stars(c, x, y, t) {
+      for (let i = 0; i < 3; i++) {
+        const a = t / 260 + i * Math.PI * 2 / 3;
+        const sx = Math.round(x + Math.cos(a) * 7);
+        const sy = Math.round(y + Math.sin(a) * 2.5);
+        px(c, sx, sy - 1, 1, 3, "#ffd75e");
+        px(c, sx - 1, sy, 3, 1, "#ffd75e");
       }
-      if (p === PALETTES.night) {
-        c.fillStyle = "rgba(8,10,30,.12)";
-        c.fillRect(0, 0, w, Y.height);
+    }
+    lighting(c, tod, pol, flash, cx, cy) {
+      if (tod === "day") return;
+      const w = this.w;
+      const h = this.h;
+      if (!this.light || this.light.width !== w || this.light.height !== h) {
+        this.light = document.createElement("canvas");
+        this.light.width = w;
+        this.light.height = h;
       }
+      const l = this.light.getContext("2d");
+      l.globalCompositeOperation = "source-over";
+      l.clearRect(0, 0, w, h);
+      l.fillStyle = tod === "night" ? "rgba(6,10,32,.58)" : "rgba(60,30,60,.22)";
+      l.fillRect(0, 0, w, h);
+      l.globalCompositeOperation = "destination-out";
+      const hole = (x, y, r, a) => {
+        const g = l.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, `rgba(0,0,0,${a})`);
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        l.fillStyle = g;
+        l.fillRect(x - r, y - r, r * 2, r * 2);
+      };
+      for (const p of this.city.lights) {
+        const x = p.x - cx;
+        const y = p.y - cy;
+        if (x < -40 || y < -40 || x > w + 40 || y > h + 40) continue;
+        hole(x, y, 30, 0.85);
+      }
+      const fx = pol.x - cx + Math.cos(pol.angle) * 26;
+      const fy = pol.y - cy + Math.sin(pol.angle) * 26;
+      hole(fx, fy, 24, 0.9);
+      hole(pol.x - cx, pol.y - cy, 16, 0.8);
+      l.globalCompositeOperation = "source-over";
+      c.drawImage(this.light, 0, 0);
+      c.save();
+      c.globalCompositeOperation = "lighter";
+      if (flash >= 0) {
+        const g = c.createRadialGradient(pol.x - cx, pol.y - cy, 0, pol.x - cx, pol.y - cy, 26);
+        g.addColorStop(0, flash ? "rgba(60,120,255,.35)" : "rgba(255,60,50,.35)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = g;
+        c.fillRect(pol.x - cx - 26, pol.y - cy - 26, 52, 52);
+      }
+      for (const p of this.city.lights) {
+        const x = p.x - cx;
+        const y = p.y - cy;
+        if (x < -30 || y < -30 || x > w + 30 || y > h + 30) continue;
+        const g = c.createRadialGradient(x, y, 0, x, y, 18);
+        g.addColorStop(0, `rgba(255,200,120,${tod === "night" ? 0.22 : 0.12})`);
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        c.fillStyle = g;
+        c.fillRect(x - 18, y - 18, 36, 36);
+      }
+      c.restore();
+    }
+    /** 右上角的小地图：整条路线、警车、小偷、仓库 */
+    minimap(c, s, pol, th) {
+      const city = this.city;
+      const mw = Math.min(84, Math.round(this.w * 0.2));
+      const k = mw / city.width;
+      const mh = Math.max(16, Math.round(city.height * k));
+      const ox = this.w - mw - 6;
+      const oy = 6;
+      c.fillStyle = "rgba(16,18,28,.55)";
+      c.fillRect(ox - 2, oy - 2, mw + 4, mh + 4);
+      c.strokeStyle = "rgba(255,255,255,.18)";
+      c.lineWidth = 1;
+      c.strokeRect(ox - 1.5, oy - 1.5, mw + 3, mh + 3);
+      c.strokeStyle = "rgba(255,255,255,.55)";
+      c.beginPath();
+      city.path.forEach((p, i) => i ? c.lineTo(ox + p.x * k, oy + p.y * k) : c.moveTo(ox + p.x * k, oy + p.y * k));
+      c.stroke();
+      const hd = city.hideout;
+      px(c, Math.round(ox + (hd.x + hd.w / 2) * k) - 2, Math.round(oy + (hd.y + hd.h / 2) * k) - 2, 4, 4, "#e8b931");
+      if (!(s.phase === "lost")) px(c, Math.round(ox + th.x * k) - 1, Math.round(oy + th.y * k) - 1, 3, 3, "#ff5a4e");
+      px(c, Math.round(ox + pol.x * k) - 2, Math.round(oy + pol.y * k) - 2, 4, 4, "#ffffff");
+      px(c, Math.round(ox + pol.x * k) - 1, Math.round(oy + pol.y * k) - 1, 2, 2, "#3f7cff");
+    }
+    /** 小偷跑出画面时，画面边上一个指向他的箭头 */
+    arrow(c, x, y) {
+      const w = this.w;
+      const h = this.h;
+      if (x >= 4 && y >= 4 && x <= w - 4 && y <= h - 4) return;
+      const ax = Math.max(10, Math.min(w - 10, x));
+      const ay = Math.max(10, Math.min(h - 10, y));
+      const a = Math.atan2(y - ay, x - ax);
+      c.save();
+      c.translate(ax, ay);
+      c.fillStyle = "rgba(16,18,28,.7)";
+      c.beginPath();
+      c.arc(0, 0, 8, 0, Math.PI * 2);
+      c.fill();
+      c.rotate(a);
+      c.fillStyle = "#ff5a4e";
+      c.beginPath();
+      c.moveTo(5, 0);
+      c.lineTo(-3, -4);
+      c.lineTo(-3, 4);
+      c.closePath();
+      c.fill();
+      c.restore();
+    }
+    /** 当前是白天、傍晚还是夜里（开新地图时用） */
+    static tod() {
+      return timeOfDay();
     }
   };
 
@@ -6748,21 +7088,25 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     { name: "极速", wpm: 70, coins: 45 }
   ];
   var DAILY_COINS = 150;
-  var HEAD = 0.15;
-  var COUNT_MS = 3e3;
+  var HEAD = 0.14;
+  var COMBO_EVERY = 12;
+  var BOOST_CHARS = 4;
+  var SKID_CHARS = 1.5;
+  var PX_PER_CHAR = 7;
   var ChaseGame = class {
     constructor(host2) {
       this.route = "setup";
       this.play = null;
       this.preview = null;
       this.tick = 0;
+      this.lastStep = 0;
       this.spans = [];
       this.shownPos = -1;
       this.keyHandler = (ev) => this.onKey(ev);
       this.lastOverlay = "";
       this.flashTimer = 0;
       this.host = host2;
-      this.scene = new ChaseScene(() => this.sceneState());
+      this.scene = new ChaseScene(() => this.sceneState(), new City(1, 600, timeOfDay()));
       document.addEventListener("keydown", this.keyHandler, true);
     }
     // ---------------- 存档 ----------------
@@ -6792,13 +7136,15 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     }
     after() {
       if (this.route === "play" && this.play) {
-        const canvas = document.getElementById("chase-canvas");
+        const canvas2 = document.getElementById("chase-canvas");
         const wrap = document.getElementById("chase-wrap");
-        if (canvas && wrap) this.scene.attach(canvas, wrap);
+        if (canvas2 && wrap) this.scene.attach(canvas2, wrap);
         this.spans = Array.from(document.querySelectorAll("#chase-text span"));
         this.shownPos = -1;
+        this.lastOverlay = "";
         this.paintText();
         this.paintHud(performance.now());
+        if (this.play.phase === "won" || this.play.phase === "lost") this.paintResult();
         this.startTick();
       } else {
         this.scene.detach();
@@ -6809,7 +7155,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     leave() {
       this.scene.detach();
       this.stopTick();
-      if (this.play && (this.play.phase === "run" || this.play.phase === "count" || this.play.phase === "paused")) this.play = null;
+      if (this.play && (this.play.phase === "run" || this.play.phase === "ready" || this.play.phase === "paused")) this.play = null;
       this.route = "setup";
     }
     setupHtml() {
@@ -6843,7 +7189,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const L = LEVELS[p.level];
       const chars = Array.from(p.passage.text).map((ch) => "<span>" + (ch === " " ? " " : h.esc(ch)) + "</span>").join("");
       const bookName = p.book === CUSTOM_BOOK ? "自定义文章" : h.books().find((b) => b.id === p.book)?.name || "";
-      return '<main class="page games play"><div class="cp-top"><div><h1 class="h1">打字追击</h1><p class="muted">' + h.esc(bookName) + " · 小偷 " + L.name + "（" + L.wpm + ' 词 / 分钟）</p></div><div class="actions"><button class="btn ghost small" data-game="pause">暂停<kbd>Esc</kbd></button><button class="btn ghost small" data-game="quit">不追了</button></div></div><div class="chase-wrap" id="chase-wrap"><canvas id="chase-canvas" class="chase-canvas"></canvas><div class="cp-overlay" id="chase-overlay"></div></div><div class="cp-track"><div class="tr-line"><i class="tr-done" id="tr-done"></i></div><img class="tr-icon tr-car" id="tr-car" alt="" src="' + icon("car") + '"><img class="tr-icon tr-thief" id="tr-thief" alt="" src="' + icon("thief") + '"><span class="tr-flag" title="小偷的仓库"></span></div><div class="cp-stats"><div><b id="st-wpm">0</b><span>词 / 分钟</span></div><div><b id="st-acc">100%</b><span>正确率</span></div><div><b id="st-time">00:00</b><span>用时</span></div><div><b id="st-gap">0</b><span>米 · 离小偷</span></div></div><div class="cp-textbox" id="chase-box"><div class="cp-scroll" id="chase-scroll"><p class="cp-text" id="chase-text">' + chars + '</p></div></div><p class="cp-source muted small">' + h.esc(p.passage.source) + "</p></main>";
+      return '<main class="page games play"><div class="cp-top"><div><h1 class="h1">打字追击</h1><p class="muted">' + h.esc(bookName) + " · 小偷 " + L.name + "（" + L.wpm + ' 词 / 分钟）</p></div><div class="actions"><button class="btn ghost small" data-game="pause">暂停<kbd>Esc</kbd></button><button class="btn ghost small" data-game="quit">不追了</button></div></div><div class="chase-wrap" id="chase-wrap"><canvas id="chase-canvas" class="chase-canvas"></canvas><div class="cp-pop" id="chase-pop"></div><div class="cp-overlay" id="chase-overlay"></div></div><div class="cp-stats"><div><b id="st-wpm">0</b><span>词 / 分钟</span></div><div><b id="st-acc">100%</b><span>正确率</span></div><div><b id="st-combo">0</b><span>连击</span></div><div><b id="st-gap">0</b><span>米 · 离小偷</span></div></div><div class="cp-textbox" id="chase-box"><div class="cp-scroll" id="chase-scroll"><p class="cp-text" id="chase-text">' + chars + '</p></div></div><p class="cp-source muted small">' + h.esc(p.passage.source) + "</p></main>";
     }
     // ---------------- 开局、进行 ----------------
     start(passage) {
@@ -6862,34 +7208,37 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
         run: new TypingRun(ps.text),
         level: c.level,
         book,
-        phase: "count",
-        countAt: performance.now(),
+        phase: "ready",
         runAt: 0,
         pausedAt: 0,
         pausedTotal: 0,
         endAt: 0,
         thief: HEAD,
+        thiefT: 0,
+        bonus: 0,
         reward: 0,
         capped: false,
-        newBest: false
+        newBest: false,
+        pop: null
       };
+      const seed = (Date.now() ^ Math.random() * 1e9) >>> 0;
+      this.scene.reset(new City(seed, Math.max(900, ps.text.length * PX_PER_CHAR), timeOfDay()));
       this.route = "play";
       this.host.render();
     }
+    /** 警车的进度：打对的字母 + 加速、打滑 */
+    policeProgress(p) {
+      const n = p.passage.text.length;
+      return Math.max(0, Math.min(1, (p.run.pos + p.bonus) / n));
+    }
     sceneState() {
       const p = this.play;
-      if (!p) return { police: 0, thief: HEAD, phase: "ready", wrong: false, endAt: 0 };
-      return { police: p.run.progress(), thief: p.thief, phase: p.phase, wrong: p.run.wrong !== null, endAt: p.endAt };
-    }
-    /** 小偷跑了多少秒（暂停不算） */
-    chaseSeconds(now) {
-      const p = this.play;
-      if (!p || !p.runAt) return 0;
-      const end = p.pausedAt || p.endAt || now;
-      return Math.max(0, (end - p.runAt - p.pausedTotal) / 1e3);
+      if (!p) return { police: 0, thief: HEAD, phase: "ready", endAt: 0 };
+      return { police: this.policeProgress(p), thief: p.thief, phase: p.phase, endAt: p.endAt };
     }
     startTick() {
       this.stopTick();
+      this.lastStep = performance.now();
       const loop = () => {
         if (!document.getElementById("chase-text")) {
           this.stopTick();
@@ -6907,15 +7256,15 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     step(now) {
       const p = this.play;
       if (!p) return;
-      if (p.phase === "count" && now - p.countAt >= COUNT_MS) {
-        p.phase = "run";
-        p.runAt = now;
-        p.run.start(now);
-      }
+      const dt = Math.min(0.1, Math.max(0, (now - this.lastStep) / 1e3));
+      this.lastStep = now;
       if (p.phase === "run") {
+        p.thiefT += dt;
+        const t = p.thiefT;
+        const vary = 1 + 0.16 * Math.sin(t * 0.8) + 0.07 * Math.sin(t * 2.1 + 1.3);
         const cps = LEVELS[p.level].wpm * 5 / 60;
-        p.thief = Math.min(1, HEAD + cps * this.chaseSeconds(now) / p.passage.text.length);
-        if (p.run.progress() >= p.thief) this.finish(true, now);
+        p.thief = Math.min(1, p.thief + cps * vary * dt / p.passage.text.length);
+        if (this.policeProgress(p) >= p.thief) this.finish(true, now);
         else if (p.thief >= 1) this.finish(false, now);
       }
       this.paintHud(now);
@@ -6943,15 +7292,11 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       }
       c.history = [{ t: Date.now(), book: p.book, level: p.level, wpm: Math.round(wpm * 10) / 10, acc: Math.round(acc * 1e3) / 1e3, won }].concat(c.history).slice(0, 30);
       this.host.save();
-      setTimeout(() => this.paintResult(), won ? 900 : 1100);
+      setTimeout(() => this.paintResult(), won ? 900 : 1300);
     }
     pause(now) {
       const p = this.play;
-      if (!p || p.phase !== "run" && p.phase !== "count") return;
-      if (p.phase === "count") {
-        p.countAt = now;
-        return;
-      }
+      if (!p || p.phase !== "run") return;
       p.phase = "paused";
       p.pausedAt = now;
       p.run.pause(now);
@@ -6964,6 +7309,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       p.pausedAt = 0;
       p.run.resume(now);
       p.phase = "run";
+      this.lastStep = now;
       this.paintOverlay();
     }
     // ---------------- 键盘 ----------------
@@ -6976,7 +7322,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
       const now = performance.now();
       if (this.route === "setup" || !this.play) {
-        if (!inField && ev.key === "Enter" && view2.classList.contains("games") && document.querySelector('[data-game="start"]:not([disabled])')) {
+        if (!inField && ev.key === "Enter" && document.querySelector('[data-game="start"]:not([disabled])')) {
           ev.preventDefault();
           this.start();
         }
@@ -6985,9 +7331,10 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const p = this.play;
       if (inField) return;
       if (ev.isComposing || ev.keyCode === 229 || ev.key === "Process") {
-        this.flash("切换到英文输入法再打");
+        this.flash("请切换到英文输入法");
         return;
       }
+      if (ev.key.length === 1 || ev.key === "Backspace") ev.preventDefault();
       if (p.phase === "won" || p.phase === "lost") {
         if (ev.key === "Enter") {
           ev.preventDefault();
@@ -7005,14 +7352,10 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
         return;
       }
       if (p.phase === "paused") {
-        if (ev.key === "Enter" || ev.key === " ") {
+        if (ev.key === "Enter") {
           ev.preventDefault();
           this.resume(now);
         }
-        return;
-      }
-      if (p.phase !== "run") {
-        if (ev.key.length === 1 || ev.key === "Backspace") ev.preventDefault();
         return;
       }
       if (ev.key === "Backspace") {
@@ -7022,8 +7365,23 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       }
       if (ev.key.length !== 1) return;
       ev.preventDefault();
+      if (p.phase === "ready") {
+        p.phase = "run";
+        p.runAt = now;
+        p.run.start(now);
+        this.lastStep = now;
+        this.paintOverlay();
+      }
       const r = p.run.type(ev.key);
-      if (r === "blocked") this.nudge();
+      if (r === "wrong") {
+        p.bonus = Math.max(-p.run.pos, p.bonus - SKID_CHARS);
+        this.scene.skid();
+        this.nudge();
+      } else if ((r === "ok" || r === "done") && p.run.combo > 0 && p.run.combo % COMBO_EVERY === 0) {
+        p.bonus += BOOST_CHARS;
+        this.scene.boost(now);
+        this.popup("连击 " + p.run.combo + " · 加速");
+      }
       this.paintText();
       this.step(now);
     }
@@ -7032,10 +7390,11 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const p = this.play;
       if (!p || !this.spans.length) return;
       const pos = p.run.pos;
-      const from = Math.max(0, Math.min(this.shownPos < 0 ? 0 : this.shownPos, pos) - 1);
-      for (let i = this.shownPos < 0 ? 0 : from; i < (this.shownPos < 0 ? this.spans.length : Math.min(this.spans.length, Math.max(pos, this.shownPos) + 2)); i++) {
-        const s = this.spans[i];
-        s.className = i < pos ? p.run.missed[i] ? "ok was" : "ok" : i === pos ? p.run.wrong !== null ? "cur err" : "cur" : "";
+      const first = this.shownPos < 0;
+      const from = first ? 0 : Math.max(0, Math.min(this.shownPos, pos) - 1);
+      const to = first ? this.spans.length : Math.min(this.spans.length, Math.max(pos, this.shownPos) + 2);
+      for (let i = from; i < to; i++) {
+        this.spans[i].className = i < pos ? p.run.missed[i] ? "ok was" : "ok" : i === pos ? p.run.wrong !== null ? "cur err" : "cur" : "";
       }
       this.shownPos = pos;
       const cur = this.spans[Math.min(pos, this.spans.length - 1)];
@@ -7055,15 +7414,8 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       };
       set("st-wpm", String(Math.round(p.run.wpm(now))));
       set("st-acc", Math.round(p.run.accuracy() * 100) + "%");
-      set("st-time", clock(p.run.elapsed(now)));
-      set("st-gap", String(Math.max(0, Math.round((p.thief - p.run.progress()) * 1e3))));
-      const pct = (x) => (Math.max(0, Math.min(1, x)) * 100).toFixed(2) + "%";
-      const car = document.getElementById("tr-car");
-      const th = document.getElementById("tr-thief");
-      const done = document.getElementById("tr-done");
-      if (car) car.style.left = pct(p.run.progress());
-      if (th) th.style.left = pct(p.thief);
-      if (done) done.style.width = pct(p.run.progress());
+      set("st-combo", String(p.run.combo));
+      set("st-gap", String(Math.max(0, Math.round((p.thief - this.policeProgress(p)) * 1e3))));
       this.paintOverlay(now);
     }
     paintOverlay(now = performance.now()) {
@@ -7071,9 +7423,8 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const el = document.getElementById("chase-overlay");
       if (!p || !el) return;
       let html = "";
-      if (p.phase === "count") {
-        const n = Math.ceil((COUNT_MS - (now - p.countAt)) / 1e3);
-        html = '<div class="ov-count" data-n="' + n + '">' + (n > 0 ? n : "追") + "</div>";
+      if (p.phase === "ready") {
+        html = '<div class="ov-ready"><b>开始打字，就开始追</b><span>字母不分大小写 · 打错了不前进</span></div>';
       } else if (p.phase === "paused") {
         html = '<div class="ov-card"><b>暂停</b><div class="actions"><button class="btn" data-game="resume">继续<kbd>Esc</kbd></button><button class="btn ghost" data-game="quit">不追了</button></div></div>';
       } else if (p.phase === "won" || p.phase === "lost") {
@@ -7083,6 +7434,21 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
         el.innerHTML = html;
         this.lastOverlay = html;
       }
+      const pop = document.getElementById("chase-pop");
+      if (pop && p.pop && now - p.pop.at > 1100) {
+        p.pop = null;
+        pop.classList.remove("show");
+      }
+    }
+    popup(text) {
+      const p = this.play;
+      const pop = document.getElementById("chase-pop");
+      if (!p || !pop) return;
+      p.pop = { text, at: performance.now() };
+      pop.textContent = text;
+      pop.classList.remove("show");
+      void pop.offsetWidth;
+      pop.classList.add("show");
     }
     paintResult() {
       const p = this.play;
@@ -7095,7 +7461,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const missedWords = wordsWithMisses(p.run);
       const title = p.phase === "won" ? p.newBest ? "抓到了 · 新纪录" : "抓到了" : "让他跑了";
       const sub = p.phase === "won" ? p.reward ? "+" + p.reward + " 金币" + (p.capped ? "（今天的领满了）" : "") : "今天打字游戏的金币领满了" : "还差 " + Math.max(1, Math.round((1 - p.run.progress()) * (p.passage.text.match(/\S+/g) || []).length)) + " 个词";
-      const html = '<div class="ov-card result ' + p.phase + '"><div class="ov-main"><div class="ov-title"><b>' + title + '</b><span class="ov-sub">' + h.esc(sub) + '</span></div><div class="ov-stats"><div><b>' + wpm + "</b><span>词 / 分钟</span></div><div><b>" + acc + "%</b><span>正确率</span></div><div><b>" + clock(p.run.elapsed(now)) + '</b><span>用时</span></div></div><div class="ov-acts"><button class="btn" data-game="next">再来一篇<kbd>Enter</kbd></button><button class="btn ghost" data-game="setup">换难度<kbd>Esc</kbd></button></div></div>' + (missedWords.length ? '<p class="ov-miss"><span class="muted small">打错过</span> ' + missedWords.map((w) => '<span class="mw">' + h.esc(w) + "</span>").join(" ") + "</p>" : "") + "</div>";
+      const html = '<div class="ov-card result ' + p.phase + '"><div class="ov-main"><div class="ov-title"><b>' + title + '</b><span class="ov-sub">' + h.esc(sub) + '</span></div><div class="ov-stats"><div><b>' + wpm + "</b><span>词 / 分钟</span></div><div><b>" + acc + "%</b><span>正确率</span></div><div><b>" + p.run.bestCombo + "</b><span>最长连击</span></div><div><b>" + clock(p.run.elapsed(now)) + '</b><span>用时</span></div></div><div class="ov-acts"><button class="btn" data-game="next">再来一篇<kbd>Enter</kbd></button><button class="btn ghost" data-game="setup">换难度<kbd>Esc</kbd></button></div></div>' + (missedWords.length ? '<p class="ov-miss"><span class="muted small">打错过</span> ' + missedWords.map((w) => '<span class="mw">' + h.esc(w) + "</span>").join(" ") + "</p>" : "") + "</div>";
       el.innerHTML = html;
       this.lastOverlay = html;
     }
@@ -7124,8 +7490,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       const p = this.play;
       if (!p) return;
       const c = this.save();
-      const ps = pickPassage(this.host, p.book, c.seen, p.passage.key);
-      this.start(ps);
+      this.start(pickPassage(this.host, p.book, c.seen, p.passage.key));
     }
     toSetup() {
       this.play = null;
@@ -7219,14 +7584,13 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       this.host.toast("加了 " + added.length + " 段");
       this.host.render();
     }
-    /** 从存档里恢复上次的文章（测试用） */
     passage(key) {
       return passageByKey(this.host, key);
     }
     /** 测试用：当前这局 */
     debug() {
       const p = this.play;
-      return p ? { phase: p.phase, pos: p.run.pos, len: p.passage.text.length, thief: p.thief, wrong: p.run.wrong, text: p.passage.text, reward: p.reward, keys: p.run.keys, hits: p.run.hits } : null;
+      return p ? { phase: p.phase, pos: p.run.pos, len: p.passage.text.length, thief: p.thief, police: this.policeProgress(p), wrong: p.run.wrong, text: p.passage.text, reward: p.reward, keys: p.run.keys, hits: p.run.hits, combo: p.run.combo, bonus: p.bonus } : null;
     }
   };
   function wordsWithMisses(run) {
@@ -7244,54 +7608,34 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     }
     return out.slice(0, 12);
   }
-  var icons = {};
-  function icon(kind) {
-    if (icons[kind]) return icons[kind];
+  var cover = "";
+  function coverImage() {
+    if (cover) return cover;
+    const city = new City(7, 700, "dusk");
+    const W = 140;
+    const H = 63;
     const cv = document.createElement("canvas");
+    cv.width = W;
+    cv.height = H;
     const c = cv.getContext("2d");
     if (!c) return "";
-    if (kind === "car") {
-      cv.width = 40;
-      cv.height = 20;
-      c.translate(2, -(Y.ground - 19));
-      drawCar(c, 0, 1, 0, 0, true);
-    } else if (kind === "thief") {
-      cv.width = 16;
-      cv.height = 24;
-      c.translate(3, -(Y.ground - 23));
-      drawThief(c, 0, 1, "run");
-    } else {
-      cv.width = 160;
-      cv.height = 72;
-      const p = PALETTES.dusk;
-      const g = c.createLinearGradient(0, 0, 0, 72);
-      g.addColorStop(0, p.sky[0]);
-      g.addColorStop(0.6, p.sky[1]);
-      g.addColorStop(1, p.sky[2]);
-      c.fillStyle = g;
-      c.fillRect(0, 0, 160, 72);
-      for (let i = 0; i < 12; i++) {
-        const h = 14 + i * 37 % 22;
-        c.fillStyle = p.far;
-        c.fillRect(i * 14, 46 - h, 13, h + 6);
-      }
-      c.fillStyle = p.sidewalk;
-      c.fillRect(0, 46, 160, 6);
-      c.fillStyle = p.road;
-      c.fillRect(0, 52, 160, 20);
-      c.fillStyle = p.lane;
-      for (let x = 4; x < 160; x += 24) c.fillRect(x, 63, 12, 1);
-      c.save();
-      c.translate(18, -(Y.ground - 70));
-      drawCar(c, 0, 1, 0.3, 0, true);
-      c.restore();
-      c.save();
-      c.translate(104, -(Y.ground - 70));
-      drawThief(c, 0, 2, "run");
-      c.restore();
-    }
-    icons[kind] = cv.toDataURL();
-    return icons[kind];
+    c.imageSmoothingEnabled = false;
+    const a = city.at(120);
+    const b = city.at(165);
+    const ox = Math.round(Math.max(0, Math.min(city.width - W, (a.x + b.x) / 2 - W / 2)));
+    const oy = Math.round(Math.max(0, Math.min(city.height - H, (a.y + b.y) / 2 - H / 2)));
+    c.drawImage(city.map, ox, oy, W, H, 0, 0, W, H);
+    shadow(c, b.x - ox, b.y - oy, 5, 3);
+    blit(c, thiefSprite(1), b.x - ox, b.y - oy, b.angle);
+    shadow(c, a.x - ox, a.y - oy, 11, 5);
+    blit(c, policeSprite(0), a.x - ox, a.y - oy, a.angle);
+    const g = c.createRadialGradient(a.x - ox, a.y - oy, 0, a.x - ox, a.y - oy, 24);
+    g.addColorStop(0, "rgba(255,70,60,.35)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    c.fillStyle = g;
+    c.fillRect(a.x - ox - 24, a.y - oy - 24, 48, 48);
+    cover = cv.toDataURL();
+    return cover;
   }
 
   // src/hub.ts
@@ -7299,8 +7643,8 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     {
       id: "chase",
       name: "打字追击",
-      desc: "打对一个字母，警车就往前开一点，在小偷跑进仓库前追上他。文章按词库挑，金融、医学、托福、GRE……",
-      cover: () => icon("cover")
+      desc: "在城市的大街小巷里追小偷：打对一个字母，警车就往前开一点，连击还能加速，要在他跑进仓库前追上。文章按词库挑，金融、医学、托福、GRE……",
+      cover: coverImage
     }
   ];
   function hubHtml(host2) {
@@ -8711,9 +9055,9 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
       ['roots', '词根'],
       ['books', '词库'],
       ['wrong', '错题本' + (wrongN ? '<sup>' + wrongN + '</sup>' : '')],
-      ['games', '小游戏'],
       ['garden', '花园'],
       ['shop', '商店' + (petNeedsCare() ? '<i class="dot" title="' + (petSick() ? '宠物生病了' : '宠物状态不太好') + '"></i>' : '')],
+      ['games', '小游戏'],
       ['settings', '设置'],
     ];
     const active = { practice: 'home', result: 'home', book: 'books', import: 'books', root: 'roots', rootquiz: 'roots', room: 'garden' }[ui.view] || ui.view;
@@ -9893,7 +10237,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
   // ================= 检查更新 =================
 
   // 版本号和 desktop/src-tauri/tauri.conf.json 保持一致（tools/build.py 会检查）
-  const APP_VERSION = '0.6.0';
+  const APP_VERSION = '0.6.1';
   const REPO = 'Adrian-Z-Wong/Marginal-Vocabulary';
   const UPDATE_KEY = 'margin.updateCheck';
   const ONLINE = /^https?:$/.test(location.protocol);
@@ -10964,7 +11308,8 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     for (let j = 0; j < D.h; j++) for (let i = 0; i < D.w; i++) if (tilled(x + i, y + j) || nearHouse(x + i, y + j)) return false;
     return true;
   }
-  // 在 ok(x, y) 允许的空草地上撒杂物（每 100 格大约：杂草 8、石头 4、树枝 3、野树 1、大石头 0.6、树桩 0.6）
+  // 在 ok(x, y) 允许的空草地上撒杂物：新开的地是一片荒地，长满杂草、野树，遍地石头
+  // （每 100 格大约：杂草 20、石头 9、树枝 7、野树 4、大石头 1.6、树桩 1.6）
   function seedDebris(ok) {
     const W = state.world;
     if (!W.debris) W.debris = [];
@@ -10972,7 +11317,7 @@ window.MARGIN_PASSAGES = {"license":"Texts from OpenStax (Rice University), lice
     const cand = [];
     for (let y = GB; y < GH - GB; y++) for (let x = GB; x < GW - GB; x++) if (ok(x, y)) cand.push([x, y]);
     const R = Math.random;
-    for (const [k, per] of [['tree', 1], ['boulder', 0.6], ['stump', 0.6], ['rock', 4], ['twig', 3], ['weed', 8]]) {
+    for (const [k, per] of [['tree', 4], ['boulder', 1.6], ['stump', 1.6], ['rock', 9], ['twig', 7], ['weed', 20]]) {
       const D = DEBRIS[k];
       let n = Math.round((cand.length * per) / 100);
       for (let tries = 0; n > 0 && tries < 40 * n + 40; tries++) {
