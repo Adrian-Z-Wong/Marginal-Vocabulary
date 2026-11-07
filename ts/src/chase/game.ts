@@ -1,14 +1,14 @@
 // 打字追击：选词库和难度 → 打字追小偷 → 成绩。
 // 打对一个字母，警车就往前开一点（字母不分大小写，空格和标点要打对）；打错不会卡住，但这一下不前进，还会打滑退一点。
 // 连续打对 12 个字母，警车加速冲一段。小偷按难度跑，速度时快时慢；追上就抓到了，小偷先跑进仓库就跑掉了。
-// 地图是俯视的城市，每局随机一条拐来拐去的路线。
+// 地图是斜 45° 看下去的城市（等距视角），每局随机一条拐来拐去的路线。
 
 import type { GamesSave, Host } from '../host';
 import { clock, TypingRun } from '../typing';
 import { CUSTOM_BOOK, Passage, bookPassages, customPassages, normalizeText, passageByKey, pickPassage, splitPassages } from '../passages';
 import { ChaseScene, SceneState } from './scene';
-import { City, timeOfDay } from './city';
-import { blit, policeSprite, shadow, thiefSprite } from './sprites';
+import { IsoCity, drawIsoCar, timeOfDay } from './iso';
+import { blitFoot, shadow, thiefSprite } from './sprites';
 
 export const LEVELS = [
   { name: '慢', wpm: 20, coins: 10 },
@@ -25,8 +25,8 @@ const COMBO_EVERY = 12;
 const BOOST_CHARS = 4;
 /** 打错一次，警车打滑退回几个字母的距离 */
 const SKID_CHARS = 1.5;
-/** 一个字母对应路线上多少像素（文章越长路线越长） */
-const PX_PER_CHAR = 7;
+/** 一个字母对应路线上多少格（文章越长路线越长） */
+const CELLS_PER_CHAR = 0.22;
 
 type Route = 'setup' | 'play';
 
@@ -63,7 +63,7 @@ export class ChaseGame {
 
   constructor(host: Host) {
     this.host = host;
-    this.scene = new ChaseScene(() => this.sceneState(), new City(1, 600, timeOfDay()));
+    this.scene = new ChaseScene(() => this.sceneState(), new IsoCity(1, 60, timeOfDay()));
     document.addEventListener('keydown', this.keyHandler, true);
   }
 
@@ -229,7 +229,7 @@ export class ChaseGame {
     };
     // 每局一张新地图：路线长短跟着文章长短
     const seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
-    this.scene.reset(new City(seed, Math.max(900, ps.text.length * PX_PER_CHAR), timeOfDay()));
+    this.scene.reset(new IsoCity(seed, Math.max(60, ps.text.length * CELLS_PER_CHAR), timeOfDay()));
     this.route = 'play';
     this.host.render();
   }
@@ -671,32 +671,50 @@ function wordsWithMisses(run: TypingRun): string[] {
 
 let cover = '';
 
-/** 封面：傍晚的城市一角，警车在路口追小偷 */
+/** 封面：傍晚的城市一角，警车在大街上追小偷 */
 export function coverImage(): string {
   if (cover) return cover;
-  const city = new City(7, 700, 'dusk');
-  const W = 140;
-  const H = 63;
+  const city = new IsoCity(7, 70, 'dusk');
+  const W = 150;
+  const H = 68;
   const cv = document.createElement('canvas');
   cv.width = W;
   cv.height = H;
   const c = cv.getContext('2d');
   if (!c) return '';
   c.imageSmoothingEnabled = false;
-  const a = city.at(120);
-  const b = city.at(165);
-  const ox = Math.round(Math.max(0, Math.min(city.width - W, (a.x + b.x) / 2 - W / 2)));
-  const oy = Math.round(Math.max(0, Math.min(city.height - H, (a.y + b.y) / 2 - H / 2)));
-  c.drawImage(city.map, ox, oy, W, H, 0, 0, W, H);
-  shadow(c, b.x - ox, b.y - oy, 5, 3);
-  blit(c, thiefSprite(1), b.x - ox, b.y - oy, b.angle);
-  shadow(c, a.x - ox, a.y - oy, 11, 5);
-  blit(c, policeSprite(0), a.x - ox, a.y - oy, a.angle);
-  const g = c.createRadialGradient(a.x - ox, a.y - oy, 0, a.x - ox, a.y - oy, 24);
+  const a = city.at(14);
+  const b = city.at(17.2);
+  const ox = Math.round((city.sx(a) + city.sx(b)) / 2 - W / 2);
+  const oy = Math.round((city.sy(a) + city.sy(b)) / 2 - H * 0.62);
+  c.drawImage(city.ground, ox, oy, W, H, 0, 0, W, H);
+  const axis = (d: { gx: number; gy: number }) => (Math.abs(d.gx) >= Math.abs(d.gy) ? { gx: Math.sign(d.gx) || 1, gy: 0 } : { gx: 0, gy: Math.sign(d.gy) || 1 });
+  let carDone = false;
+  let thiefDone = false;
+  const car = () => drawIsoCar(c, Math.round(city.sx(a) - ox), Math.round(city.sy(a) - oy), axis(a.dir), '#f6f5f0', 0);
+  const thief = () => {
+    shadow(c, city.sx(b) - ox, city.sy(b) - oy, 5, 2);
+    blitFoot(c, thiefSprite(1), city.sx(b) - ox, city.sy(b) - oy);
+  };
+  for (const th of city.things) {
+    if (th.x - ox > W || th.y - oy > H || th.x + th.img.width - ox < 0 || th.y + th.img.height - oy < 0) continue;
+    if (!thiefDone && th.mx > b.gx && th.my > b.gy) {
+      thief();
+      thiefDone = true;
+    }
+    if (!carDone && th.mx > a.gx && th.my > a.gy) {
+      car();
+      carDone = true;
+    }
+    c.drawImage(th.img, th.x - ox, th.y - oy);
+  }
+  if (!thiefDone) thief();
+  if (!carDone) car();
+  const g = c.createRadialGradient(city.sx(a) - ox, city.sy(a) - oy - 8, 0, city.sx(a) - ox, city.sy(a) - oy - 8, 22);
   g.addColorStop(0, 'rgba(255,70,60,.35)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   c.fillStyle = g;
-  c.fillRect(a.x - ox - 24, a.y - oy - 24, 48, 48);
+  c.fillRect(0, 0, W, H);
   cover = cv.toDataURL();
   return cover;
 }

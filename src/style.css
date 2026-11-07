@@ -1573,7 +1573,7 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
   font: inherit; color: inherit; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .game-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
-.gc-cover { width: 100%; aspect-ratio: 140 / 63; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--line); }
+.gc-cover { width: 100%; aspect-ratio: 150 / 68; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--line); }
 .gc-body { display: flex; flex-direction: column; gap: 8px; padding: 18px 22px 20px; }
 .gc-name { font: 400 26px/1.2 var(--serif); }
 .gc-desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
