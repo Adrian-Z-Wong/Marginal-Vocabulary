@@ -27,9 +27,10 @@ def check_version():
     """网页里的版本号要和桌面版的一致，检查更新靠它比较版本"""
     with open(os.path.join(ROOT, "desktop", "src-tauri", "tauri.conf.json"), encoding="utf-8") as f:
         desktop = json.load(f)["version"]
-    m = re.search(r"const APP_VERSION = '([^']+)'", read("app.js"))
+    with open(os.path.join(ROOT, "ts", "src", "app", "update.ts"), encoding="utf-8") as f:
+        m = re.search(r"const APP_VERSION = '([^']+)'", f.read())
     if not m or m.group(1) != desktop:
-        raise SystemExit(f"版本号不一致：src/app.js 是 {m.group(1) if m else '（没找到）'}，tauri.conf.json 是 {desktop}")
+        raise SystemExit(f"版本号不一致：ts/src/app/update.ts 是 {m.group(1) if m else '（没找到）'}，tauri.conf.json 是 {desktop}")
 
 
 def main():

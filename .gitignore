@@ -11,5 +11,5 @@ desktop/package-lock.json
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
 
-# 小游戏（TypeScript）的依赖
+# 界面（TypeScript）的依赖
 ts/node_modules/

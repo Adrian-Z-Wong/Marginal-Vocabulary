@@ -1,10 +1,11 @@
 {
-  "name": "margin-games",
+  "name": "marginal-vocabulary",
   "private": true,
-  "description": "Marginal Vocabulary 的小游戏（TypeScript），打包成 src/games.js",
+  "description": "Marginal Vocabulary 的界面和小游戏（TypeScript），打包成 src/app.js",
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "tsc --noEmit && esbuild src/main.ts --bundle --format=iife --target=es2020 --charset=utf8 --legal-comments=none --banner:js=\"// 由 ts/ 下的 TypeScript 编译生成（npm run build），请勿手动修改\" --outfile=../src/games.js"
+    "build": "tsc --noEmit && npm run bundle",
+    "bundle": "esbuild src/main.ts --bundle --format=iife --target=es2020 --charset=utf8 --legal-comments=none --banner:js=\"// 由 ts/ 下的 TypeScript 编译生成（cd ts && npm run build），请勿手动修改\" --outfile=../src/app.js"
   },
   "devDependencies": {
     "esbuild": "0.24.2",

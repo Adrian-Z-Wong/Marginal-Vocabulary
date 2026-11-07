@@ -1,5 +1,8 @@
-// Marginal Vocabulary 的宠物、树种、商店里卖的东西和台词（像素画在 art.js 里），价格单位是金币
-window.MARGIN_PETS = {
+// Marginal Vocabulary 的宠物、树种、商店里卖的东西和台词（像素画在 art/ 里），价格单位是金币
+
+import type { PetsData } from './types';
+
+export const MARGIN_PETS: PetsData = {
   // 宠物：price 是买一只要花的金币（同一种可以买好几只）；kind 是宠物店里的分类（dog 猫狗、small 小动物、bird 鸟、wild 野生动物、fish 观赏鱼）；
   // fish 的养在池塘里
   species: [

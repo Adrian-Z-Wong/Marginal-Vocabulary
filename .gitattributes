@@ -1,4 +1,4 @@
-# 构建出来的单文件版和由 data/ 生成的词库数据，不算进 GitHub 的语言统计
+# 构建出来的单文件版、由 ts/ 编译出来的 app.js 和由 data/ 生成的词库数据，不算进 GitHub 的语言统计
 Margin.html linguist-generated=true
 src/words.js linguist-generated=true
 src/finance.js linguist-generated=true
@@ -7,4 +7,4 @@ src/macrofin.js linguist-generated=true
 src/roots.js linguist-generated=true
 src/vectors.js linguist-generated=true
 src/passages.js linguist-generated=true
-src/games.js linguist-generated=true
+src/app.js linguist-generated=true

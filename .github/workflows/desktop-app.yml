@@ -40,7 +40,7 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
-      - name: 编译小游戏（TypeScript）
+      - name: 编译界面（TypeScript）
         working-directory: ts
         run: |
           npm ci
@@ -86,7 +86,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: 编译小游戏（TypeScript）
+      - name: 编译界面（TypeScript）
         working-directory: ts
         shell: bash
         run: |

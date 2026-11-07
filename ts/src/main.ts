@@ -1,62 +1,56 @@
-// 小游戏的入口：app.js 启动时调用 MARGIN_GAMES.init(host)，「小游戏」页面由这里画。
+// Marginal Vocabulary 的入口：按原来的顺序把各个模块装起来（esbuild 打包成 src/app.js）
 
-import type { Host } from './host';
-import { ChaseGame } from './chase/game';
-import { hubHtml } from './hub';
+import { ART } from './art';
+import { MARGIN_PETS } from './data/pets';
+import './games';
+import './app/books';
+import './app/store';
+import './app/util';
+import './app/meaning';
+import './app/dialogs';
+import './app/library';
+import './app/stats';
+import './app/judge';
+import { initSpeech } from './app/speech';
+import './app/importer';
+import './app/nav';
+import './app/session';
+import './app/render';
+import './app/views/home';
+import './app/views/practice';
+import './app/views/result';
+import './app/views/books';
+import './app/views/wrong';
+import './app/views/settings';
+import './app/roots/quiz';
+import './app/roots/views';
+import './app/update';
+import './app/actions';
+import './world/data';
+import './world/coins';
+import './world/bag';
+import './world/pets';
+import './world/garden';
+import './world/sky';
+import './world/debris';
+import './world/occupancy';
+import './world/migrate';
+import { initRoam } from './world/roam';
+import './world/terrain';
+import './world/scene';
+import './world/sceneui';
+import { initBag } from './world/bagui';
+import './world/shop';
+import './world/actions';
+import { initEvents } from './app/events';
+import { start } from './app/start';
 
-let host: Host | null = null;
-let chase: ChaseGame | null = null;
-let route: 'hub' | 'chase' = 'hub';
+// 像素画和宠物数据也挂在 window 上（自动化测试会用到）
+window.MARGIN_ART = ART;
+window.MARGIN_PETS = MARGIN_PETS;
 
-function init(h: Host): void {
-  host = h;
-  chase = new ChaseGame(h);
-  // 小游戏页面上的按钮（data-game）和选择框
-  document.addEventListener('click', (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-game]');
-    if (!el || !document.querySelector('main.games') || !chase || !host) return;
-    if (el.tagName === 'SELECT') return;
-    const name = el.dataset.game || '';
-    if (name === 'open') {
-      route = el.dataset.id === 'chase' ? 'chase' : 'hub';
-      chase.route = 'setup';
-      host.render();
-      window.scrollTo(0, 0);
-      return;
-    }
-    void chase.action(name, el);
-  });
-  document.addEventListener('change', (ev) => {
-    const el = ev.target as HTMLInputElement | HTMLSelectElement;
-    if (!chase || !document.querySelector('main.games')) return;
-    if (el.id === 'chase-file') void chase.file(el as HTMLInputElement);
-    else if (el.dataset && el.dataset.game) chase.change(el.dataset.game, el);
-  });
-}
-
-/** 点顶栏「小游戏」：回到游戏列表 */
-function home(): void {
-  if (chase) chase.leave();
-  route = 'hub';
-}
-
-function view(): string {
-  if (!host || !chase) return '';
-  return route === 'chase' ? chase.view() : hubHtml(host);
-}
-
-function after(): void {
-  if (chase) {
-    if (route === 'chase') chase.after();
-    else chase.leave();
-  }
-}
-
-/** 离开小游戏页面 */
-function leave(): void {
-  if (chase) chase.leave();
-}
-
-const api = { init, view, after, leave, home, debug: () => (chase ? chase.debug() : null), route: () => route };
-window.MARGIN_GAMES = api;
-export type GamesApi = typeof api;
+initSpeech();
+initRoam();
+initBag();
+initEvents();
+start();

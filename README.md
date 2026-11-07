@@ -77,7 +77,7 @@ Finance 收录经济、金融、会计、管理、公司治理、财务管理、
 
 ## 开发
 
-桌面应用用 [Tauri](https://tauri.app)：外壳和系统相关的部分（下载更新、存文件）是 Rust（`desktop/src-tauri/`），界面在 `src/`，小游戏是 TypeScript（`ts/`，用 esbuild 编译成 `src/games.js`），原有的界面代码会逐页迁到 TypeScript。运行 `python3 tools/build.py` 打包成 `Margin.html`；Mac 和 Windows 安装包由 GitHub Actions 自动打包发布。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+桌面应用用 [Tauri](https://tauri.app)：外壳和系统相关的部分（下载更新、存文件）是 Rust（`desktop/src-tauri/`），界面和小游戏是 TypeScript（`ts/src/`，用 esbuild 编译成 `src/app.js`），样式和词库数据在 `src/`。运行 `python3 tools/build.py` 打包成 `Margin.html`；Mac 和 Windows 安装包由 GitHub Actions 自动打包发布。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 

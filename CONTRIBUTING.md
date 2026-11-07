@@ -25,10 +25,15 @@ CET-4、CET-6、GEE、TOEFL、IELTS、GRE、GMAT 词库来自 [ECDICT](https://g
 
 ## 改代码
 
-- 界面源码在 `src/`：`index.html`、`style.css`、`app.js`；像素画全部用代码画在 `art.js`（宠物、小人、房子、植物、装饰、家具、物品、花园地面）；宠物、树种、商店货架和台词这些数据在 `pets.js`。
-- 小游戏用 TypeScript 写在 `ts/src/`（打字追击在 `ts/src/chase/`），和主程序只通过 `ts/src/host.ts` 里的接口打交道。改完在 `ts/` 里运行 `npm install`（第一次）和 `npm run build`，会先做严格的类型检查，再编译成 `src/games.js`。新的界面代码都用 TypeScript 写，`app.js` 会逐页迁过去。
-- 版本号写在 `src/app.js` 的 `APP_VERSION` 和 `desktop/src-tauri/tauri.conf.json` 里，两处要一致（`tools/build.py` 会检查），应用内检查更新靠它比较版本。
-- 开发时直接用浏览器打开 `src/index.html`，改完刷新。
+- 界面代码用 TypeScript 写在 `ts/src/`，入口是 `main.ts`：
+  - `app/`：背单词、词根、词库、错题本、设置这些页面，存档、判分、发音、检查更新
+  - `world/`：花园、小屋、宠物、商店、背包、天气和时间
+  - `art/`：像素画全部用代码画（宠物、小人、房子、植物、装饰、家具、物品、花园地面）
+  - `data/`：宠物、树种、商店货架和台词
+  - `games/`：小游戏（打字追击在 `games/chase/`），和主程序只通过 `games/host.ts` 里的接口打交道
+- 改完在 `ts/` 里运行 `npm install`（第一次）和 `npm run build`：先做严格的类型检查，再编译成 `src/app.js`（生成的文件，不要手改）。`src/` 里还有 `index.html`、`style.css` 和词库数据。
+- 版本号写在 `ts/src/app/update.ts` 的 `APP_VERSION` 和 `desktop/src-tauri/tauri.conf.json` 里，两处要一致（`tools/build.py` 会检查），应用内检查更新靠它比较版本。
+- 开发时在 `ts/` 里运行 `npm run build`，再用浏览器打开 `src/index.html`，刷新就能看到改动。
 - 提交前运行 `python3 tools/build.py`，更新打包好的 `Margin.html`。
 
 生成数据的脚本：
@@ -40,7 +45,7 @@ python3 tools/build_roots.py     # 词根和单词拆解 src/roots.js（data/roo
 pip install numpy scipy
 python3 tools/build_vectors.py   # 中文词向量 src/vectors.js
 python3 tools/build_passages.py  # 打字小游戏的文章 data/typing/passages.json、src/passages.js（OpenStax CC BY 教材）
-(cd ts && npm run build)         # 小游戏 src/games.js
+(cd ts && npm run build)         # 界面和小游戏 src/app.js
 python3 tools/build.py           # 打包 Margin.html
 ```
 
