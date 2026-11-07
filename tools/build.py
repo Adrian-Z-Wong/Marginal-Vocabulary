@@ -7,6 +7,11 @@
 import json
 import os
 import re
+import sys
+
+# Windows 的命令行默认编码打印不了中文
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "src")

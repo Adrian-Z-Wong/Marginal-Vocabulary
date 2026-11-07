@@ -9,6 +9,12 @@ on:
     branches: [main]
     paths: ['desktop/src-tauri/tauri.conf.json']
   workflow_dispatch:
+    inputs:
+      only:
+        description: '只打哪个版本（all：Mac 和 Windows；windows：只补打 Windows 版，传到已有的 Release）'
+        type: choice
+        options: [all, windows]
+        default: all
 
 permissions:
   contents: write
@@ -21,6 +27,7 @@ env:
 
 jobs:
   mac:
+    if: github.event_name != 'workflow_dispatch' || inputs.only != 'windows'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +70,13 @@ jobs:
 
   windows:
     needs: mac
+    # Mac 那步成功了才打 Windows 版（只补打 Windows 版时 Mac 那步跳过）
+    if: always() && (needs.mac.result == 'success' || needs.mac.result == 'skipped')
     runs-on: windows-latest
+    env:
+      # Windows 的命令行默认不是 UTF-8，打印中文会出错
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/checkout@v4
 
