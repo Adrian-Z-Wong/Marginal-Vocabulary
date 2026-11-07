@@ -1140,6 +1140,8 @@ window.MARGIN_ART = (function () {
   // 镜像一行（走路的另一只脚）
   const mirrorRow = (r) => r.split('').reverse().join('');
 
+  // 坐着（正面）：大腿朝着我们看不见，只露出小腿和鞋
+  const LEGS_SIT = ['................', '................', '................', '....bbB..bbB....', '...fffF..fffF...', '...FFFF..FFFF...', '................', '................'];
   // 侧面换另一条腿在前：远近两条腿的深浅对调
   const SWAP_LEG = { b: 'B', B: 'b', f: 'F', F: 'f' };
 
@@ -1158,11 +1160,12 @@ window.MARGIN_ART = (function () {
     const act = f === 'act';
     // 走路四步一轮：walk1 迈开一条腿、walkp 两腿并拢身子往上一点、walk2 迈开另一条腿、walkp
     const walk = f === 'walk1' || f === 'walk2';
-    const y0 = f === 'walkp' ? -1 : 0;
+    const y0 = f === 'walkp' ? -1 : f === 'sit' ? 3 : 0;
     const head = AV[dir === 'side' ? 'headSide' : dir === 'back' ? 'headBack' : 'headFront'];
     const body = AV[dir === 'side' ? (act ? 'bodySideAct' : 'bodySide') : dir === 'back' ? 'bodyBack' : act ? 'bodyFrontAct' : 'bodyFront'];
     let legs = AV[dir === 'side' ? (walk ? 'legsSideWalk' : 'legsSide') : walk ? 'legsFrontWalk' : 'legsFront'];
     if (f === 'walk2') legs = dir === 'side' ? legs.map((r) => r.replace(/[bBfF]/g, (c) => SWAP_LEG[c])) : legs.map(mirrorRow);
+    if (f === 'sit') legs = LEGS_SIT;
     const pal = {
       h: hair, H: HR.mid, j: HR.hi,
       s: skin, S: SK.mid, c: '#f2a0a0', e: INK, w: WHITE, m: '#c0705f',
@@ -1224,6 +1227,39 @@ window.MARGIN_ART = (function () {
       const bx = dir === 'side' ? 5 : 8;
       p.sEll(bx, 1.5 + by + y0, 2.6, 2, hair);
       p.set(bx - 1, 1 + by + y0, HR.hi);
+    }
+    // 走路时手臂和腿反着摆：正面、背面一只手往前（低一格）、一只手往后（高一格）；侧面手往前、往后挪两格
+    if (walk) {
+      const hy = 21 + y0;
+      const fwd = f === 'walk1';
+      if (dir === 'side') {
+        const hand = [p.get(8, hy), p.get(9, hy)];
+        const pants = p.get(11, hy) || bottom;
+        if (hand[0] && hand[1]) {
+          const nx = fwd ? 10 : 6;
+          p.set(8, hy, pants);
+          p.set(9, hy, pants);
+          p.set(nx, hy, hand[0]);
+          p.set(nx + 1, hy, hand[1]);
+        }
+      } else {
+        for (const [x0, down] of [[2, fwd], [12, !fwd]]) {
+          const a = [p.get(x0, hy), p.get(x0 + 1, hy)];
+          if (!a[0] && !a[1]) continue;
+          if (down) {
+            const sleeve = [p.get(x0, hy - 1), p.get(x0 + 1, hy - 1)];
+            p.set(x0, hy + 1, a[0]);
+            p.set(x0 + 1, hy + 1, a[1]);
+            if (sleeve[0]) p.set(x0, hy, sleeve[0]);
+            if (sleeve[1]) p.set(x0 + 1, hy, sleeve[1]);
+          } else {
+            p.set(x0, hy - 1, a[0]);
+            p.set(x0 + 1, hy - 1, a[1]);
+            p.clear(x0, hy);
+            p.clear(x0 + 1, hy);
+          }
+        }
+      }
     }
     if (look.hat && HATS[look.hat]) HATS[look.hat](p, y0, dir);
   }
@@ -1992,6 +2028,9 @@ window.MARGIN_ART = (function () {
     const gh = h - 4;
     p.rect(gx, gy, gw, gh, '#7fb6d8');
     p.rect(gx, gy, gw, Math.max(2, Math.floor(gh / 5)), '#a9d4ec');
+    // 玻璃往墙里缩进去一点：上沿、左沿一道暗边
+    p.rect(gx, gy, gw, 1, '#5e93b8');
+    p.rect(gx, gy, 1, gh, '#6aa2c6');
     p.line(gx + 1, gy + gh - 2, gx + Math.min(gw - 2, 7), gy + gh - 2 - Math.min(gh - 3, 7), '#cdeaf8');
     if (o.arch) {
       for (let k = 0; k < Math.floor(w / 2); k++) {
@@ -2006,6 +2045,11 @@ window.MARGIN_ART = (function () {
     if (!o.door) p.rect(gx, gy + Math.floor(gh / 2), gw, 1, T);
     p.rect(gx, gy, 2, Math.floor(gh * 0.55), '#f4ece0');
     p.rect(gx + gw - 2, gy, 2, Math.floor(gh * 0.55), '#f4ece0');
+    // 窗台：比窗框宽一点，上面受光
+    if (!o.box && !o.door) {
+      p.rect(x - 1, y + h, w + 2, 2, ramp(T).mid);
+      p.rect(x - 1, y + h, w + 2, 1, '#fffaf0');
+    }
     if (o.box) {
       p.sRect(x - 1, y + h, w + 2, 3, '#8a5a3b');
       for (let i = 0; i < w; i += 2) {
@@ -2020,6 +2064,7 @@ window.MARGIN_ART = (function () {
     p.sRect(x - 3, y - 3, w + 6, h + 3, trim, { noHi: true });
     p.sRect(x, y, w, h, c);
     const R = ramp(c);
+    p.rect(x, y, w, 2, R.lo); // 门往里缩，上面压着一道影子
     p.rect(Math.round(cx), y, 1, h, R.lo);
     for (const [px, py] of [[x + 2, y + 3], [Math.round(cx) + 2, y + 3], [x + 2, y + Math.round(h / 2) + 1], [Math.round(cx) + 2, y + Math.round(h / 2) + 1]]) p.sRect(px, py, Math.floor(w / 2) - 4, Math.floor(h / 2) - 5, R.mid, { noHi: true });
     p.rect(Math.round(cx) + 2, y + Math.round(h * 0.55), 2, 2, '#f2c14e');
@@ -2048,6 +2093,146 @@ window.MARGIN_ART = (function () {
       p.ell(8, 14, 6, 1.6, 'rgba(40,30,20,.2)');
       p.sEll(8, 10.5, 5.5, 4, '#a8a29a');
       p.sEll(12, 12, 2.5, 2, '#a8a29a');
+    } },
+    // ---- 地上要清理的东西：杂草、小石头、大石头、树枝、树桩（野树直接用长大的树） ----
+    weed1: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 14.5, 5.5, 1.4, 'rgba(30,40,20,.22)');
+      const G = ramp('#5f9a3a');
+      for (const [x0, y0, x1, y1, c] of [[8, 14, 3, 5, G.lo], [8, 14, 13, 6, G.lo], [8, 14, 5, 3, G.mid], [8, 14, 11, 2, G.mid], [8, 14, 8, 1, '#5f9a3a'], [8, 14, 2, 9, '#5f9a3a'], [8, 14, 14, 10, '#5f9a3a']]) p.line(x0, y0, x1, y1, c);
+      for (const [x, y] of [[3, 5], [13, 6], [5, 3], [11, 2], [8, 1]]) p.set(x, y, G.hi);
+      p.rect(6, 13, 5, 2, G.lo);
+    } },
+    weed2: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 14.5, 6, 1.4, 'rgba(30,40,20,.22)');
+      const G = ramp('#6aa23e');
+      // 一圈锯齿边的叶子，中间冒出一朵小黄花
+      for (const [cx, cy, rx, ry] of [[4, 11, 3.5, 2.2], [12, 11, 3.5, 2.2], [6, 8, 2.6, 3], [10, 8, 2.6, 3], [8, 12, 3, 2]]) p.sEll(cx, cy, rx, ry, '#6aa23e');
+      for (const [x, y] of [[2, 10], [14, 10], [5, 6], [11, 6]]) p.set(x, y, G.hi);
+      p.line(8, 12, 8, 4, G.lo);
+      p.sEll(8, 3.5, 2, 1.8, '#f2c14e');
+      p.set(8, 3, '#fff2a8');
+    } },
+    weed3: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 14.5, 6, 1.4, 'rgba(30,40,20,.22)');
+      const G = ramp('#7a9a3a');
+      // 一丛干一点的长草，叶尖发黄
+      for (let i = 0; i < 7; i++) {
+        const x0 = 4 + i * 1.3;
+        const lean = (i - 3) * 0.9;
+        const h = 8 + ((i * 5) % 4);
+        p.line(Math.round(x0), 14, Math.round(x0 + lean), 14 - h, i % 2 ? G.mid : '#7a9a3a');
+        p.set(Math.round(x0 + lean), 14 - h, '#c9b65a');
+      }
+      p.rect(4, 13, 9, 2, G.lo);
+    } },
+    rock1: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 14, 6.5, 1.7, 'rgba(30,25,20,.25)');
+      const R = ramp('#a39d94');
+      p.sEll(8, 10, 6, 4.5, '#a39d94');
+      p.ell(6.5, 8.5, 3.6, 2.4, R.hi);
+      p.ell(10, 12, 3.2, 1.6, R.mid);
+      p.line(9, 8, 11, 11, R.lo);
+      p.set(5, 7, '#d8d4cc');
+    } },
+    rock2: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 14, 6.5, 1.7, 'rgba(30,25,20,.25)');
+      const R = ramp('#9a958e');
+      p.sEll(6, 11, 4.5, 3.4, '#9a958e');
+      p.sEll(11, 10, 3.6, 3.6, '#a8a29a');
+      p.ell(10.5, 8.5, 2, 1.4, ramp('#a8a29a').hi);
+      p.ell(5, 9.8, 2.4, 1.3, R.hi);
+      p.rect(3, 9, 3, 1, '#6f9a4a');
+    } },
+    boulder: { w: 32, h: 32, tw: 2, th: 2, draw(p) {
+      p.ell(16, 29, 14, 2.6, 'rgba(30,25,20,.28)');
+      const R = ramp('#9c968c');
+      // 大石头：亮的一面朝左上，暗的一面朝右下，几道裂缝，顶上一点青苔
+      p.sEll(16, 18, 14, 11, '#9c968c');
+      p.ell(13, 14, 9.5, 7, R.hi);
+      p.ell(12, 13, 6, 4, lighten(R.hi, 0.05));
+      p.ell(21, 23, 8, 4.5, R.mid);
+      p.ell(23, 25, 5, 2.4, R.lo);
+      p.line(17, 9, 19, 15, R.lo);
+      p.line(19, 15, 23, 17, R.lo);
+      p.line(8, 20, 12, 23, R.mid);
+      p.sEll(11, 9, 5, 2.2, '#5f8f3e');
+      for (const [x, y] of [[8, 8], [10, 7], [13, 8]]) p.set(x, y, '#7fb04f');
+      p.set(9, 11, '#e4e0d8');
+      p.set(10, 11, '#e4e0d8');
+    } },
+    twig: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
+      p.ell(8, 13, 6, 1.3, 'rgba(30,25,20,.2)');
+      const B = '#8a5e3a';
+      p.line(2, 12, 13, 8, B);
+      p.line(2, 13, 13, 9, ramp(B).lo);
+      p.line(8, 10, 10, 5, B);
+      p.line(5, 11, 4, 8, B);
+      p.sEll(11, 4.5, 1.8, 1.2, '#6aa23e');
+      p.sEll(3.5, 7.5, 1.4, 1, '#6aa23e');
+    } },
+    stump: { w: 32, h: 32, tw: 2, th: 2, draw(p) {
+      p.ell(16, 28, 14, 2.6, 'rgba(30,25,20,.28)');
+      const BARK = '#7a5234';
+      const BK = ramp(BARK);
+      // 树根往外张开
+      for (const [x0, x1] of [[5, 2], [26, 30], [11, 8], [21, 24]]) p.poly([[x0, 22], [x0 + (x1 > x0 ? 4 : -4) * 0 + 2, 22], [x1, 27], [x1 + (x1 > x0 ? -3 : 3), 27]], BK.lo);
+      // 树干：一圈树皮，左边亮右边暗
+      p.sRect(6, 12, 20, 14, BARK);
+      for (let x = 6; x < 26; x++) {
+        const c = x < 9 ? BK.hi : x > 21 ? BK.lo : (x % 4 === 0 ? BK.mid : BARK);
+        for (let y = 13; y < 26; y++) if (!((y + x) % 7 === 0 && x > 9 && x < 21)) p.set(x, y, c);
+      }
+      // 截面：年轮
+      p.sEll(16, 12, 10, 4.5, '#d9b07a');
+      p.ell(16, 12, 7, 3, '#c99a62');
+      p.ell(16, 12, 4.2, 1.8, '#d9b07a');
+      p.ell(16, 12, 1.6, 0.8, '#b8864e');
+      p.line(16, 12, 22, 10, '#a8763e');
+      // 一朵小蘑菇
+      p.sEll(25, 21, 2.4, 1.6, '#d8783a');
+      p.rect(25, 22, 1, 2, '#f4ece0');
+    } },
+    // 上楼的楼梯：一级级往后墙里走，越往上越暗，右边一道扶手
+    stairsUp: { w: 32, h: 48, tw: 2, th: 3, room: true, flat: true, draw(p) {
+      const TREAD = '#c99a62';
+      const RISE = '#8a5e3a';
+      p.rect(0, 0, 32, 48, '#6a4630');
+      for (let i = 0; i < 7; i++) {
+        const y = 47 - i * 7;
+        const k = i / 7;
+        p.rect(3, y - 6, 26, 5, mix(TREAD, '#3a2a20', k * 0.55));
+        p.rect(3, y - 1, 26, 2, mix(RISE, '#2a1d16', k * 0.55));
+        p.rect(3, y - 6, 26, 1, mix(lighten(TREAD, 0.08), '#3a2a20', k * 0.55));
+      }
+      p.rect(0, 0, 32, 4, '#2a1d16');
+      p.rect(0, 0, 3, 48, '#5a3a26');
+      p.rect(29, 0, 3, 48, '#5a3a26');
+      for (let y = 8; y < 46; y += 8) p.rect(30, y, 1, 6, '#c8a070');
+      p.rect(29, 6, 3, 1, '#d8b080');
+    } },
+    // 下楼的楼梯：地板上一个口子，楼梯往下走，越往下越暗，三边围着栏杆
+    stairsDown: { w: 32, h: 48, tw: 2, th: 3, room: true, flat: true, draw(p) {
+      p.rect(0, 0, 32, 48, '#5a3a26');
+      for (let i = 0; i < 7; i++) {
+        const y = 3 + i * 6;
+        const k = i / 7;
+        p.rect(4, y, 24, 4, mix('#c99a62', '#1a120c', 0.15 + k * 0.7));
+        p.rect(4, y + 4, 24, 2, mix('#8a5e3a', '#120c08', 0.2 + k * 0.7));
+      }
+      for (const x of [1, 29]) {
+        p.rect(x, 0, 2, 46, '#b07a4a');
+        for (let y = 2; y < 46; y += 5) p.rect(x, y, 2, 1, '#8a5a3b');
+      }
+      p.rect(1, 0, 30, 2, '#c8a070');
+      p.rect(1, 46, 30, 2, '#8a5a3b');
+    } },
+    stool: { w: 16, h: 16, tw: 1, th: 1, room: true, draw(p) {
+      p.ell(8, 14.5, 5.5, 1.3, 'rgba(30,25,20,.22)');
+      const W = '#b07a4a';
+      for (const x of [4, 11]) p.sRect(x, 8, 2, 7, ramp(W).mid, { noHi: true });
+      p.rect(5, 11, 7, 1, ramp(W).lo);
+      p.sEll(8, 7, 5.5, 2.6, W);
+      p.ell(7, 6.4, 3.6, 1.2, ramp(W).hi);
     } },
     mushroom: { w: 16, h: 16, tw: 1, th: 1, draw(p) {
       p.sRect(6, 9, 4, 5, '#f4ece0');
@@ -2929,6 +3114,54 @@ window.MARGIN_ART = (function () {
       p.set(8, 9, '#f6d35b');
       p.rect(8, 12, 1, 2, '#4f8a43');
     },
+    // 体力：一道闪电
+    bolt(p) {
+      p.poly([[9, 1], [3, 9], [7, 9], [6, 15], [13, 6], [9, 6], [11, 1]], '#f2c14e');
+      p.line(9, 2, 5, 8, '#fff2a8');
+    },
+    // 材料：一捆木头、一堆石块
+    wood(p) {
+      const W = '#a8713f';
+      for (const [y, x0, x1] of [[10, 2, 12], [6, 4, 14]]) {
+        p.sRect(x0, y, x1 - x0, 4, W, { noHi: true });
+        p.rect(x0 + 1, y, x1 - x0 - 2, 1, ramp(W).hi);
+        p.sEll(x1, y + 2, 1.9, 1.9, '#d9b07a');
+        p.set(x1, y + 2, '#a8763e');
+      }
+      p.rect(7, 6, 1, 8, '#6a4630');
+    },
+    stone(p) {
+      p.sEll(5.5, 10.5, 4, 3, '#a39d94');
+      p.sEll(11, 11, 3.6, 2.8, '#948e86');
+      p.sEll(8.5, 6.5, 3.4, 2.8, '#b0aaa0');
+      p.set(7, 5, '#e4e0d8');
+      p.set(4, 9, '#d4d0c8');
+    },
+    scythe(p) {
+      // 长木柄，顶上一把往左弯的刀，柄中间一个握把
+      p.line(12, 15, 10, 3, '#8a5a3b');
+      p.line(13, 15, 11, 3, ramp('#8a5a3b').lo);
+      p.rect(9, 9, 5, 2, '#6a4630');
+      for (const [x, y] of [[10, 2], [9, 2], [8, 2], [7, 2], [6, 3], [5, 3], [4, 4], [3, 5], [2, 6], [1, 8]]) p.set(x, y, '#dfe6ec');
+      for (const [x, y] of [[9, 3], [8, 3], [7, 3], [6, 4], [5, 4], [4, 5], [3, 6], [2, 7]]) p.set(x, y, '#9aa4ae');
+      p.set(10, 3, '#5a5f66');
+    },
+    pickaxe(p) {
+      p.line(4, 15, 10, 4, '#8a5a3b');
+      p.line(5, 15, 11, 4, ramp('#8a5a3b').lo);
+      // 两头尖的镐头
+      for (let i = 0; i < 6; i++) {
+        p.set(10 - i, 3 + Math.floor(i / 2), '#a8b0b8');
+        p.set(10 + i, 3 + Math.floor(i / 2), '#a8b0b8');
+      }
+      p.rect(8, 2, 5, 2, '#c8d0d8');
+    },
+    axe(p) {
+      p.line(4, 15, 10, 3, '#8a5a3b');
+      p.line(5, 15, 11, 3, ramp('#8a5a3b').lo);
+      p.poly([[9, 2], [14, 1], [15, 6], [11, 7]], '#a8b0b8');
+      p.line(14, 1, 15, 6, '#d8dee4');
+    },
     hoe(p) {
       p.line(2, 14, 10, 4, '#8a5a3b');
       p.line(3, 14, 11, 4, ramp('#8a5a3b').lo);
@@ -3029,8 +3262,9 @@ window.MARGIN_ART = (function () {
       if (!has(o.path, tx, ty + 1) && T - 1 - ly < 1 + n) return false;
       return true;
     };
-    // 池塘：格子并成一块，边缘圆一点
+    // 池塘：有 pondFn 就按它画出弯弯曲曲的岸；没有就按格子并成一块，边缘圆一点
     const waterAt = (px, py) => {
+      if (o.pondFn) return o.pondFn(px / T, py / T);
       if (!o.water) return false;
       const tx = Math.floor(px / T);
       const ty = Math.floor(py / T);
@@ -3215,8 +3449,8 @@ window.MARGIN_ART = (function () {
     if (pond) {
       const { x0, y0, x1, y1 } = pond;
       let pads = 0;
-      for (let ty = Math.floor(y0 / T); ty * T < y1 && pads < 4; ty++)
-        for (let tx = Math.floor(x0 / T); tx * T < x1 && pads < 4; tx++) {
+      for (let ty = Math.floor(y0 / T); ty * T < y1 && pads < 8; ty++)
+        for (let tx = Math.floor(x0 / T); tx * T < x1 && pads < 8; tx++) {
           const cx = tx * T + 4 + Math.floor(hash2(tx, ty, seed + 91) * 8);
           const cy = ty * T + 5 + Math.floor(hash2(tx, ty, seed + 92) * 7);
           if (hash2(tx, ty, seed + 93) > 0.4) continue;
@@ -3244,8 +3478,8 @@ window.MARGIN_ART = (function () {
         }
       // 芦苇：长在岸边的草里，几根一丛，顶上一个棕色的穗
       let reeds = 0;
-      for (let y = y1 - 1; y > y0 && reeds < 4; y -= 3)
-        for (let x = x0; x < x1 && reeds < 4; x += 2) {
+      for (let y = y1 - 1; y > y0 && reeds < 9; y -= 3)
+        for (let x = x0; x < x1 && reeds < 9; x += 2) {
           if (!GRASS_SET.has(p.get(x, y)) || hash2(x, y, seed + 95) > 0.08) continue;
           let wet = false;
           for (let d = 1; d <= 4 && !wet; d++) if (isW(x - d, y) || isW(x + d, y) || isW(x, y - d)) wet = true;
@@ -3401,6 +3635,14 @@ window.MARGIN_ART = (function () {
         }
     }
     return p.toCanvas();
+  }
+
+  // ================= 池塘的形状 =================
+  // 格子坐标（可以带小数）。一大一小两个椭圆连成一片，左下边一个小湾，岸线再加一点起伏，看着像天然的池塘
+  function pondInside(x, y) {
+    const e = (cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+    const f = Math.min(e(10.5, 36.4, 7.6, 4.3), e(15.4, 33.4, 3.7, 2.9), e(5.3, 39.3, 3.4, 2.5));
+    return f < 1 + (noise(x * 0.9, y * 0.9, 77) - 0.5) * 0.36;
   }
 
   // ================= 花园外面的树林 =================
@@ -3674,6 +3916,35 @@ window.MARGIN_ART = (function () {
     return hsl2hex(h + deg, s, l);
   }
 
+  // 躺在床上：头枕在枕头上，被子盖到下巴，被子下面鼓起来一点（和 32×32 的床对齐）
+  function lying(look) {
+    return cached('lying:' + JSON.stringify(look), () => {
+      const q = build(16, 32, (z) => person(z, look, 'idle', 'front'));
+      const p = new Pix(32, 32);
+      for (let y = 0; y < 14; y++) for (let x = 0; x < 16; x++) if (q.get(x, y)) p.set(x + 8, y + 3, q.get(x, y));
+      const B = ramp('#5a8fe0');
+      p.rect(2, 15, 28, 3, '#5a8fe0');
+      p.rect(2, 15, 28, 1, B.hi);
+      p.rect(2, 18, 28, 1, B.mid);
+      p.ell(16, 23, 7, 3, lighten('#5a8fe0', 0.05));
+      p.ell(15, 22, 5, 1.5, B.hi);
+      return p;
+    });
+  }
+
+  // 夜里亮灯的窗户：只留下房子图里的玻璃，换成暖黄色（盖在变暗的画面上）
+  const GLASS = { '#7fb6d8': '#ffcf6e', '#a9d4ec': '#ffe08f', '#cdeaf8': '#fff1c4', '#5e93b8': '#d99a48', '#6aa2c6': '#e8ac56' };
+  function litWindows(kind) {
+    const d = DECOR[kind];
+    if (!d) return null;
+    return cached('lit:' + kind, () => {
+      const src = build(d.w, d.h, (q) => d.draw(q), { outline: !d.flat });
+      const p = new Pix(d.w, d.h);
+      for (let i = 0; i < src.d.length; i++) if (GLASS[src.d[i]]) p.d[i] = GLASS[src.d[i]];
+      return p;
+    });
+  }
+
   function avatar(look, frame, dir) {
     return cached('avatar:' + JSON.stringify(look) + ':' + frame + ':' + (dir || 'front'), () => build(16, 32, (q) => person(q, look, frame, dir)));
   }
@@ -3727,7 +3998,7 @@ window.MARGIN_ART = (function () {
 
   return {
     Pix, ramp, lighten, mix, url, terrain,
-    pet, avatar, tree, flower: flowerSprite, shrub: shrubSprite, grass: grassSprite, fishTop, room, forestRing, ground, decor, icon,
+    pet, avatar, tree, flower: flowerSprite, shrub: shrubSprite, grass: grassSprite, fishTop, room, forestRing, pondInside, lying, litWindows, ground, decor, icon,
     PETS: Object.keys(PETS), TREES: Object.keys(TREE_SPECS), FLOWERS: Object.keys(FLOWERS), SHRUBS: Object.keys(SHRUBS),
     DECOR: Object.fromEntries(Object.entries(DECOR).map(([k, v]) => [k, { w: v.w, h: v.h, tw: v.tw, th: v.th, room: !!v.room, wall: !!v.wall, flat: !!v.flat }])),
     HATS: Object.keys(HATS), ICONS: Object.keys(ICONS),

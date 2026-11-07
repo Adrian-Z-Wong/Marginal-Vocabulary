@@ -1319,6 +1319,10 @@ canvas.scene { display: block; cursor: pointer; max-width: 100%; }
 }
 .tool .tn { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .tsep { width: 1px; align-self: stretch; background: #c4a97c; margin: 0 4px; }
+/* 工具栏最前面的体力 */
+.stam { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 40px; padding: 2px 4px; font: 600 13px/1 var(--mono); color: #6a4a2a; }
+.stam img { width: 24px; height: 24px; }
+.si-note.short { color: var(--accent); }
 
 
 /* 背包：右下角的小袋子 */
@@ -1525,3 +1529,35 @@ img.px.gray { filter: grayscale(1) opacity(.7); }
   .scene-wrap .toolbar .tool .tn { font-size: 11px; }
   .scene-wrap .toolbar .muted, .scene-wrap .toolbar .link { flex: none; white-space: nowrap; }
 }
+
+/* ---------- 商店：木头货架、一格一格的货位 ---------- */
+:root { --wood: #9a6a42; --wood-lo: #7a4f30; --wood-hi: #c99a62; --parch: #f6ecd6; --parch-2: #fbf5e7; --slot-line: #dcc69c; }
+:root[data-theme="dark"] { --wood: #6a4a32; --wood-lo: #4e3424; --wood-hi: #8a6440; --parch: #2f2a23; --parch-2: #38322a; --slot-line: #5a4c3a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --wood: #6a4a32; --wood-lo: #4e3424; --wood-hi: #8a6440; --parch: #2f2a23; --parch-2: #38322a; --slot-line: #5a4c3a; } }
+.panel.store, .panel.adopt {
+  background: var(--parch);
+  border: 4px solid var(--wood);
+  box-shadow: inset 0 0 0 2px var(--wood-hi), inset 0 0 0 4px var(--wood-lo), 0 10px 24px -14px rgba(60, 35, 15, .55);
+  border-radius: 14px;
+  padding: 22px;
+}
+.panel.store .shop-item, .panel.adopt .pet-card {
+  background: var(--parch-2);
+  border: 2px solid var(--slot-line);
+  border-radius: 10px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .55), inset 0 -3px 0 rgba(120, 80, 40, .12);
+}
+.panel.store .shop-item:hover, .panel.adopt .pet-card:hover { border-color: var(--wood-hi); }
+.panel.adopt .pet-card.on { border-color: var(--accent); background: var(--accent-soft); }
+/* 东西摆在一块小木托上 */
+.panel.store .shop-item .si-pic { position: relative; width: 100%; height: 80px; padding-bottom: 8px; }
+.panel.store .shop-item .si-pic::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 2px; height: 8px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(120, 80, 40, .28), rgba(120, 80, 40, 0) 70%); }
+.panel.store .si-name { font-weight: 600; }
+.panel.store .si-meta { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1 var(--mono); color: var(--ink); }
+.panel.store .si-meta .pts-ic { width: 11px; height: 11px; }
+.panel.store .si-meta .have { margin-left: 4px; font: 500 12px/1 var(--sans, inherit); color: var(--muted); }
+.panel.store .shop-item .btn { box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .25); }
+/* 分类：像挂在货架上的木牌 */
+.shop-tabs .chip, .shelf-tabs .chip { background: var(--parch-2); border: 2px solid var(--slot-line); }
+.shop-tabs .chip.on, .shelf-tabs .chip.on { background: var(--wood); border-color: var(--wood-lo); color: #fff8ec; box-shadow: inset 0 1px 0 var(--wood-hi); }
+.panel.adopt .adopt-pick { background: var(--parch-2); border: 2px solid var(--slot-line); }

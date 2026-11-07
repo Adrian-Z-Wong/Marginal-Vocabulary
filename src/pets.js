@@ -87,6 +87,9 @@ window.MARGIN_PETS = {
       name: '园艺',
       items: [
         { id: 'hoe', name: '锄头', price: 600, use: 'hoe', icon: 'hoe', once: true },
+        { id: 'scythe', name: '镰刀', price: 300, use: 'scythe', icon: 'scythe', once: true },
+        { id: 'pickaxe', name: '十字镐', price: 800, use: 'pickaxe', icon: 'pickaxe', once: true },
+        { id: 'axe', name: '斧头', price: 800, use: 'axe', icon: 'axe', once: true },
         { id: 'water', name: '清水 ×5', price: 10, use: 'water', gives: 5, icon: 'water' },
         { id: 'fert', name: '肥料', price: 20, use: 'fert', icon: 'fert' },
       ],
@@ -122,10 +125,21 @@ window.MARGIN_PETS = {
       ],
     },
     {
+      id: 'mats',
+      name: '建材',
+      items: [
+        { id: 'wood', name: '木材', price: 12, use: 'mat', icon: 'wood' },
+        { id: 'wood10', name: '木材 ×10', price: 110, use: 'mat', icon: 'wood', gives: 10, into: 'wood' },
+        { id: 'stone', name: '石料', price: 18, use: 'mat', icon: 'stone' },
+        { id: 'stone10', name: '石料 ×10', price: 160, use: 'mat', icon: 'stone', gives: 10, into: 'stone' },
+      ],
+    },
+    {
       id: 'furniture',
       name: '家具',
       items: [
         { id: 'furn.chair', name: '椅子', price: 120, use: 'furnish', decor: 'chair' },
+        { id: 'furn.stool', name: '小凳子', price: 80, use: 'furnish', decor: 'stool' },
         { id: 'furn.plant', name: '盆栽', price: 120, use: 'furnish', decor: 'plant' },
         { id: 'furn.painting', name: '挂画', price: 150, use: 'furnish', decor: 'painting' },
         { id: 'furn.window', name: '窗户', price: 180, use: 'furnish', decor: 'window' },
